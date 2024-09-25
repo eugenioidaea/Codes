@@ -21,14 +21,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Parameters
-dt = 0.01  # Time step
 num_steps = 10000  # Number of steps
-gamma = 1.0  # Friction coefficient
-kB = 1.0  # Boltzmann constant
-T = 1.0  # Temperature
-D = kB * T / gamma  # Diffusion constant
-m = 1.0  # Assuming unit mass
-noise_strength = np.sqrt(2 * D * dt)  # Strength of the noise term
+D = 1.0  # Diffusion constant
+noise_strength = np.sqrt(2 * D)  # Strength of the noise term
+mean = 0
+std = 1
 
 # Initialize arrays to store position data
 x = np.zeros(num_steps)
@@ -37,12 +34,12 @@ y = np.zeros(num_steps)
 # Simulate Langevin dynamics
 for i in range(1, num_steps):
     # Generate random forces (Gaussian white noise)
-    eta_x = np.random.normal(0, noise_strength)
-    eta_y = np.random.normal(0, noise_strength)
+    eta_x = np.random.normal(mean, std)
+    eta_y = np.random.normal(mean, std)
     
     # Update positions
-    x[i] = x[i - 1] + eta_x
-    y[i] = y[i - 1] + eta_y
+    x[i] = x[i - 1] + noise_strength*eta_x
+    y[i] = y[i - 1] + noise_strength*eta_y
 
 # Plot the trajectory
 plt.figure(figsize=(8, 8))
