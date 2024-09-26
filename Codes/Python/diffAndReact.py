@@ -27,7 +27,7 @@ D = 1.0  # Diffusion constant
 noise_strength = np.sqrt(2 * D)  # Strength of the noise term
 mean = 0
 std = 1
-num_particles = 10
+num_particles = 100
 k = 0.01 # Reflection efficiency
 
 react_dist = [math.exp(-k*t)*k for t in range(1, num_steps)]
@@ -56,6 +56,11 @@ for n, particle in enumerate(x):
 # Plot reflection probability
 plt.figure(figsize=(8, 8))
 plt.plot(range(1, num_steps), psi)
+plt.hist(samples, bins=30, density=True, alpha=0.6, color='blue', edgecolor='black', label='Sampled Data')
+plt.title("Psi distribution of reflecting probability")
+plt.xlabel("Time step")
+plt.ylabel("Reflecting probability")
+plt.grid(True)
 
 # Plot the trajectory
 plt.figure(figsize=(8, 8))
