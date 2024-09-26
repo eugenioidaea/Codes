@@ -28,13 +28,13 @@ for n, position in enumerate(x):
         eta_x = np.random.normal(mean, std)
         eta_y = np.random.normal(mean, std)
         
-        x[n][i] = x[n][i - 1] + noise_strength*eta_x
-        y[n][i] = y[n][i - 1] + noise_strength*eta_y
+        x[n][i] = x[n][i-1] + noise_strength*eta_x
+        y[n][i] = y[n][i-1] + noise_strength*eta_y
 
         if x[n][i] < lbx:
-            x[n][i] = -0.1*x[n][i]
+            x[n][i] = x[n][i-1] - noise_strength*eta_x
         if y[n][i] > uby or y[n][i] < lby:
-            y[n][i] = -0.1*y[n][i]
+            y[n][i] = y[n][i-1] - noise_strength*eta_y
 
 # Plot the trajectory
 plt.figure(figsize=(8, 8))
