@@ -8,11 +8,11 @@ D = 1.0  # Diffusion constant
 noise_strength = np.sqrt(2 * D)  # Strength of the noise term
 mean = 0
 std = 1
-num_particles = 3
+num_particles = 10
 uby = 10 # Vertical Upper Boundary
 lby = -10 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
-rbx = 40 # Horizontal Right Boundary
+rbx = 60 # Horizontal Right Boundary
 init_shift = 5 # It aggregates the initial positions of the particles around the centre of the domain
 
 # Initialize arrays to store position data
