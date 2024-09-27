@@ -8,11 +8,11 @@ D = 1.0  # Diffusion constant
 noise_strength = np.sqrt(2 * D)  # Strength of the noise term
 mean = 0
 std = 1
-num_particles = 10
+num_particles = 100
 uby = 10 # Vertical Upper Boundary
 lby = -10 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
-rbx = 60 # Horizontal Right Boundary
+rbx = 20 # Horizontal Right Boundary
 init_shift = 5 # It aggregates the initial positions of the particles around the centre of the domain
 
 # Initialize arrays to store position data
@@ -41,6 +41,10 @@ for n, position in enumerate(x):
             y[n] = y[n][:i]
             break
 
+bc_time = [len(value)/num_steps for index, value in enumerate(x)]
+bc_time.sort()
+cum_part = [index/num_particles for index, value in enumerate(bc_time)]
+
 # Plot the trajectory
 plt.figure(figsize=(8, 8))
 for i in range(num_particles):
@@ -48,5 +52,14 @@ for i in range(num_particles):
 plt.title("2D Diffusion Process (Langevin Equation)")
 plt.xlabel("X Position")
 plt.ylabel("Y Position")
+plt.grid(True)
+plt.show()
+
+# Plot Breakthrough curve
+plt.figure(figsize=(8, 8))
+plt.plot(bc_time, cum_part, lw=0.5)
+plt.title("Breakthorugh curve")
+plt.xlabel("Time step")
+plt.ylabel("CDF")
 plt.grid(True)
 plt.show()
