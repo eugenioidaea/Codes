@@ -12,6 +12,7 @@ num_particles = 3
 uby = 10 # Vertical Upper Boundary
 lby = -10 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
+rbx = 40 # Horizontal Right Boundary
 init_shift = 5 # It aggregates the initial positions of the particles around the centre of the domain
 
 # Initialize arrays to store position data
@@ -35,6 +36,10 @@ for n, position in enumerate(x):
             x[n][i] = x[n][i-1] - noise_strength*eta_x
         if y[n][i] > uby or y[n][i] < lby:
             y[n][i] = y[n][i-1] - noise_strength*eta_y
+        if x[n][i] > rbx:
+            x[n] = x[n][:i]
+            y[n] = y[n][:i]
+            break
 
 # Plot the trajectory
 plt.figure(figsize=(8, 8))
