@@ -8,17 +8,21 @@ D = 1.0  # Diffusion constant
 noise_strength = np.sqrt(2 * D)  # Strength of the noise term
 mean = 0
 std = 1
-num_particles = 10
+num_particles = 100
 uby = 10 # Vertical Upper Boundary
 lby = -10 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
-rbx = 20 # Horizontal Right Boundary
-init_shift = 5 # It aggregates the initial positions of the particles around the centre of the domain
+rbx = 30 # Horizontal Right Boundary
+init_shift = 1 # It aggregates the initial positions of the particles around the centre of the domain
 k = 0.001 # Reflection efficiency
+crossProbThreshold = 2
 
 react_dist = [math.exp(-k*t)*k for t in range(1, num_steps)]
 psi = [react/sum(react_dist) for react in react_dist]
 samples = np.random.choice(range(1, num_steps), size=num_steps, p=psi)
+
+crossProb = np.random.normal(mean, std, num_steps)
+bounces = 0
 
 # Initialize arrays to store position data
 x = [np.zeros(num_steps) for _ in range(num_particles)]
@@ -29,7 +33,7 @@ for index, array in enumerate(y):
 
 # Simulate Langevin dynamics
 for n, position in enumerate(x):
-    cross = False
+    cross = False # After the particle crosses the fracture's walls once, it can freely move from fracture to matric and viceversa
     for i in range(1, num_steps):
         # Generate random forces (Gaussian white noise)
         eta_x = np.random.normal(mean, std)
@@ -42,9 +46,14 @@ for n, position in enumerate(x):
             x[n][i] = x[n][i-1] - noise_strength*eta_x
         # The following condition compares the particle time step i with a sample vector which stores the reflecting probabilities randomly arranged
         # The particle gets reflected until it crosses the fracture's wall. Once it crossed it moves freely between fractures' boundaries
-        if (y[n][i] > uby or y[n][i] < lby) and i<samples[i] and cross==False:
-            y[n][i] = y[n][i-1] - noise_strength*eta_y
-            cross = True
+        if cross == False:
+            # The particle bounces against the fracture's wall
+            if (y[n][i] > uby or y[n][i] < lby) and crossProb[i] < crossProbThreshold:
+                y[n][i] = y[n][i-1] - noise_strength*eta_y
+                bounces = bounces+1
+            # The particle crosses the fracture's wall
+            if (y[n][i] > uby or y[n][i] < lby) and crossProb[i] > crossProbThreshold:
+                cross = True
         if x[n][i] > rbx:
             x[n] = x[n][:i]
             y[n] = y[n][:i]

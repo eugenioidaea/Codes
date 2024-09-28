@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import math
 
 # Parameters
-num_steps = 10000 # Number of steps
+num_steps = 300 # Number of steps
 D = 1.0  # Diffusion constant
 noise_strength = np.sqrt(2 * D)  # Strength of the noise term
 mean = 0
