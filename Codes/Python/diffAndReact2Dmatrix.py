@@ -1,28 +1,30 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import scipy.stats
 
 # Parameters
-num_steps = 300 # Number of steps
+num_steps = 1000 # Number of steps
 D = 1.0  # Diffusion constant
 noise_strength = np.sqrt(2 * D)  # Strength of the noise term
 mean = 0
 std = 1
-num_particles = 100
+num_particles = 1000
 uby = 10 # Vertical Upper Boundary
 lby = -10 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
-rbx = 30 # Horizontal Right Boundary
+rbx = 50 # Horizontal Right Boundary
 init_shift = 1 # It aggregates the initial positions of the particles around the centre of the domain
-k = 0.001 # Reflection efficiency
-crossProbThreshold = 1.5
+reflectedInward = 80
+crossOut = scipy.stats.norm.ppf(reflectedInward/100)
+reflectedOutward = 30
+crossIn = scipy.stats.norm.ppf(reflectedOutward/100)
 arrival = np.zeros(num_particles)
 
-react_dist = [math.exp(-k*t)*k for t in range(1, num_steps)]
-psi = [react/sum(react_dist) for react in react_dist]
-samples = np.random.choice(range(1, num_steps), size=num_steps, p=psi)
-
-bounces = 0
+bouncesBackIn = 0
+bouncesBackOut = 0
+crossInToOut = 0
+crossOutToIn = 0
 
 # Initialize arrays to store position data
 x = [np.zeros(num_steps) for _ in range(num_particles)]
@@ -47,21 +49,23 @@ for n, position in enumerate(x):
         # The following condition compares the particle time step i with a sample vector which stores the reflecting probabilities randomly arranged
         # The particle gets reflected until it crosses the fracture's wall. Once it crossed it moves freely between fractures' boundaries
         if cross == False:
-            # The particle bounces against the fracture's wall
-            if (y[n][i] > uby or y[n][i] < lby) and np.random.normal(mean, std) < crossProbThreshold:
+            # The particle bounces back in against the fracture's wall
+            if (y[n][i] > uby or y[n][i] < lby) and np.random.normal(mean, std) < crossOut:
                 y[n][i] = y[n][i-1] - noise_strength*eta_y
-                bounces = bounces+1
+                bouncesBackIn = bouncesBackIn+1
             # The particle leaves the fracture
-            if (y[n][i] > uby or y[n][i] < lby) and np.random.normal(mean, std) > crossProbThreshold:
+            if (y[n][i] > uby or y[n][i] < lby) and np.random.normal(mean, std) > crossOut:
                 cross = True
+                crossInToOut = crossInToOut+1
         if cross == True:
             # The particle bounces against the fracture's wall
-            if (y[n][i] < uby or y[n][i] > lby) and np.random.normal(mean, std) < crossProbThreshold:
+            if (y[n][i] < uby or y[n][i] > lby) and np.random.normal(mean, std) < crossIn:
                 y[n][i] = y[n][i-1] - noise_strength*eta_y
-                bounces = bounces+1
+                bouncesBackOut = bouncesBackOut+1
             # The particle enters the fracture
-            if (y[n][i] > uby or y[n][i] < lby) and np.random.normal(mean, std) > crossProbThreshold:
+            if (y[n][i] < uby or y[n][i] > lby) and np.random.normal(mean, std) > crossIn:
                 cross = False
+                crossOutToIn = crossOutToIn+1
         if x[n][i] > rbx:
             x[n] = x[n][:i]
             y[n] = y[n][:i]
@@ -73,14 +77,8 @@ bc_time = [len(value)/num_steps for index, value in enumerate(x) if len(value)<n
 bc_time.sort()
 cum_part = [index/num_particles for index, value in enumerate(bc_time)]
 
-# Plot reflection probability
-plt.figure(figsize=(8, 8))
-plt.plot(range(1, num_steps), psi)
-plt.hist(samples, bins=30, density=True, alpha=0.6, color='blue', edgecolor='black', label='Sampled Data')
-plt.title("Psi distribution of reflecting probability")
-plt.xlabel("Time step")
-plt.ylabel("Reflecting probability")
-plt.grid(True)
+print("Effective bounce-in fraction: ", 100*bouncesBackIn/(bouncesBackIn+crossInToOut))
+print("Effective bounce-out fraction: ", 100*bouncesBackOut/(bouncesBackOut+crossInToOut))
 
 # Plot the trajectory
 plt.figure(figsize=(8, 8))
