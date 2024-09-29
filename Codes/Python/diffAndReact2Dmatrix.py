@@ -15,13 +15,13 @@ lbx = 0 # Horizontal Left Boundary
 rbx = 30 # Horizontal Right Boundary
 init_shift = 1 # It aggregates the initial positions of the particles around the centre of the domain
 k = 0.001 # Reflection efficiency
-crossProbThreshold = 2
+crossProbThreshold = 1.5
+arrival = np.zeros(num_particles)
 
 react_dist = [math.exp(-k*t)*k for t in range(1, num_steps)]
 psi = [react/sum(react_dist) for react in react_dist]
 samples = np.random.choice(range(1, num_steps), size=num_steps, p=psi)
 
-crossProb = np.random.normal(mean, std, num_steps)
 bounces = 0
 
 # Initialize arrays to store position data
@@ -48,15 +48,25 @@ for n, position in enumerate(x):
         # The particle gets reflected until it crosses the fracture's wall. Once it crossed it moves freely between fractures' boundaries
         if cross == False:
             # The particle bounces against the fracture's wall
-            if (y[n][i] > uby or y[n][i] < lby) and crossProb[i] < crossProbThreshold:
+            if (y[n][i] > uby or y[n][i] < lby) and np.random.normal(mean, std) < crossProbThreshold:
                 y[n][i] = y[n][i-1] - noise_strength*eta_y
                 bounces = bounces+1
-            # The particle crosses the fracture's wall
-            if (y[n][i] > uby or y[n][i] < lby) and crossProb[i] > crossProbThreshold:
+            # The particle leaves the fracture
+            if (y[n][i] > uby or y[n][i] < lby) and np.random.normal(mean, std) > crossProbThreshold:
                 cross = True
+        if cross == True:
+            # The particle bounces against the fracture's wall
+            if (y[n][i] < uby or y[n][i] > lby) and np.random.normal(mean, std) < crossProbThreshold:
+                y[n][i] = y[n][i-1] - noise_strength*eta_y
+                bounces = bounces+1
+            # The particle enters the fracture
+            if (y[n][i] > uby or y[n][i] < lby) and np.random.normal(mean, std) > crossProbThreshold:
+                cross = False
         if x[n][i] > rbx:
             x[n] = x[n][:i]
             y[n] = y[n][:i]
+            if y[n][i-1] < uby or y[n][i-1] > lby:
+                arrival[n] = arrival[n]+1
             break
 
 bc_time = [len(value)/num_steps for index, value in enumerate(x) if len(value)<num_steps]
