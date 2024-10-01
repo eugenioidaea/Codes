@@ -9,7 +9,7 @@ D = 1.0  # Diffusion constant
 noise_strength = np.sqrt(2 * D)  # Strength of the noise term
 mean = 0
 std = 1
-num_particles = 10000
+num_particles = 1000
 uby = 10 # Vertical Upper Boundary
 lby = -10 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
@@ -150,6 +150,10 @@ else:
     endTstep.sort()
     endTstep = [i/num_steps for i in endTstep]
     cum_part = [i/num_particles for i in range(len(endTstep))]
+
+    with open("BreakthroughCurve.txt", "w") as file:
+        for time, prob in zip(endTstep, cum_part):
+            file.write(f"{time}\t{prob}\n")
 
     # Plot Breakthrough curve
     plt.figure(figsize=(8, 8))
