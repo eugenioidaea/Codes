@@ -166,3 +166,4 @@ else:
 
 print("Effective bounce-in fraction: ", 100*bouncesBackIn/(bouncesBackIn+crossInToOut))
 print("Effective bounce-out fraction: ", 100*bouncesBackOut/(bouncesBackOut+crossInToOut))
+print("Time scale: L^2/D", (rbx-lbx)**2/D**2)
