@@ -10,19 +10,19 @@ recordTrajectories = True # It uses up memory
 
 # Parameters #################################################################
 num_steps = 1000 # Number of steps
-D = 1.0  # Diffusion constant
+D = 0.1  # Diffusion constant
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
 meanCross = 0 # Crossing probability parameter
 stdCross = 1 # Crossing probability parameter
-num_particles = 1000 # Number of particles in the simulation
-uby = 10 # Vertical Upper Boundary
-lby = -10 # Vertical Lower Boundary
+num_particles = 100 # Number of particles in the simulation
+uby = 1 # Vertical Upper Boundary
+lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
-rbx = 50 # Horizontal Right Boundary
-init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
-reflectedInward = 60 # Percentage of impacts from the fracture reflected again into the fracture
-reflectedOutward = 70 # Percentage of impacts from the porous matrix reflected again into the porous matrix
+rbx = 100 # Horizontal Right Boundary
+init_shift = 0.5 # It aggregates the initial positions of the particles around the centre of the domain
+reflectedInward = 70 # Percentage of impacts from the fracture reflected again into the fracture
+reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
 animatedParticle = 3 # Index of the particle whose trajectory will be animated
 fTstp = 10 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
@@ -37,6 +37,8 @@ bouncesBackIn = 0
 bouncesBackOut = 0
 crossInToOut = 0
 crossOutToIn = 0
+staysIn = 0
+staysOut = 0
 
 # Case for recorded trajectories #############################################
 if recordTrajectories:
@@ -49,7 +51,8 @@ if recordTrajectories:
 
     # Simulate Langevin dynamics
     for n in range(num_particles):
-        cross = False # After the particle crosses the fracture's walls once, it can freely move from fracture to matric and viceversa
+        outsideFractureUp = False # After the particle crosses the fracture's walls once, it can freely move from fracture to matric and viceversa
+        outsideFractureDown = False # After the particle crosses the fracture's walls once, it can freely move from fracture to matric and viceversa
         for i in range(1, num_steps):
             # Generate random forces (Gaussian white noise)
             eta_x = np.random.normal(meanEta, stdEta)
@@ -59,39 +62,49 @@ if recordTrajectories:
             y[n][i] = y[n][i-1] + noise_strength*eta_y
 
             if x[n][i] < lbx:
-                x[n][i] = x[n][i] + 2*(lbx-x[n][i])
+               x[n][i] = x[n][i] + 2*(lbx-x[n][i])
             # The following condition compares the particle time step i with a sample vector which stores the reflecting probabilities randomly arranged
             # The particle gets reflected until it crosses the fracture's wall. Once it crossed it moves freely between fractures' boundaries
             crossProb = np.random.normal(meanCross, stdCross)
-            if cross == False:
+            if (outsideFractureUp == False and outsideFractureDown == False):
+                # The particle leaves the fracture
+                if y[n][i] > uby and crossProb > crossOut:
+                   outsideFractureUp = True
+                   crossInToOut = crossInToOut+1
+                elif y[n][i] < lby and crossProb > crossOut:
+                   outsideFractureDown = True
+                   crossInToOut = crossInToOut+1
                 # The particle bounces back in against the fracture's wall
-                if y[n][i] > uby and crossProb < crossOut:
+                elif y[n][i] > uby and crossProb < crossOut:
                    y[n][i] = y[n][i] - 2*(y[n][i]-uby)
                    bouncesBackIn = bouncesBackIn+1
-                if y[n][i] < lby and crossProb < crossOut:
+                elif y[n][i] < lby and crossProb < crossOut:
                    y[n][i] = y[n][i] + 2*(lby-y[n][i])
                    bouncesBackIn = bouncesBackIn+1
-                # The particle leaves the fracture
-                if (y[n][i] > uby or y[n][i] < lby) and crossProb > crossOut:
-                    cross = True
-                    crossInToOut = crossInToOut+1
-            if cross == True:
+                # The particle remains in the fracture without bouncing
+                else:
+                   staysIn = staysIn+1
+            else:
+                # The particle enters the fracture
+                if (y[n][i] <= uby and y[n][i] >= lby) and crossProb > crossIn:
+                   outsideFractureUp = False
+                   outsideFractureDown = False
+                   crossOutToIn = crossOutToIn+1
                 # The particle bounces against the fracture's wall
-                if y[n][i] <= uby and crossProb < crossIn:
+                elif (outsideFractureUp == True and y[n][i] <= uby) and crossProb < crossIn:
                    y[n][i] =  y[n][i] + 2*(uby-y[n][i])
                    bouncesBackOut = bouncesBackOut+1
-                if y[n][i] >= lby and crossProb < crossIn:
+                elif (outsideFractureDown == True and y[n][i] >= lby) and crossProb < crossIn:
                    y[n][i] =  y[n][i] - 2*(y[n][i]-lby)
                    bouncesBackOut = bouncesBackOut+1
-                # The particle enters the fracture
-                if (y[n][i] <= uby or y[n][i] >= lby) and crossProb > crossIn:
-                    cross = False
-                    crossOutToIn = crossOutToIn+1
+                # The particle remains in the porous matrix without bouncing
+                else:
+                   staysOut = staysOut+1
             if x[n][i] > rbx:
-                x[n] = x[n][:i]
-                y[n] = y[n][:i]
-                if y[n][i-1] < uby or y[n][i-1] > lby:
-                    arrival[n] = True
+                if y[n][i] < uby and y[n][i] > lby:
+                   arrival[n] = True
+                x[n] = x[n][:i-1]
+                y[n] = y[n][:i-1]
                 break
 
     bc_time = [len(value)/num_steps for index, value in enumerate(x) if (len(value)<num_steps and arrival[index]== True)]
@@ -150,7 +163,7 @@ else:
     for n in range(num_particles):
         x = x0[n]
         y = y0[n]
-        cross = False # After the particle crosses the fracture's walls once, it can freely move from fracture to matric and viceversa
+        outsideFracture = False # After the particle crosses the fracture's walls once, it can freely move from fracture to matric and viceversa
         for i in range(1, num_steps):
             # Generate random forces (Gaussian white noise)
             eta_x = np.random.normal(meanEta, stdEta)
@@ -164,23 +177,23 @@ else:
             # The following condition compares the particle time step i with a sample vector which stores the reflecting probabilities randomly arranged
             # The particle gets reflected until it crosses the fracture's wall. Once it crossed it moves freely between fractures' boundaries
             crossProb = np.random.normal(meanCross, stdCross)
-            if cross == False:
+            if outsideFracture == False:
                 # The particle bounces back in against the fracture's wall
                 if (y > uby or y < lby) and crossProb < crossOut:
                     y = y - noise_strength*eta_y
                     bouncesBackIn = bouncesBackIn+1
                 # The particle leaves the fracture
                 if (y > uby or y < lby) and crossProb > crossOut:
-                    cross = True
+                    outsideFracture = True
                     crossInToOut = crossInToOut+1
-            if cross == True:
+            else:
                 # The particle bounces against the fracture's wall
                 if (y < uby or y > lby) and crossProb < crossIn:
                     y = y - noise_strength*eta_y
                     bouncesBackOut = bouncesBackOut+1
                 # The particle enters the fracture
                 if (y < uby or y > lby) and crossProb > crossIn:
-                    cross = False
+                    outsideFracture = False
                     crossOutToIn = crossOutToIn+1
             if x > rbx:
                 if y < uby or y > lby:
@@ -206,6 +219,7 @@ else:
     plt.show()
 
 # Statistics to double check the results of the simulations against the inputs
+print("Effective steps (only if particles do not get absorbed by right boundary): ", (num_particles+staysIn+staysOut+bouncesBackIn+bouncesBackOut+crossInToOut+crossOutToIn)/num_particles)
 print("Effective bounce-in fraction: ", 100*bouncesBackIn/(bouncesBackIn+crossInToOut))
 print("Effective bounce-out fraction: ", 100*bouncesBackOut/(bouncesBackOut+crossOutToIn))
 print("Time scale: L^2/D", (rbx-lbx)**2/D**2)
