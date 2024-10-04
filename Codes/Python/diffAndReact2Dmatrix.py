@@ -12,20 +12,20 @@ if localRun:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = 10000 # Number of steps
+num_steps = 1000 # Number of steps
 D = 0.1  # Diffusion constant
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
 meanCross = 0 # Crossing probability parameter
 stdCross = 1 # Crossing probability parameter
-num_particles = 10000 # Number of particles in the simulation
+num_particles = 1000 # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
-rbx = 2000 # Horizontal Right Boundary
+rbx = 20 # Horizontal Right Boundary
 init_shift = 0.5 # It aggregates the initial positions of the particles around the centre of the domain
 reflectedInward = 90 # Percentage of impacts from the fracture reflected again into the fracture
-reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
+reflectedOutward = 30 # Percentage of impacts from the porous matrix reflected again into the porous matrix
 animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
