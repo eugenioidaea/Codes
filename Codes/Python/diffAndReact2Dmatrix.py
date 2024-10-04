@@ -1,8 +1,8 @@
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import math
 import scipy.stats
-from matplotlib.animation import FuncAnimation
+# from matplotlib.animation import FuncAnimation
 
 # Features ###################################################################
 recordVideo = False # It slows down the script
@@ -39,6 +39,8 @@ crossInToOut = 0
 crossOutToIn = 0
 staysIn = 0
 staysOut = 0
+outsideFractureUp = False
+outsideFractureDown = False
 
 # If recording trajectories is enabled #############################################
 if recordTrajectories:
@@ -227,13 +229,13 @@ if recordVideo:
     plt.show()
 
 # Plot Breakthrough curve
-plt.figure(figsize=(8, 8))
-plt.plot(bc_time, cum_part, lw=0.5)
-plt.title("Breakthorugh curve")
-plt.xlabel("Time step")
-plt.ylabel("CDF")
-plt.grid(True)
-plt.show()
+# plt.figure(figsize=(8, 8))
+# plt.plot(bc_time, cum_part, lw=0.5)
+# plt.title("Breakthorugh curve")
+# plt.xlabel("Time step")
+# plt.ylabel("CDF")
+# plt.grid(True)
+# plt.show()
 
 # Statistics to double check the results of the simulations against the inputs
 print("Effective steps (only if particles do not get absorbed by right boundary): ", (num_particles+staysIn+staysOut+bouncesBackIn+bouncesBackOut+crossInToOut+crossOutToIn)/num_particles)
