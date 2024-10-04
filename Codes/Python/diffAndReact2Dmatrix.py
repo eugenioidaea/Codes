@@ -9,13 +9,13 @@ recordVideo = False # It slows down the script
 recordTrajectories = False # It uses up memory
 
 # Parameters #################################################################
-num_steps = 1000 # Number of steps
+num_steps = 100 # Number of steps
 D = 0.1  # Diffusion constant
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
 meanCross = 0 # Crossing probability parameter
 stdCross = 1 # Crossing probability parameter
-num_particles = 100 # Number of particles in the simulation
+num_particles = 1 # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
@@ -23,8 +23,8 @@ rbx = 20 # Horizontal Right Boundary
 init_shift = 0.5 # It aggregates the initial positions of the particles around the centre of the domain
 reflectedInward = 90 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
-animatedParticle = 3 # Index of the particle whose trajectory will be animated
-fTstp = 10 # First time step to be recorded in the video
+animatedParticle = 0 # Index of the particle whose trajectory will be animated
+fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
 
 noise_strength = np.sqrt(2 * D)  # Strength of the noise term
@@ -179,11 +179,12 @@ else:
     bc_time = [i/num_steps for i in bc_time]
     cum_part = [i/num_particles for i in range(len(bc_time))]
 
-    with open("BreakthroughCurve.txt", "w") as file:
-        for time, prob in zip(bc_time, cum_part):
-            file.write(f"{time}\t{prob}\n")
-
 # Plot section ###############################################################
+
+# Print BC on external txt file
+with open("BreakthroughCurve.txt", "w") as file:
+    for time, prob in zip(bc_time, cum_part):
+        file.write(f"{time}\t{prob}\n")
 
 # Plot the trajectory
 if recordTrajectories:
@@ -192,6 +193,7 @@ if recordTrajectories:
         plt.plot(x[i], y[i], lw=0.5)
     plt.axhline(y=uby, color='r', linestyle='--', linewidth=2)
     plt.axhline(y=lby, color='r', linestyle='--', linewidth=2)
+    plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
     plt.title("2D Diffusion Process (Langevin Equation)")
     plt.xlabel("X Position")
     plt.ylabel("Y Position")
@@ -205,8 +207,12 @@ if recordVideo:
     fig, ax = plt.subplots()
     line, = ax.plot([], [], lw=2)
     # Set the plot limits
-    ax.set_xlim(lbx, rbx)
-    ax.set_ylim(lby, uby)
+    ax.set_xlim(min(x[animatedParticle]), max(x[animatedParticle]))
+    ax.set_ylim(min(y[animatedParticle]), max(y[animatedParticle]))
+    plt.axhline(y=uby, color='r', linestyle='--', linewidth=2)
+    plt.axhline(y=lby, color='r', linestyle='--', linewidth=2)
+    plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
+    plt.grid(True)
     # Initialization function: plot the background of each frame
     def init():
         line.set_data([], [])
