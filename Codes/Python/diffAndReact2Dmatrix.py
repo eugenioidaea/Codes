@@ -6,7 +6,7 @@ from matplotlib.animation import FuncAnimation
 
 # Features ###################################################################
 recordVideo = False # It slows down the script
-recordTrajectories = True # It uses up memory
+recordTrajectories = False # It uses up memory
 
 # Parameters #################################################################
 num_steps = 1000 # Number of steps
@@ -19,9 +19,9 @@ num_particles = 100 # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
-rbx = 100 # Horizontal Right Boundary
+rbx = 20 # Horizontal Right Boundary
 init_shift = 0.5 # It aggregates the initial positions of the particles around the centre of the domain
-reflectedInward = 70 # Percentage of impacts from the fracture reflected again into the fracture
+reflectedInward = 90 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
 animatedParticle = 3 # Index of the particle whose trajectory will be animated
 fTstp = 10 # First time step to be recorded in the video
@@ -31,7 +31,7 @@ noise_strength = np.sqrt(2 * D)  # Strength of the noise term
 crossOut = scipy.stats.norm.ppf(reflectedInward/100)
 crossIn = scipy.stats.norm.ppf(reflectedOutward/100)
 arrival = [False for _ in range(num_particles)]
-endTstep = []
+bc_time = []
 
 bouncesBackIn = 0
 bouncesBackOut = 0
@@ -40,7 +40,7 @@ crossOutToIn = 0
 staysIn = 0
 staysOut = 0
 
-# Case for recorded trajectories #############################################
+# If recording trajectories is enabled #############################################
 if recordTrajectories:
     # Initialize arrays to store position data
     x = [np.zeros(num_steps) for _ in range(num_particles)]
@@ -111,49 +111,7 @@ if recordTrajectories:
     bc_time.sort()
     cum_part = [i/num_particles for i in range(len(bc_time))]
 
-    # Plot the trajectory
-    plt.figure(figsize=(8, 8))
-    for i in range(num_particles):
-        plt.plot(x[i], y[i], lw=0.5)
-    plt.axhline(y=uby, color='r', linestyle='--', linewidth=2)
-    plt.axhline(y=lby, color='r', linestyle='--', linewidth=2)
-    plt.title("2D Diffusion Process (Langevin Equation)")
-    plt.xlabel("X Position")
-    plt.ylabel("Y Position")
-    plt.grid(True)
-    plt.show()
-
-    if recordVideo:
-        # Animate the trajectory
-        # Set up the figure, axis, and plot element to animate
-        fig, ax = plt.subplots()
-        line, = ax.plot([], [], lw=2)
-        # Set the plot limits
-        ax.set_xlim(lbx, rbx)
-        ax.set_ylim(lby, uby)
-        # Initialization function: plot the background of each frame
-        def init():
-            line.set_data([], [])
-            return line,
-        # Animation function: this is called sequentially
-        def animate(i):
-            line.set_data(x[animatedParticle][fTstp:i], y[animatedParticle][fTstp:i])  # Update the data to show part of the line
-            return line,
-        # Call the animator
-        ani = FuncAnimation(fig, animate, init_func=init, frames=len(x[animatedParticle][fTstp:lTstp]), interval=400, blit=True)
-        ani.save('animated_chart.mp4', writer='ffmpeg', fps=20)
-        plt.show()
-
-    # Plot Breakthrough curve
-    plt.figure(figsize=(8, 8))
-    plt.plot(bc_time, cum_part, lw=0.5)
-    plt.title("Breakthorugh curve")
-    plt.xlabel("Time step")
-    plt.ylabel("CDF")
-    plt.grid(True)
-    plt.show()
-
-# Case without recorded trajectories #########################################
+# If recording trajectories is NOT enabled #########################################
 else:
     # Initialize arrays to store position data
     x0 = np.zeros(num_particles)
@@ -173,50 +131,103 @@ else:
             y = y + noise_strength*eta_y
 
             if x < lbx:
-                x = x - noise_strength*eta_x
+               x = x + 2*(lbx-x)
             # The following condition compares the particle time step i with a sample vector which stores the reflecting probabilities randomly arranged
             # The particle gets reflected until it crosses the fracture's wall. Once it crossed it moves freely between fractures' boundaries
             crossProb = np.random.normal(meanCross, stdCross)
-            if outsideFracture == False:
-                # The particle bounces back in against the fracture's wall
-                if (y > uby or y < lby) and crossProb < crossOut:
-                    y = y - noise_strength*eta_y
-                    bouncesBackIn = bouncesBackIn+1
+            if (outsideFractureUp == False and outsideFractureDown == False):
                 # The particle leaves the fracture
-                if (y > uby or y < lby) and crossProb > crossOut:
-                    outsideFracture = True
-                    crossInToOut = crossInToOut+1
+                if y > uby and crossProb > crossOut:
+                   outsideFractureUp = True
+                   crossInToOut = crossInToOut+1
+                elif y < lby and crossProb > crossOut:
+                   outsideFractureDown = True
+                   crossInToOut = crossInToOut+1
+                # The particle bounces back in against the fracture's wall
+                elif y > uby and crossProb < crossOut:
+                   y = y - 2*(y-uby)
+                   bouncesBackIn = bouncesBackIn+1
+                elif y < lby and crossProb < crossOut:
+                   y = y + 2*(lby-y)
+                   bouncesBackIn = bouncesBackIn+1
+                # The particle remains in the fracture without bouncing
+                else:
+                   staysIn = staysIn+1
             else:
-                # The particle bounces against the fracture's wall
-                if (y < uby or y > lby) and crossProb < crossIn:
-                    y = y - noise_strength*eta_y
-                    bouncesBackOut = bouncesBackOut+1
                 # The particle enters the fracture
-                if (y < uby or y > lby) and crossProb > crossIn:
-                    outsideFracture = False
-                    crossOutToIn = crossOutToIn+1
+                if (y <= uby and y >= lby) and crossProb > crossIn:
+                   outsideFractureUp = False
+                   outsideFractureDown = False
+                   crossOutToIn = crossOutToIn+1
+                # The particle bounces against the fracture's wall
+                elif (outsideFractureUp == True and y <= uby) and crossProb < crossIn:
+                   y =  y + 2*(uby-y)
+                   bouncesBackOut = bouncesBackOut+1
+                elif (outsideFractureDown == True and y >= lby) and crossProb < crossIn:
+                   y =  y - 2*(y-lby)
+                   bouncesBackOut = bouncesBackOut+1
+                # The particle remains in the porous matrix without bouncing
+                else:
+                   staysOut = staysOut+1
             if x > rbx:
-                if y < uby or y > lby:
-                    arrival[n] = True
-                    endTstep.extend([i])
+                if y < uby and y > lby:
+                   arrival[n] = True
+                   bc_time.extend([i])
                 break
 
-    endTstep.sort()
-    endTstep = [i/num_steps for i in endTstep]
-    cum_part = [i/num_particles for i in range(len(endTstep))]
+    bc_time.sort()
+    bc_time = [i/num_steps for i in bc_time]
+    cum_part = [i/num_particles for i in range(len(bc_time))]
 
     with open("BreakthroughCurve.txt", "w") as file:
-        for time, prob in zip(endTstep, cum_part):
+        for time, prob in zip(bc_time, cum_part):
             file.write(f"{time}\t{prob}\n")
 
-    # Plot Breakthrough curve
+# Plot section ###############################################################
+
+# Plot the trajectory
+if recordTrajectories:
     plt.figure(figsize=(8, 8))
-    plt.plot(endTstep, cum_part, lw=0.5)
-    plt.title("Breakthorugh curve")
-    plt.xlabel("Time step")
-    plt.ylabel("CDF")
+    for i in range(num_particles):
+        plt.plot(x[i], y[i], lw=0.5)
+    plt.axhline(y=uby, color='r', linestyle='--', linewidth=2)
+    plt.axhline(y=lby, color='r', linestyle='--', linewidth=2)
+    plt.title("2D Diffusion Process (Langevin Equation)")
+    plt.xlabel("X Position")
+    plt.ylabel("Y Position")
     plt.grid(True)
     plt.show()
+
+# Record video
+if recordVideo:
+    # Animate the trajectory
+    # Set up the figure, axis, and plot element to animate
+    fig, ax = plt.subplots()
+    line, = ax.plot([], [], lw=2)
+    # Set the plot limits
+    ax.set_xlim(lbx, rbx)
+    ax.set_ylim(lby, uby)
+    # Initialization function: plot the background of each frame
+    def init():
+        line.set_data([], [])
+        return line,
+    # Animation function: this is called sequentially
+    def animate(i):
+        line.set_data(x[animatedParticle][fTstp:i], y[animatedParticle][fTstp:i])  # Update the data to show part of the line
+        return line,
+    # Call the animator
+    ani = FuncAnimation(fig, animate, init_func=init, frames=len(x[animatedParticle][fTstp:lTstp]), interval=400, blit=True)
+    ani.save('animated_chart.mp4', writer='ffmpeg', fps=20)
+    plt.show()
+
+# Plot Breakthrough curve
+plt.figure(figsize=(8, 8))
+plt.plot(bc_time, cum_part, lw=0.5)
+plt.title("Breakthorugh curve")
+plt.xlabel("Time step")
+plt.ylabel("CDF")
+plt.grid(True)
+plt.show()
 
 # Statistics to double check the results of the simulations against the inputs
 print("Effective steps (only if particles do not get absorbed by right boundary): ", (num_particles+staysIn+staysOut+bouncesBackIn+bouncesBackOut+crossInToOut+crossOutToIn)/num_particles)
