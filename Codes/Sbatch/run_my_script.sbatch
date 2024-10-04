@@ -3,10 +3,10 @@
 #SBATCH --output = output.log					# Standard output and error log
 #SBATCH -p generic                          			# Queue
 #SBATCH -N 1							# Number of nodes
-#SBATCH -n 8							# Number of cores
+#SBATCH -n 16							# Number of cores
 #SBATCH -- ntasks =1						# Number of tasks
 #SBATCH -- cpus - per - task =1				# CPUs per task
-#SBATCH --mem - per - cpu =2625				# megabytes
+#SBATCH --mem - per - cpu = 100000				# megabytes
 #SBATCH -t 0-24:00						# Duration D-HH:MM
 #SBATCH --job - name = testP8					# Job name
 #SBATCH -- mail - type = END , FAIL				# Notification
