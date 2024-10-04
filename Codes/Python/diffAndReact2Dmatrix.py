@@ -1,12 +1,15 @@
 import numpy as np
-# import matplotlib.pyplot as plt
 import math
 import scipy.stats
-# from matplotlib.animation import FuncAnimation
 
 # Features ###################################################################
+localRun = False # Disable graphical features for running on HPC
 recordVideo = False # It slows down the script
 recordTrajectories = False # It uses up memory
+
+if localRun:
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
 num_steps = 100 # Number of steps
@@ -228,14 +231,15 @@ if recordVideo:
     ani.save('animated_chart.mp4', writer='ffmpeg', fps=20)
     plt.show()
 
-# Plot Breakthrough curve
-# plt.figure(figsize=(8, 8))
-# plt.plot(bc_time, cum_part, lw=0.5)
-# plt.title("Breakthorugh curve")
-# plt.xlabel("Time step")
-# plt.ylabel("CDF")
-# plt.grid(True)
-# plt.show()
+if localRun:
+    # Plot Breakthrough curve
+    plt.figure(figsize=(8, 8))
+    plt.plot(bc_time, cum_part, lw=0.5)
+    plt.title("Breakthorugh curve")
+    plt.xlabel("Time step")
+    plt.ylabel("CDF")
+    plt.grid(True)
+    plt.show()
 
 # Statistics to double check the results of the simulations against the inputs
 print("Effective steps (only if particles do not get absorbed by right boundary): ", (num_particles+staysIn+staysOut+bouncesBackIn+bouncesBackOut+crossInToOut+crossOutToIn)/num_particles)
