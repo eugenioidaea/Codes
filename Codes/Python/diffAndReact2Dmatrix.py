@@ -126,7 +126,8 @@ else:
     for n in range(num_particles):
         x = x0[n]
         y = y0[n]
-        outsideFracture = False # After the particle crosses the fracture's walls once, it can freely move from fracture to matric and viceversa
+        outsideFractureUp = False # After the particle crosses the fracture's walls once, it can freely move from fracture to matric and viceversa
+        outsideFractureDown = False # After the particle crosses the fracture's walls once, it can freely move from fracture to matric and viceversa
         for i in range(1, num_steps):
             # Generate random forces (Gaussian white noise)
             eta_x = np.random.normal(meanEta, stdEta)
@@ -180,8 +181,8 @@ else:
                    bc_time.extend([i])
                 break
 
+    bc_time = [len(value)/num_steps for index, value in enumerate(x) if (len(value)<num_steps and arrival[index]== True)]
     bc_time.sort()
-    bc_time = [i/num_steps for i in bc_time]
     cum_part = [i/num_particles for i in range(len(bc_time))]
 
 # Plot section ###############################################################
