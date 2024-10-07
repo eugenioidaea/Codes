@@ -12,7 +12,7 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = 1000 # Number of steps
+num_steps = 100000 # Number of steps
 D = 0.1  # Diffusion constant
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
@@ -22,7 +22,7 @@ num_particles = 10000 # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
-rbx = 20 # Horizontal Right Boundary
+rbx = 200 # Horizontal Right Boundary
 init_shift = 0.5 # It aggregates the initial positions of the particles around the centre of the domain
 reflectedInward = 90 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 30 # Percentage of impacts from the porous matrix reflected again into the porous matrix
