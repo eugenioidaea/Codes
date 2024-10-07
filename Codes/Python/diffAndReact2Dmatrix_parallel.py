@@ -51,7 +51,7 @@ outsideFractureDown = False
 x0 = np.zeros(num_particles)
 y0 = np.linspace(lby+init_shift, uby-init_shift, num_particles)
 
-def oneTrajectory(x0, y0):
+def oneStep(x0, y0):
 
    out = False
    outsideFractureUp = False # After the particle crosses the fracture's walls once, it can freely move from fracture to matric and viceversa
@@ -61,8 +61,8 @@ def oneTrajectory(x0, y0):
    eta_x = np.random.normal(meanEta, stdEta)
    eta_y = np.random.normal(meanEta, stdEta)
    
-   x = x + noise_strength*eta_x
-   y = y + noise_strength*eta_y
+   x = x0 + noise_strength*eta_x
+   y = y0 + noise_strength*eta_y
 
    if x < lbx:
       x = x + 2*(lbx-x)
@@ -107,11 +107,17 @@ def oneTrajectory(x0, y0):
       out = True
       return out
 
-def parallelForLoops(num_steps, max_workers=4):
+def oneTrajectory(num_steps, x0, y0):
+   out = False
+   while out == False and i <= num_steps:
+      oneStep(x0, y0)
+   return i
+
+def oneCore(num_particles, max_workers=4):
     """Parallelize a loop over many steps."""
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         # Submit all steps to be processed in parallel
-        brktrc = list(executor.map(oneLangevinParticle, range(num_steps)))
+        brktrc = list(executor.map(oneTrajectory, range(num_particles)))
         brktrc.sort()
         brktrc = [i/num_steps for i in brktrc]
         cum_part = [i/num_particles for i in range(len(brktrc))]
