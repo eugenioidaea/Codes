@@ -3,26 +3,26 @@ import math
 import scipy.stats
 
 # Features ###################################################################
-localRun = False # Disable graphical features for running on HPC
+plotCharts = True # It controls graphical features (disable when run on HPC)
 recordVideo = False # It slows down the script
-recordTrajectories = False # It uses up memory
+recordTrajectories = True # It uses up memory
 
-if localRun:
+if plotCharts:
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = 1000000 # Number of steps
+num_steps = 1000 # Number of steps
 D = 0.1  # Diffusion constant
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
 meanCross = 0 # Crossing probability parameter
 stdCross = 1 # Crossing probability parameter
-num_particles = 10000 # Number of particles in the simulation
+num_particles = 100 # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
-rbx = 500 # Horizontal Right Boundary
+rbx = 20 # Horizontal Right Boundary
 init_shift = 0.5 # It aggregates the initial positions of the particles around the centre of the domain
 reflectedInward = 90 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 30 # Percentage of impacts from the porous matrix reflected again into the porous matrix
@@ -105,12 +105,11 @@ if recordTrajectories:
                 # The particle remains in the porous matrix without bouncing
                 else:
                    staysOut = staysOut+1
-            if x[n][i] > rbx:
-                if y[n][i] < uby and y[n][i] > lby:
-                   arrival[n] = True
-                x[n] = x[n][:i-1]
-                y[n] = y[n][:i-1]
-                break
+            if (x[n][i] > rbx and y[n][i] < uby and y[n][i] > lby):
+               arrival[n] = True
+               x[n] = x[n][:i-1]
+               y[n] = y[n][:i-1]
+               break
 
     bc_time = [len(value)/num_steps for index, value in enumerate(x) if (len(value)<num_steps and arrival[index]== True)]
     bc_time.sort()
@@ -175,13 +174,11 @@ else:
                 # The particle remains in the porous matrix without bouncing
                 else:
                    staysOut = staysOut+1
-            if x > rbx:
-                if y < uby and y > lby:
-                   arrival[n] = True
-                   bc_time.extend([i])
-                break
+            if (x > rbx and y < uby and y > lby):
+               bc_time.extend([i])
+               break
 
-    bc_time = [len(value)/num_steps for index, value in enumerate(x) if (len(value)<num_steps and arrival[index]== True)]
+    bc_time = [i/num_steps for i in bc_time]
     bc_time.sort()
     cum_part = [i/num_particles for i in range(len(bc_time))]
 
@@ -232,7 +229,7 @@ if recordVideo:
     ani.save('animated_chart.mp4', writer='ffmpeg', fps=20)
     plt.show()
 
-if localRun:
+if plotCharts:
     # Plot Breakthrough curve
     plt.figure(figsize=(8, 8))
     plt.plot(bc_time, cum_part, lw=0.5)

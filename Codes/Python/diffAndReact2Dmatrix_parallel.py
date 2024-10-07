@@ -13,17 +13,17 @@ if localRun:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = 1000000 # Number of steps
+num_steps = 1000 # Number of steps
 D = 0.1  # Diffusion constant
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
 meanCross = 0 # Crossing probability parameter
 stdCross = 1 # Crossing probability parameter
-num_particles = 10000 # Number of particles in the simulation
+num_particles = 100 # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
-rbx = 2000 # Horizontal Right Boundary
+rbx = 20 # Horizontal Right Boundary
 init_shift = 0.5 # It aggregates the initial positions of the particles around the centre of the domain
 reflectedInward = 90 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 30 # Percentage of impacts from the porous matrix reflected again into the porous matrix
@@ -107,21 +107,23 @@ def oneStep(x0, y0):
       out = True
       return out
 
-def oneTrajectory(num_steps, x0, y0):
+def oneTrajectory(x0, y0):
    out = False
    while out == False and i <= num_steps:
       oneStep(x0, y0)
    return i
 
-def oneCore(num_particles, max_workers=4):
+def oneCore(max_workers=4):
     """Parallelize a loop over many steps."""
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         # Submit all steps to be processed in parallel
-        brktrc = list(executor.map(oneTrajectory, range(num_particles)))
+        brktrc = list(executor.map(oneTrajectory, x0, y0))
         brktrc.sort()
         brktrc = [i/num_steps for i in brktrc]
         cum_part = [i/num_particles for i in range(len(brktrc))]
     return brktrc, cum_part
+
+bc_time, cum_part = oneCore(max_workers=4)
 
 # Plot section ###############################################################
 
