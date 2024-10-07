@@ -3,9 +3,9 @@ import math
 import scipy.stats
 
 # Features ###################################################################
-plotCharts = True # It controls graphical features (disable when run on HPC)
+plotCharts = False # It controls graphical features (disable when run on HPC)
 recordVideo = False # It slows down the script
-recordTrajectories = True # It uses up memory
+recordTrajectories = False # It uses up memory
 
 if plotCharts:
     import matplotlib.pyplot as plt
@@ -18,7 +18,7 @@ meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
 meanCross = 0 # Crossing probability parameter
 stdCross = 1 # Crossing probability parameter
-num_particles = 100 # Number of particles in the simulation
+num_particles = 10000 # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
