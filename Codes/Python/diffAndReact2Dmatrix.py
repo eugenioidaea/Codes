@@ -3,7 +3,7 @@ import math
 import scipy.stats
 
 # Features ###################################################################
-plotCharts = False # It controls graphical features (disable when run on HPC)
+plotCharts = True # It controls graphical features (disable when run on HPC)
 recordVideo = False # It slows down the script
 recordTrajectories = False # It uses up memory
 
@@ -12,17 +12,18 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = 100000 # Number of steps
+num_steps = 40000 # Number of steps
 D = 0.1  # Diffusion constant
+dt = 1 # Time step
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
 meanCross = 0 # Crossing probability parameter
 stdCross = 1 # Crossing probability parameter
-num_particles = 10000 # Number of particles in the simulation
+num_particles = 1000 # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
-rbx = 200 # Horizontal Right Boundary
+rbx = 20 # Horizontal Right Boundary
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
 reflectedInward = 90 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 30 # Percentage of impacts from the porous matrix reflected again into the porous matrix
@@ -30,10 +31,10 @@ animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
 
-noise_strength = np.sqrt(2 * D)  # Strength of the noise term
+noise_strength = np.sqrt(2*D*dt)  # Strength of the noise term
 crossOut = scipy.stats.norm.ppf(reflectedInward/100)
 crossIn = scipy.stats.norm.ppf(reflectedOutward/100)
-arrival = [False for _ in range(num_particles)]
+inFraRbx = [False for _ in range(num_particles)]
 bc_time = []
 
 bouncesBackIn = 0
@@ -106,12 +107,20 @@ if recordTrajectories:
                 else:
                    staysOut = staysOut+1
             if (x[n][i] > rbx and y[n][i] < uby and y[n][i] > lby):
-               arrival[n] = True
-               x[n] = x[n][:i-1]
-               y[n] = y[n][:i-1]
+               inFraRbx[n] = True
+               x[n] = x[n][:i]
+               y[n] = y[n][:i]
+               break
+            elif x[n][i] > rbx:
+               x[n] = x[n][:i]
+               y[n] = y[n][:i]               
                break
 
-    bc_time = [len(value)/num_steps for index, value in enumerate(x) if (len(value)<num_steps and arrival[index]== True)]
+    bc_time_inFra = [len(value)/num_steps for index, value in enumerate(x) if (len(value)<num_steps and inFraRbx[index]==True)]
+    bc_time_inFra.sort()
+    cum_part_inFra = [i/num_particles for i in range(len(bc_time_inFra))]
+
+    bc_time = [x[i][-1]/num_steps for i in range(num_particles) if (len(x[i])<num_steps)]
     bc_time.sort()
     cum_part = [i/num_particles for i in range(len(bc_time))]
 
@@ -175,8 +184,16 @@ else:
                 else:
                    staysOut = staysOut+1
             if (x > rbx and y < uby and y > lby):
+               inFraRbx[n] = True
                bc_time.extend([i])
                break
+            elif x > rbx:
+               bc_time.extend([i])
+               break
+
+    bc_time_inFra = [value/num_steps for index, value in enumerate(bc_time) if inFraRbx[index]==True]
+    bc_time_inFra.sort()
+    cum_part_inFra = [i/num_particles for i in range(len(bc_time_inFra))]
 
     bc_time = [i/num_steps for i in bc_time]
     bc_time.sort()
@@ -239,8 +256,19 @@ if plotCharts:
     plt.grid(True)
     plt.show()
 
+if plotCharts:
+    # Plot Breakthrough curve for particles that reached the right boundary from within the fracture
+    plt.figure(figsize=(8, 8))
+    plt.plot(bc_time_inFra, cum_part_inFra, lw=0.5)
+    plt.title("BC for particles that reached the rx boundary from within the fracture")
+    plt.xlabel("Time step")
+    plt.ylabel("CDF")
+    plt.grid(True)
+    plt.show()
+
 # Statistics to double check the results of the simulations against the inputs
-print("Effective steps (only if particles do not get absorbed by right boundary): ", (num_particles+staysIn+staysOut+bouncesBackIn+bouncesBackOut+crossInToOut+crossOutToIn)/num_particles)
+print("Average # of steps: ", (num_particles+staysIn+staysOut+bouncesBackIn+bouncesBackOut+crossInToOut+crossOutToIn)/num_particles)
 print("Effective bounce-in fraction: ", 100*bouncesBackIn/(bouncesBackIn+crossInToOut))
-print("Effective bounce-out fraction: ", 100*bouncesBackOut/(bouncesBackOut+crossOutToIn))
-print("Time scale: L^2/D", (rbx-lbx)**2/D**2)
+print("Effective bounce-out fraction: ", 100*bouncesBackOut/(bouncesBackOut+crossOutToIn)) if bouncesBackOut+crossOutToIn>0 else print("The particles never leave the fracture")
+print("Horizontal time scale: L^2/D", (rbx-lbx)**2/D**2)
+print("Verticlal time scale: L^2/D", (uby-lby)**2/D**2)
