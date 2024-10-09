@@ -1,26 +1,27 @@
 import numpy as np
 import math
 import scipy.stats
+import time
 
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
 recordVideo = False # It slows down the script
-recordTrajectories = True # It uses up memory
+recordTrajectories = False # It uses up memory
 
 if plotCharts:
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = 100000 # Number of steps
-Dm = 0.01  # Diffusion for particles moving in the porous matrix
+num_steps = 10000 # Number of steps
+Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 dt = 1 # Time step
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
 meanCross = 0 # Crossing probability parameter
 stdCross = 1 # Crossing probability parameter
-num_particles = 100 # Number of particles in the simulation
+num_particles = 10000 # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
@@ -48,6 +49,7 @@ staysOut = 0
 outsideFractureUp = False
 outsideFractureDown = False
 
+start_time = time.time()
 # If recording trajectories is enabled #############################################
 if recordTrajectories:
     # Initialize arrays to store position data
@@ -121,6 +123,9 @@ if recordTrajectories:
                x[n] = x[n][:i]
                y[n] = y[n][:i]               
                break
+
+    end_time = time.time()
+    execution_time = end_time - start_time
 
     bc_time_inFra = [len(value)/num_steps for index, value in enumerate(x) if (len(value)<num_steps and inFraRbx[index]==True)]
     bc_time_inFra.sort()
@@ -197,6 +202,9 @@ else:
                bc_time.extend([i])
                break
 
+    end_time = time.time()
+    execution_time = end_time - start_time
+
     bc_time_inFra = [value/num_steps for index, value in enumerate(bc_time) if inFraRbx[index]==True]
     bc_time_inFra.sort()
     cum_part_inFra = [i/num_particles for i in range(len(bc_time_inFra))]
@@ -256,13 +264,21 @@ if plotCharts:
     # Plot Breakthrough curve
     plt.figure(figsize=(8, 8))
     plt.plot(bc_time, cum_part, lw=0.5)
-    plt.title("Breakthorugh curve")
+    plt.title("CDF")
     plt.xlabel("Time step")
     plt.ylabel("CDF")
     plt.grid(True)
     plt.show()
 
-if plotCharts:
+    # Plot Breakthrough curve
+    plt.figure(figsize=(8, 8))
+    plt.plot(bc_time, [1-i for _, i in enumerate(cum_part)], lw=0.5)
+    plt.title("1-CDF")
+    plt.xlabel("Time step")
+    plt.ylabel("CDF")
+    plt.grid(True)
+    plt.show()
+
     # Plot Breakthrough curve for particles that reached the right boundary from within the fracture
     plt.figure(figsize=(8, 8))
     plt.plot(bc_time_inFra, cum_part_inFra, lw=0.5)
@@ -278,3 +294,4 @@ print("Effective bounce-in fraction: ", 100*bouncesBackIn/(bouncesBackIn+crossIn
 print("Effective bounce-out fraction: ", 100*bouncesBackOut/(bouncesBackOut+crossOutToIn)) if bouncesBackOut+crossOutToIn>0 else print("The particles never leave the fracture")
 print("Horizontal time scale for particles within the fracture: L^2/Df", (rbx-lbx)**2/Df**2)
 print("Verticlal time scale for particles within the fracture: L^2/Df", (uby-lby)**2/Df**2)
+print(f"Execution time: {execution_time:.6f} seconds")
