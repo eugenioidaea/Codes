@@ -80,22 +80,22 @@ while t<num_steps*dt:
 end_time = time.time()
 execution_time = end_time - start_time
 
+Time = np.linspace(dt, t, len(pdf_part))
+
+pdf_part = np.asarray(pdf_part)
+plt.plot(Time, pdf_part/num_particles)
+plt.plot(Time, np.cumsum(pdf_part)/num_particles)
+
+#plt.hist(counts, bin_edges)
 i = 0
 particlesTstep=np.zeros(num_particles)
 for index, value in enumerate(pdf_part):
     particlesTstep[i:i+value] = index
     i = i+value
+bins = 100
+timeLinSpaced = np.linspace(dt, t, bins)
+timeLogSpaced = np.logspace(np.log10(dt), np.log10(t), bins)
+counts, bin_edges = np.histogram(particlesTstep, timeLinSpaced)
+plt.plot(bin_edges[1:], counts)
 
-counts, bin_edges = np.histogram(particlesTstep, np.linspace(0, num_steps, 1000))
-
-Time = np.linspace(dt, t, len(pdf_part))
-timeLogSpaced = np.logspace(np.log10(dt), np.log10(t), len(pdf_part))
-pdf_part = np.asarray(pdf_part)
-plt.plot(Time, pdf_part/num_particles)
-# plt.plot(timeLogSpaced, pdf_part/num_particles)
-# plt.xscale('log')
-plt.show()
-plt.plot(Time, np.cumsum(pdf_part)/num_particles)
-plt.show()
-plt.hist(counts, bin_edges)
 print(f"Execution time: {execution_time:.6f} seconds")
