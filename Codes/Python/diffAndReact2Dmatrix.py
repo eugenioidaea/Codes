@@ -5,25 +5,26 @@ import scipy.stats
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
 recordVideo = False # It slows down the script
-recordTrajectories = False # It uses up memory
+recordTrajectories = True # It uses up memory
 
 if plotCharts:
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = 40000 # Number of steps
-D = 0.1  # Diffusion constant
+num_steps = 100000 # Number of steps
+Dm = 0.01  # Diffusion for particles moving in the porous matrix
+Df = 0.1  # Diffusion for particles moving in the fracture
 dt = 1 # Time step
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
 meanCross = 0 # Crossing probability parameter
 stdCross = 1 # Crossing probability parameter
-num_particles = 1000 # Number of particles in the simulation
+num_particles = 100 # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
-rbx = 20 # Horizontal Right Boundary
+rbx = 10 # Horizontal Right Boundary
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
 reflectedInward = 90 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 30 # Percentage of impacts from the porous matrix reflected again into the porous matrix
@@ -31,7 +32,8 @@ animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
 
-noise_strength = np.sqrt(2*D*dt)  # Strength of the noise term
+noiseMatrix = np.sqrt(2*Dm*dt)  # Strength of the noise term for particle in the porous matrix
+noiseFracture = np.sqrt(2*Df*dt)  # Strength of the noise term for particle in the fracture
 crossOut = scipy.stats.norm.ppf(reflectedInward/100)
 crossIn = scipy.stats.norm.ppf(reflectedOutward/100)
 inFraRbx = [False for _ in range(num_particles)]
@@ -59,13 +61,14 @@ if recordTrajectories:
     for n in range(num_particles):
         outsideFractureUp = False # After the particle crosses the fracture's walls once, it can freely move from fracture to matric and viceversa
         outsideFractureDown = False # After the particle crosses the fracture's walls once, it can freely move from fracture to matric and viceversa
+        noise = noiseFracture
         for i in range(1, num_steps):
             # Generate random forces (Gaussian white noise)
             eta_x = np.random.normal(meanEta, stdEta)
             eta_y = np.random.normal(meanEta, stdEta)
             
-            x[n][i] = x[n][i-1] + noise_strength*eta_x
-            y[n][i] = y[n][i-1] + noise_strength*eta_y
+            x[n][i] = x[n][i-1] + noise*eta_x
+            y[n][i] = y[n][i-1] + noise*eta_y
 
             if x[n][i] < lbx:
                x[n][i] = x[n][i] + 2*(lbx-x[n][i])
@@ -77,9 +80,11 @@ if recordTrajectories:
                 if y[n][i] > uby and crossProb > crossOut:
                    outsideFractureUp = True
                    crossInToOut = crossInToOut+1
+                   noise = noiseMatrix
                 elif y[n][i] < lby and crossProb > crossOut:
                    outsideFractureDown = True
                    crossInToOut = crossInToOut+1
+                   noise = noiseMatrix
                 # The particle bounces back in against the fracture's wall
                 elif y[n][i] > uby and crossProb < crossOut:
                    y[n][i] = y[n][i] - 2*(y[n][i]-uby)
@@ -96,6 +101,7 @@ if recordTrajectories:
                    outsideFractureUp = False
                    outsideFractureDown = False
                    crossOutToIn = crossOutToIn+1
+                   noise = noiseFracture
                 # The particle bounces against the fracture's wall
                 elif (outsideFractureUp == True and y[n][i] <= uby) and crossProb < crossIn:
                    y[n][i] =  y[n][i] + 2*(uby-y[n][i])
@@ -141,8 +147,8 @@ else:
             eta_x = np.random.normal(meanEta, stdEta)
             eta_y = np.random.normal(meanEta, stdEta)
             
-            x = x + noise_strength*eta_x
-            y = y + noise_strength*eta_y
+            x = x + noiseMatrix*eta_x
+            y = y + noiseMatrix*eta_y
 
             if x < lbx:
                x = x + 2*(lbx-x)
@@ -270,5 +276,5 @@ if plotCharts:
 print("Average # of steps: ", (num_particles+staysIn+staysOut+bouncesBackIn+bouncesBackOut+crossInToOut+crossOutToIn)/num_particles)
 print("Effective bounce-in fraction: ", 100*bouncesBackIn/(bouncesBackIn+crossInToOut))
 print("Effective bounce-out fraction: ", 100*bouncesBackOut/(bouncesBackOut+crossOutToIn)) if bouncesBackOut+crossOutToIn>0 else print("The particles never leave the fracture")
-print("Horizontal time scale: L^2/D", (rbx-lbx)**2/D**2)
-print("Verticlal time scale: L^2/D", (uby-lby)**2/D**2)
+print("Horizontal time scale for particles within the fracture: L^2/Df", (rbx-lbx)**2/Df**2)
+print("Verticlal time scale for particles within the fracture: L^2/Df", (uby-lby)**2/Df**2)
