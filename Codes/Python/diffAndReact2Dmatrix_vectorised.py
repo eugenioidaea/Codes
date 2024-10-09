@@ -13,7 +13,7 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = 10000 # Number of steps
+num_steps = 5000 # Number of steps
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 dt = 1 # Time step
@@ -56,7 +56,6 @@ x = np.zeros(num_particles)
 y = np.linspace(lby+init_shift, uby-init_shift, num_particles)
 
 # Simulate Langevin dynamics
-i = 0
 t = 0
 pdf_part = []
 while t<num_steps*dt:
@@ -68,21 +67,35 @@ while t<num_steps*dt:
    x[isIn] = x[isIn] + np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(isIn))
    y[isIn] = y[isIn] + np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(isIn))
 
-   x = np.where(x<lbx, -x+2*lbx, x)   
+   x = np.where(x<lbx, -x+2*lbx, x)
    y = np.where(y>uby, -y+2*uby, y)
    y = np.where(y<lby, -y+2*lby, y)
 
-   # y[y<lby] = -y + 2*lby
-   pdf_part.append(sum(x[isIn]>rbx)) 
+   '''x[x<lbx] = -x[x<lbx] + 2*lbx
+   y[y<lby] = -y[y<lby] + 2*lby
+   y[y>uby] = -y[y>uby] + 2*lby'''
+   
+   pdf_part.append(sum(x[isIn]>rbx))
 
 end_time = time.time()
 execution_time = end_time - start_time
 
-time = np.linspace(dt, t, len(pdf_part))
-pdf_part = np.asarray(pdf_part)
-plt.plot(time, pdf_part/num_particles)
-plt.show()
-plt.plot(time, np.cumsum(pdf_part)/num_particles)
-plt.show()
+i = 0
+particlesTstep=np.zeros(num_particles)
+for index, value in enumerate(pdf_part):
+    particlesTstep[i:i+value] = index
+    i = i+value
 
+counts, bin_edges = np.histogram(particlesTstep, np.linspace(0, num_steps, 1000))
+
+Time = np.linspace(dt, t, len(pdf_part))
+timeLogSpaced = np.logspace(np.log10(dt), np.log10(t), len(pdf_part))
+pdf_part = np.asarray(pdf_part)
+plt.plot(Time, pdf_part/num_particles)
+# plt.plot(timeLogSpaced, pdf_part/num_particles)
+# plt.xscale('log')
+plt.show()
+plt.plot(Time, np.cumsum(pdf_part)/num_particles)
+plt.show()
+plt.hist(counts, bin_edges)
 print(f"Execution time: {execution_time:.6f} seconds")

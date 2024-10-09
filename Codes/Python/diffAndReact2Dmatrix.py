@@ -14,14 +14,14 @@ if plotCharts:
 
 # Parameters #################################################################
 num_steps = 10000 # Number of steps
-Dm = 0.1  # Diffusion for particles moving in the porous matrix
+Dm = 0.01  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 dt = 1 # Time step
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
 meanCross = 0 # Crossing probability parameter
 stdCross = 1 # Crossing probability parameter
-num_particles = 10000 # Number of particles in the simulation
+num_particles = 100 # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
