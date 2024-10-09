@@ -83,7 +83,9 @@ execution_time = end_time - start_time
 Time = np.linspace(dt, t, len(pdf_part))
 
 pdf_part = np.asarray(pdf_part)
+plt.figure(figsize=(8, 8))
 plt.plot(Time, pdf_part/num_particles)
+plt.figure(figsize=(8, 8))
 plt.plot(Time, np.cumsum(pdf_part)/num_particles)
 
 #plt.hist(counts, bin_edges)
@@ -95,7 +97,8 @@ for index, value in enumerate(pdf_part):
 bins = 100
 timeLinSpaced = np.linspace(dt, t, bins)
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(t), bins)
-counts, bin_edges = np.histogram(particlesTstep, timeLinSpaced)
+counts, bin_edges = np.histogram(particlesTstep, timeLogSpaced)
+plt.figure(figsize=(8, 8))
 plt.plot(bin_edges[1:], counts)
 
 print(f"Execution time: {execution_time:.6f} seconds")
