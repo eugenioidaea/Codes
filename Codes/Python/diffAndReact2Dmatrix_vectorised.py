@@ -123,6 +123,7 @@ timeLinSpaced = np.linspace(dt, t, bins) # Linearly spaced bins
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(t), bins) # Logarithmic spaced bins
 counts, bin_edges = np.histogram(particlesTstep, timeLogSpaced)
 plt.figure(figsize=(8, 8))
-plt.plot(bin_edges[1:], counts)
+counts_norm = [counts/(num_particles+bin_edges[i]-bin_edges[i-1]) for i in range(len(bin_edges))]
+plt.plot(bin_edges[1:], counts_norm)
 
 print(f"Execution time: {execution_time:.6f} seconds")
