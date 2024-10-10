@@ -6,14 +6,14 @@ import time
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
 recordVideo = False # It slows down the script
-recordTrajectories = False # It uses up memory
+recordTrajectories = True # It uses up memory
 
 if plotCharts:
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = 10000 # Number of steps
+num_steps = 1000 # Number of steps
 Dm = 0.01  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 dt = 1 # Time step
@@ -221,7 +221,7 @@ with open("BreakthroughCurve.txt", "w") as file:
         file.write(f"{time}\t{prob}\n")
 
 # Plot the trajectory
-if recordTrajectories:
+if plotCharts and recordTrajectories:
     plt.figure(figsize=(8, 8))
     for i in range(num_particles):
         plt.plot(x[i], y[i], lw=0.5)
