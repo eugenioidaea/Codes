@@ -56,7 +56,9 @@ x = np.zeros(num_particles) # Horizontal initial positions
 y = np.linspace(lby+init_shift, uby-init_shift, num_particles) # Vertical initial positions
 xPath = np.zeros((num_particles, num_steps))  # Matrix for storing x trajectories
 yPath = np.zeros((num_particles, num_steps))  # Matrix for storing y trajectories
-out = [False for _ in range(num_particles)]
+inside = [True for _ in range(num_particles)]
+outsideAbove = [False for _ in range(num_particles)]
+outsideBelow = [False for _ in range(num_particles)]
 
 start_time = time.time() # Start timing the while loop
 
@@ -77,20 +79,28 @@ while t<num_steps*dt:
 
     # Elastic reflection for the particles which hit the fracture's walls and some of them can diffuse into the matrix
     x = np.where(x<lbx, -x+2*lbx, x)
-    if out:
-        inside = y<uby and y>lby
-        crossOutToIn = np.random.rand(num_particles) < reflectedOutward/100
-        reflected = inside & crossOutToIn # Above upper boundary y
-        y = np.where(reflected, -y+2*uby, y)
-    else:
-        above = y>uby
-        below = y<lby
-        crossInToOut = np.random.rand(num_particles) < reflectedInward/100
-        aUby = above & crossInToOut # Above upper boundary y
-        bLby = below & crossInToOut # Below lower boundary y
-        y = np.where(aUby, -y+2*uby, y)
-        y = np.where(bLby, -y+2*lby, y)
-        out = aUby & bLby
+
+    crossOutAbove = inside & (y>uby)
+    crossOutBelow = inside & (y<lby)
+    crossInAbove = outsideAbove  & (y > lby) & (y < uby)
+    crossInBelow = outsideBelow & (y>lby) & (y<uby)
+
+    crossInToOut = np.random.rand(num_particles) > reflectedInward/100
+    crossOutToIn = np.random.rand(num_particles) > reflectedOutward/100
+
+    crossInToOutAbove = crossOutAbove & crossInToOut # Above upper boundary y
+    crossInToOutBelow = crossOutBelow & crossInToOut # Below lower boundary y
+    crossOutToInAbove = crossInAbove & crossOutToIn # Above upper boundary y
+    crossOutToInBelow = crossInBelow & crossOutToIn # Below lower boundary y
+
+    y = np.where(crossInToOutAbove, y, -y+2*uby)
+    y = np.where(crossInToOutBelow, y, -y+2*lby)
+    y = np.where(crossOutToInAbove, y, -y+2*uby)
+    y = np.where(crossOutToInBelow, y, -y+2*lby)
+
+    inside = (y<uby) & (y>lby)
+    outsideAbove = y>uby
+    outsideBelow = y<lby
 
     # Slightly less efficient implementation of the reflection boundary condition
     '''x[x<lbx] = -x[x<lbx] + 2*lbx
