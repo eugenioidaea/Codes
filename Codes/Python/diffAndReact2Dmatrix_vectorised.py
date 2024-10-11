@@ -13,7 +13,7 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = int(1e4) # Number of steps
+num_steps = int(1e3) # Number of steps
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 dt = 1 # Time step
@@ -54,8 +54,6 @@ t = 0
 pdf_part = []
 x = np.zeros(num_particles) # Horizontal initial positions
 y = np.linspace(lby+init_shift, uby-init_shift, num_particles) # Vertical initial positions
-# xPath = [[] for _ in range(num_particles)] # List for storing the trajectories
-# yPath = [[] for _ in range(num_particles)] # List for storing the trajectories
 xPath = np.zeros((num_particles, num_steps))  # Matrix for storing x trajectories
 yPath = np.zeros((num_particles, num_steps))  # Matrix for storing y trajectories
 
