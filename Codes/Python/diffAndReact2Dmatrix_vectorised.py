@@ -13,7 +13,7 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = 1000 # Number of steps
+num_steps = int(1e4) # Number of steps
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 dt = 1 # Time step
@@ -54,8 +54,10 @@ t = 0
 pdf_part = []
 x = np.zeros(num_particles) # Horizontal initial positions
 y = np.linspace(lby+init_shift, uby-init_shift, num_particles) # Vertical initial positions
-xPath = [[] for _ in range(num_particles)] # List for storing the trajectories
-yPath = [[] for _ in range(num_particles)] # List for storing the trajectories
+# xPath = [[] for _ in range(num_particles)] # List for storing the trajectories
+# yPath = [[] for _ in range(num_particles)] # List for storing the trajectories
+xPath = np.zeros((num_particles, num_steps))  # Matrix for storing x trajectories
+yPath = np.zeros((num_particles, num_steps))  # Matrix for storing y trajectories
 
 start_time = time.time() # Start timing the while loop
 
@@ -63,9 +65,14 @@ start_time = time.time() # Start timing the while loop
 
 while t<num_steps*dt:
 
-    t = t + dt
-
     isIn = x<rbx # Get the positions of the particles that are still in the domain
+
+    # Store the positions of each particle for all the time steps 
+    if recordTrajectories:
+        # [xPath[particleN].append(float(xAtTimeT)) for particleN, xAtTimeT in enumerate(x) if x[particleN]<rbx]
+        # [yPath[particleN].append(float(yAtTimeT)) for particleN, yAtTimeT in enumerate(y) if x[particleN]<rbx]
+        xPath[:, t] = x  # Store x positions for the current time step
+        yPath[:, t] = y  # Store y positions for the current time step        
 
     # Update ALL the particles' position for time step t
     x[isIn] = x[isIn] + np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(isIn))
@@ -81,12 +88,9 @@ while t<num_steps*dt:
     y[y<lby] = -y[y<lby] + 2*lby
     y[y>uby] = -y[y>uby] + 2*lby'''
 
-    # Store the positions of each particle for all the time steps 
-    if recordTrajectories:
-        [xPath[p].append(float(x_val)) for p, x_val in enumerate(x) if x[p]<rbx]
-        [yPath[p].append(float(y_val)) for p, y_val in enumerate(y) if x[p]<rbx]
-    
     pdf_part.append(sum(x[isIn]>rbx)) # Count the particle which exit the right boundary at each time step
+
+    t = t + dt
 
 end_time = time.time() # Stop timing the while loop
 execution_time = end_time - start_time
@@ -121,9 +125,11 @@ for index, value in enumerate(pdf_part):
 # Logarithmic plot
 timeLinSpaced = np.linspace(dt, t, bins) # Linearly spaced bins
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(t), bins) # Logarithmic spaced bins
-counts, bin_edges = np.histogram(particlesTstep, timeLogSpaced)
+countsLin, binEdgesLin = np.histogram(particlesTstep, timeLinSpaced)
+countsLog, binEdgesLog = np.histogram(particlesTstep, timeLogSpaced)
+countsNormLin = (countsLin/num_particles)/np.diff(binEdgesLin)
+countsNormLog = (countsLog/num_particles)/np.diff(binEdgesLog)
 plt.figure(figsize=(8, 8))
-counts_norm = [counts/(num_particles+bin_edges[i]-bin_edges[i-1]) for i in range(len(bin_edges))]
-plt.plot(bin_edges[1:], counts_norm)
-
+plt.plot(binEdgesLin[1:], countsNormLin)
+plt.plot(binEdgesLog[1:], countsNormLog)
 print(f"Execution time: {execution_time:.6f} seconds")
