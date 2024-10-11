@@ -56,6 +56,7 @@ x = np.zeros(num_particles) # Horizontal initial positions
 y = np.linspace(lby+init_shift, uby-init_shift, num_particles) # Vertical initial positions
 xPath = np.zeros((num_particles, num_steps))  # Matrix for storing x trajectories
 yPath = np.zeros((num_particles, num_steps))  # Matrix for storing y trajectories
+out = [False for _ in range(num_particles)]
 
 start_time = time.time() # Start timing the while loop
 
@@ -63,23 +64,33 @@ start_time = time.time() # Start timing the while loop
 
 while t<num_steps*dt:
 
-    isIn = x<rbx # Get the positions of the particles that are still in the domain
-
     # Store the positions of each particle for all the time steps 
     if recordTrajectories:
-        # [xPath[particleN].append(float(xAtTimeT)) for particleN, xAtTimeT in enumerate(x) if x[particleN]<rbx]
-        # [yPath[particleN].append(float(yAtTimeT)) for particleN, yAtTimeT in enumerate(y) if x[particleN]<rbx]
         xPath[:, t] = x  # Store x positions for the current time step
         yPath[:, t] = y  # Store y positions for the current time step        
+
+    isIn = x<rbx # Get the positions of the particles that are still in the domain
 
     # Update ALL the particles' position for time step t
     x[isIn] = x[isIn] + np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(isIn))
     y[isIn] = y[isIn] + np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(isIn))
 
-    # Elastic reflection for the particles which hit the fracture's walls
+    # Elastic reflection for the particles which hit the fracture's walls and some of them can diffuse into the matrix
     x = np.where(x<lbx, -x+2*lbx, x)
-    y = np.where(y>uby, -y+2*uby, y)
-    y = np.where(y<lby, -y+2*lby, y)
+    if out:
+        inside = y<uby and y>lby
+        crossOutToIn = np.random.rand(num_particles) < reflectedOutward/100
+        reflected = inside & crossOutToIn # Above upper boundary y
+        y = np.where(reflected, -y+2*uby, y)
+    else:
+        above = y>uby
+        below = y<lby
+        crossInToOut = np.random.rand(num_particles) < reflectedInward/100
+        aUby = above & crossInToOut # Above upper boundary y
+        bLby = below & crossInToOut # Below lower boundary y
+        y = np.where(aUby, -y+2*uby, y)
+        y = np.where(bLby, -y+2*lby, y)
+        out = aUby & bLby
 
     # Slightly less efficient implementation of the reflection boundary condition
     '''x[x<lbx] = -x[x<lbx] + 2*lbx
