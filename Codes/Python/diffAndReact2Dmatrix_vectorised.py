@@ -13,7 +13,7 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = int(1e3) # Number of steps
+num_steps = int(1e4) # Number of steps
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 dt = 1 # Time step
@@ -21,14 +21,14 @@ meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
 meanCross = 0 # Crossing probability parameter
 stdCross = 1 # Crossing probability parameter
-num_particles = int(1e3) # Number of particles in the simulation
+num_particles = int(1e4) # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
 rbx = 10 # Horizontal Right Boundary
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
 reflectedInward = 90 # Percentage of impacts from the fracture reflected again into the fracture
-reflectedOutward = 30 # Percentage of impacts from the porous matrix reflected again into the porous matrix
+reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
 animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
@@ -85,7 +85,7 @@ while t<num_steps*dt:
     crossInAbove = outsideAbove  & (y > lby) & (y < uby)
     crossInBelow = outsideBelow & (y>lby) & (y<uby)
 
-    crossInToOut = np.random.rand(num_particles) > reflectedInward/100
+    crossInToOut = np.random.rand(num_particles) < reflectedInward/100
     crossOutToIn = np.random.rand(num_particles) > reflectedOutward/100
 
     crossInToOutAbove = crossOutAbove & crossInToOut # Above upper boundary y
@@ -93,10 +93,10 @@ while t<num_steps*dt:
     crossOutToInAbove = crossInAbove & crossOutToIn # Above upper boundary y
     crossOutToInBelow = crossInBelow & crossOutToIn # Below lower boundary y
 
-    y = np.where(crossInToOutAbove, y, -y+2*uby)
-    y = np.where(crossInToOutBelow, y, -y+2*lby)
-    y = np.where(crossOutToInAbove, y, -y+2*uby)
-    y = np.where(crossOutToInBelow, y, -y+2*lby)
+    y = np.where(crossInToOutAbove, -y+2*uby, y)
+    y = np.where(crossInToOutBelow, -y+2*lby, y)
+    y = np.where(crossOutToInAbove, -y+2*uby, y)
+    y = np.where(crossOutToInBelow, -y+2*lby, y)
 
     inside = (y<uby) & (y>lby)
     outsideAbove = y>uby
