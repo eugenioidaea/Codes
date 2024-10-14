@@ -48,7 +48,6 @@ yPath = np.zeros((num_particles, num_steps))  # Matrix for storing y trajectorie
 inside = [True for _ in range(num_particles)]
 outsideAbove = [False for _ in range(num_particles)]
 outsideBelow = [False for _ in range(num_particles)]
-bc_time = []
 
 start_time = time.time() # Start timing the while loop
 
