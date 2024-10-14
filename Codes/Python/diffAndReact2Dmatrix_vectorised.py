@@ -13,14 +13,12 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = int(1e4) # Number of steps
+num_steps = int(1e3) # Number of steps
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
-Df = 0.1  # Diffusion for particles moving in the fracture
+Df = 1  # Diffusion for particles moving in the fracture
 dt = 1 # Time step
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-meanCross = 0 # Crossing probability parameter
-stdCross = 1 # Crossing probability parameter
 num_particles = int(1e4) # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
@@ -34,21 +32,12 @@ fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
 bins = 100 # Number of bins for the logarithmic plot
 
-noiseMatrix = np.sqrt(2*Dm*dt)  # Strength of the noise term for particle in the porous matrix
-noiseFracture = np.sqrt(2*Df*dt)  # Strength of the noise term for particle in the fracture
-crossOut = scipy.stats.norm.ppf(reflectedInward/100)
-crossIn = scipy.stats.norm.ppf(reflectedOutward/100)
-inFraRbx = [False for _ in range(num_particles)]
-bc_time = []
-
 bouncesBackIn = 0
 bouncesBackOut = 0
 crossInToOut = 0
 crossOutToIn = 0
 staysIn = 0
 staysOut = 0
-outsideFractureUp = False
-outsideFractureDown = False
 
 t = 0
 pdf_part = []
@@ -59,6 +48,7 @@ yPath = np.zeros((num_particles, num_steps))  # Matrix for storing y trajectorie
 inside = [True for _ in range(num_particles)]
 outsideAbove = [False for _ in range(num_particles)]
 outsideBelow = [False for _ in range(num_particles)]
+bc_time = []
 
 start_time = time.time() # Start timing the while loop
 
@@ -71,11 +61,15 @@ while t<num_steps*dt:
         xPath[:, t] = x  # Store x positions for the current time step
         yPath[:, t] = y  # Store y positions for the current time step        
 
-    isIn = x<rbx # Get the positions of the particles that are still in the domain
+    isIn = x<rbx # Get the positions of the particles that are still in the domain (wheter inside or outside the fracture)
+    fracture = isIn & inside
+    matrix = isIn & np.logical_or(outsideAbove, outsideBelow)
 
     # Update ALL the particles' position for time step t
-    x[isIn] = x[isIn] + np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(isIn))
-    y[isIn] = y[isIn] + np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(isIn))
+    x[fracture] = x[fracture] + np.sqrt(2*Df*dt)*np.random.normal(meanEta, stdEta, np.sum(fracture))
+    y[fracture] = y[fracture] + np.sqrt(2*Df*dt)*np.random.normal(meanEta, stdEta, np.sum(fracture))
+    x[matrix] = x[matrix] + np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(matrix))
+    y[matrix] = y[matrix] + np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(matrix))
 
     # Elastic reflection for the particles which hit the fracture's walls and some of them can diffuse into the matrix
     x = np.where(x<lbx, -x+2*lbx, x)
@@ -98,9 +92,9 @@ while t<num_steps*dt:
     y = np.where(crossOutToInAbove, -y+2*uby, y)
     y = np.where(crossOutToInBelow, -y+2*lby, y)
 
-    inside = (y<uby) & (y>lby)
-    outsideAbove = y>uby
-    outsideBelow = y<lby
+    inside = (y<uby) & (y>lby) # Particles inside the fracture
+    outsideAbove = y>uby # Particles in the porous matrix above the fracture
+    outsideBelow = y<lby #Particles in the porous matrix below the fracture
 
     # Slightly less efficient implementation of the reflection boundary condition
     '''x[x<lbx] = -x[x<lbx] + 2*lbx
