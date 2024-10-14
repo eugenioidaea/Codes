@@ -48,6 +48,22 @@ yPath = np.zeros((num_particles, num_steps))  # Matrix for storing y trajectorie
 inside = [True for _ in range(num_particles)]
 outsideAbove = [False for _ in range(num_particles)]
 outsideBelow = [False for _ in range(num_particles)]
+particlesTstep = np.zeros(num_particles) # Array which stores each particles' number of steps
+
+def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow, uby, lby):
+    x = np.where(x<lbx, -x+2*lbx, x)
+    y = np.where(crossInToOutAbove, -y+2*uby, y)
+    y = np.where(crossInToOutBelow, -y+2*lby, y)
+    y = np.where(crossOutToInAbove, -y+2*uby, y)
+    y = np.where(crossOutToInBelow, -y+2*lby, y)
+    return x, y
+
+def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
+    x[fracture] += np.sqrt(2*Df*dt)*np.random.normal(meanEta, stdEta, np.sum(fracture))
+    y[fracture] += np.sqrt(2*Df*dt)*np.random.normal(meanEta, stdEta, np.sum(fracture))
+    x[matrix] += np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(matrix))
+    y[matrix] += np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(matrix))
+    return x, y
 
 start_time = time.time() # Start timing the while loop
 
@@ -60,45 +76,36 @@ while t<num_steps*dt:
         xPath[:, t] = x  # Store x positions for the current time step
         yPath[:, t] = y  # Store y positions for the current time step        
 
-    isIn = x<rbx # Get the positions of the particles that are still in the domain (wheter inside or outside the fracture)
-    fracture = isIn & inside
-    matrix = isIn & np.logical_or(outsideAbove, outsideBelow)
+    isIn = x<rbx # Get the positions of the particles that are in the domain (wheter inside or outside the fracture)
+    fracture = isIn & inside # Particles in the fracture
+    outside = np.array(outsideAbove) | np.array(outsideBelow) # Particles outside the fracture
+    matrix = isIn & outside # Particles in the domain and outside the fracture
 
-    # Update ALL the particles' position for time step t
-    x[fracture] = x[fracture] + np.sqrt(2*Df*dt)*np.random.normal(meanEta, stdEta, np.sum(fracture))
-    y[fracture] = y[fracture] + np.sqrt(2*Df*dt)*np.random.normal(meanEta, stdEta, np.sum(fracture))
-    x[matrix] = x[matrix] + np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(matrix))
-    y[matrix] = y[matrix] + np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(matrix))
+    # Update the position of all the particles at a given time steps according to the Langevin dynamics
+    x, y = update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta)
 
-    # Elastic reflection for the particles which hit the fracture's walls and some of them can diffuse into the matrix
-    x = np.where(x<lbx, -x+2*lbx, x)
-
+    # Particles which in principles would cross the fractures' walls
     crossOutAbove = inside & (y>uby)
     crossOutBelow = inside & (y<lby)
     crossInAbove = outsideAbove  & (y > lby) & (y < uby)
     crossInBelow = outsideBelow & (y>lby) & (y<uby)
 
+    # Successfull crossing based on uniform probability distribution
     crossInToOut = np.random.rand(num_particles) < reflectedInward/100
     crossOutToIn = np.random.rand(num_particles) > reflectedOutward/100
 
+    # Find the indeces of those particles that did not successfully corss the fracture
     crossInToOutAbove = crossOutAbove & crossInToOut # Above upper boundary y
     crossInToOutBelow = crossOutBelow & crossInToOut # Below lower boundary y
     crossOutToInAbove = crossInAbove & crossOutToIn # Above upper boundary y
     crossOutToInBelow = crossInBelow & crossOutToIn # Below lower boundary y
-
-    y = np.where(crossInToOutAbove, -y+2*uby, y)
-    y = np.where(crossInToOutBelow, -y+2*lby, y)
-    y = np.where(crossOutToInAbove, -y+2*uby, y)
-    y = np.where(crossOutToInBelow, -y+2*lby, y)
+    
+    # Update the reflected particles' positions according to an elastic reflection dynamic
+    x, y = apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow, uby, lby)
 
     inside = (y<uby) & (y>lby) # Particles inside the fracture
     outsideAbove = y>uby # Particles in the porous matrix above the fracture
     outsideBelow = y<lby #Particles in the porous matrix below the fracture
-
-    # Slightly less efficient implementation of the reflection boundary condition
-    '''x[x<lbx] = -x[x<lbx] + 2*lbx
-    y[y<lby] = -y[y<lby] + 2*lby
-    y[y>uby] = -y[y>uby] + 2*lby'''
 
     pdf_part.append(sum(x[isIn]>rbx)) # Count the particle which exit the right boundary at each time step
 
@@ -106,6 +113,14 @@ while t<num_steps*dt:
 
 end_time = time.time() # Stop timing the while loop
 execution_time = end_time - start_time
+
+# Retrieve the number of steps for each particle from the pdf of the breakthrough curve
+i = 0
+for index, value in enumerate(pdf_part):
+    particlesTstep[i:i+value] = index
+    i = i+value
+meanTstep = particlesTstep.mean()*dt
+stdTstep = particlesTstep.std()*dt**2
 
 # Plot section #########################################################################
 if plotCharts and recordTrajectories:
@@ -128,12 +143,6 @@ plt.plot(Time, pdf_part/num_particles)
 plt.figure(figsize=(8, 8))
 plt.plot(Time, np.cumsum(pdf_part)/num_particles)
 
-i = 0
-particlesTstep=np.zeros(num_particles)
-# Retrieve the number of steps for each particle from the pdf of the breakthrough curve
-for index, value in enumerate(pdf_part):
-    particlesTstep[i:i+value] = index
-    i = i+value
 # Logarithmic plot
 timeLinSpaced = np.linspace(dt, t, bins) # Linearly spaced bins
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(t), bins) # Logarithmic spaced bins
@@ -144,4 +153,7 @@ countsNormLog = (countsLog/num_particles)/np.diff(binEdgesLog)
 plt.figure(figsize=(8, 8))
 plt.plot(binEdgesLin[1:], countsNormLin)
 plt.plot(binEdgesLog[1:], countsNormLog)
+
 print(f"Execution time: {execution_time:.6f} seconds")
+print(f"<t>: {meanTstep:.6f} seconds")
+print(f"sigma2t: {stdTstep:.6f} seconds")
