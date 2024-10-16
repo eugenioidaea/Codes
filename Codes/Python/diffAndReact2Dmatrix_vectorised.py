@@ -14,16 +14,16 @@ if plotCharts:
 
 # Parameters #################################################################
 num_steps = int(1e4) # Number of steps
-Dm = 0.01  # Diffusion for particles moving in the porous matrix
+Dm = 1  # Diffusion for particles moving in the porous matrix
 Df = 1  # Diffusion for particles moving in the fracture
 dt = 1 # Time step
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e4) # Number of particles in the simulation
+num_particles = int(1e3) # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
-rbx = 10 # Horizontal Right Boundary
+rbx = 30 # Horizontal Right Boundary
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
 reflectedInward = 90 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
