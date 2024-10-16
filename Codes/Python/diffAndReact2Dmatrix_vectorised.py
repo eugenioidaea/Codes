@@ -19,23 +19,25 @@ Df = 1  # Diffusion for particles moving in the fracture
 dt = 1 # Time step
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e3) # Number of particles in the simulation
+num_particles = int(1e4) # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
 rbx = 30 # Horizontal Right Boundary
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
-reflectedInward = 90 # Percentage of impacts from the fracture reflected again into the fracture
+reflectedInward = 100 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
 animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
-bins = 100 # Number of bins for the logarithmic plot
+bins = 50 # Number of bins for the logarithmic plot
+stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 
 # Initialisation ####################################################################
 
 t = 0 # Time
 i = 0 # Index for converting Eulerian pdf to Lagrangian pdf
+cdf = 0
 pdf_part = np.zeros(num_steps)
 x = np.zeros(num_particles) # Horizontal initial positions
 y = np.linspace(lby+init_shift, uby-init_shift, num_particles) # Vertical initial positions
@@ -70,7 +72,7 @@ def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
 
 start_time = time.time() # Start timing the while loop
 
-while t<num_steps*dt:
+while (cdf<stopBTC/100*num_particles) & (t<num_steps*dt):
 
     # Store the positions of each particle for all the time steps 
     if recordTrajectories:
@@ -110,7 +112,8 @@ while t<num_steps*dt:
 
     pdf_part[int(t/dt)] = sum(x[isIn]>rbx) # Count the particle which exit the right boundary at each time step
 
-    t += dt
+    cdf = sum(pdf_part)
+    t += dt    
 
 end_time = time.time() # Stop timing the while loop
 execution_time = end_time - start_time
@@ -153,15 +156,15 @@ plt.xscale('log')
 plt.figure(figsize=(8, 8))
 plt.plot(Time, 1-np.cumsum(pdf_part)/num_particles)
 plt.xscale('log')
+plt.yscale('log')
 
 # Binning for plotting the pdf from a Lagrangian vector
-countsLin, binEdgesLin = np.histogram(particleRT, timeLinSpaced)
-countsLog, binEdgesLog = np.histogram(particleRT, timeLogSpaced)
-countsNormLin = (countsLin/num_particles)/np.diff(binEdgesLin)
-countsNormLog = (countsLog/num_particles)/np.diff(binEdgesLog)
+countsLog, binEdgesLog = np.histogram(particleRT, timeLogSpaced, density=True)
 plt.figure(figsize=(8, 8))
-plt.plot(binEdgesLin[1:][countsNormLin!=0], countsNormLin[countsNormLin!=0])
-plt.plot(binEdgesLog[1:][countsNormLog!=0], countsNormLog[countsNormLog!=0])
+plt.plot(binEdgesLog[1:][countsLog!=0], countsLog[countsLog!=0], 'r*')
+plt.xscale('log')
+plt.yscale('log')
+
 
 # Statistichs
 print(f"Execution time: {execution_time:.6f} seconds")
