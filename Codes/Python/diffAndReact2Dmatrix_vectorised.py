@@ -6,15 +6,15 @@ import time
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
 recordVideo = False # It slows down the script
-recordTrajectories = True # It uses up memory
+recordTrajectories = False # It uses up memory
 
 if plotCharts:
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = int(1e3) # Number of steps
-Dm = 0.1  # Diffusion for particles moving in the porous matrix
+num_steps = int(1e5) # Number of steps
+Dm = 0.01  # Diffusion for particles moving in the porous matrix
 Df = 1  # Diffusion for particles moving in the fracture
 dt = 1 # Time step
 meanEta = 0 # Spatial jump distribution paramenter
@@ -30,17 +30,13 @@ reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected a
 animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
-bins = 100 # Number of bins for the logarithmic plot
+bins = 1000 # Number of bins for the logarithmic plot
 
-bouncesBackIn = 0
-bouncesBackOut = 0
-crossInToOut = 0
-crossOutToIn = 0
-staysIn = 0
-staysOut = 0
+# Initialisation ####################################################################
 
-t = 0
-pdf_part = []
+t = 0 # Time
+i = 0 # Index for converting Eulerian pdf to Lagrangian pdf
+pdf_part = np.zeros(num_steps)
 x = np.zeros(num_particles) # Horizontal initial positions
 y = np.linspace(lby+init_shift, uby-init_shift, num_particles) # Vertical initial positions
 xPath = np.zeros((num_particles, num_steps))  # Matrix for storing x trajectories
@@ -48,7 +44,12 @@ yPath = np.zeros((num_particles, num_steps))  # Matrix for storing y trajectorie
 inside = [True for _ in range(num_particles)]
 outsideAbove = [False for _ in range(num_particles)]
 outsideBelow = [False for _ in range(num_particles)]
-particlesTstep = np.zeros(num_particles) # Array which stores each particles' number of steps
+particleRT = np.zeros(num_particles) # Array which stores each particles' number of steps
+Time = np.linspace(dt, num_steps*dt, num_steps) # Array that stores time steps
+timeLinSpaced = np.linspace(dt, dt*num_steps, bins) # Linearly spaced bins
+timeLogSpaced = np.logspace(np.log10(dt), np.log10(dt*num_steps), bins) # Logarithmic spaced bins
+
+# Functions ##########################################################################
 
 def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow, uby, lby):
     x = np.where(x<lbx, -x+2*lbx, x)
@@ -65,9 +66,9 @@ def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
     y[matrix] += np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(matrix))
     return x, y
 
-start_time = time.time() # Start timing the while loop
-
 # Time loop ###########################################################################
+
+start_time = time.time() # Start timing the while loop
 
 while t<num_steps*dt:
 
@@ -107,22 +108,24 @@ while t<num_steps*dt:
     outsideAbove = y>uby # Particles in the porous matrix above the fracture
     outsideBelow = y<lby #Particles in the porous matrix below the fracture
 
-    pdf_part.append(sum(x[isIn]>rbx)) # Count the particle which exit the right boundary at each time step
+    pdf_part[int(t/dt)] = sum(x[isIn]>rbx) # Count the particle which exit the right boundary at each time step
 
-    t = t + dt
+    t += dt
 
 end_time = time.time() # Stop timing the while loop
 execution_time = end_time - start_time
 
 # Retrieve the number of steps for each particle from the pdf of the breakthrough curve
-i = 0
 for index, value in enumerate(pdf_part):
-    particlesTstep[i:i+value] = index
+    particleRT[int(i):int(i+value)] = index*dt
     i = i+value
-meanTstep = particlesTstep.mean()*dt
-stdTstep = particlesTstep.std()*dt**2
+
+meanTstep = particleRT.mean()
+stdTstep = particleRT.std()
 
 # Plot section #########################################################################
+
+# Trajectories
 if plotCharts and recordTrajectories:
     plt.figure(figsize=(8, 8))
     for i in range(num_particles):
@@ -136,24 +139,37 @@ if plotCharts and recordTrajectories:
     plt.grid(True)
     plt.show()
 
-Time = np.linspace(dt, t, len(pdf_part))
-pdf_part = np.asarray(pdf_part)
+# PDF
 plt.figure(figsize=(8, 8))
 plt.plot(Time, pdf_part/num_particles)
+plt.xscale('log')
+
+# CDF
 plt.figure(figsize=(8, 8))
 plt.plot(Time, np.cumsum(pdf_part)/num_particles)
+plt.xscale('log')
 
-# Logarithmic plot
-timeLinSpaced = np.linspace(dt, t, bins) # Linearly spaced bins
-timeLogSpaced = np.logspace(np.log10(dt), np.log10(t), bins) # Logarithmic spaced bins
-countsLin, binEdgesLin = np.histogram(particlesTstep, timeLinSpaced)
-countsLog, binEdgesLog = np.histogram(particlesTstep, timeLogSpaced)
+# Binning for plotting the pdf from a Lagrangian vector
+countsLin, binEdgesLin = np.histogram(particleRT, timeLinSpaced)
+countsLog, binEdgesLog = np.histogram(particleRT, timeLogSpaced)
 countsNormLin = (countsLin/num_particles)/np.diff(binEdgesLin)
 countsNormLog = (countsLog/num_particles)/np.diff(binEdgesLog)
 plt.figure(figsize=(8, 8))
 plt.plot(binEdgesLin[1:], countsNormLin)
 plt.plot(binEdgesLog[1:], countsNormLog)
+# plt.xscale('log')
 
+# 1-CDF
+plt.figure(figsize=(8, 8))
+plt.plot(Time, 1-np.cumsum(pdf_part)/num_particles)
+plt.xscale('log')
+
+# Log PDF
+plt.figure(figsize=(8, 8))
+plt.plot(binEdgesLog[1:], countsNormLog)
+plt.xscale('log')
+
+# Statistichs
 print(f"Execution time: {execution_time:.6f} seconds")
-print(f"<t>: {meanTstep:.6f} seconds")
-print(f"sigma2t: {stdTstep:.6f} seconds")
+print(f"<t>: {meanTstep:.6f} s")
+print(f"sigmat: {stdTstep:.6f} s")
