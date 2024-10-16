@@ -13,7 +13,7 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = int(1e5) # Number of steps
+num_steps = int(1e4) # Number of steps
 Dm = 0.01  # Diffusion for particles moving in the porous matrix
 Df = 1  # Diffusion for particles moving in the fracture
 dt = 1 # Time step
@@ -30,7 +30,7 @@ reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected a
 animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
-bins = 1000 # Number of bins for the logarithmic plot
+bins = 100 # Number of bins for the logarithmic plot
 
 # Initialisation ####################################################################
 
@@ -149,25 +149,19 @@ plt.figure(figsize=(8, 8))
 plt.plot(Time, np.cumsum(pdf_part)/num_particles)
 plt.xscale('log')
 
+# 1-CDF
+plt.figure(figsize=(8, 8))
+plt.plot(Time, 1-np.cumsum(pdf_part)/num_particles)
+plt.xscale('log')
+
 # Binning for plotting the pdf from a Lagrangian vector
 countsLin, binEdgesLin = np.histogram(particleRT, timeLinSpaced)
 countsLog, binEdgesLog = np.histogram(particleRT, timeLogSpaced)
 countsNormLin = (countsLin/num_particles)/np.diff(binEdgesLin)
 countsNormLog = (countsLog/num_particles)/np.diff(binEdgesLog)
 plt.figure(figsize=(8, 8))
-plt.plot(binEdgesLin[1:], countsNormLin)
-plt.plot(binEdgesLog[1:], countsNormLog)
-# plt.xscale('log')
-
-# 1-CDF
-plt.figure(figsize=(8, 8))
-plt.plot(Time, 1-np.cumsum(pdf_part)/num_particles)
-plt.xscale('log')
-
-# Log PDF
-plt.figure(figsize=(8, 8))
-plt.plot(binEdgesLog[1:], countsNormLog)
-plt.xscale('log')
+plt.plot(binEdgesLin[1:][countsNormLin!=0], countsNormLin[countsNormLin!=0])
+plt.plot(binEdgesLog[1:][countsNormLog!=0], countsNormLog[countsNormLog!=0])
 
 # Statistichs
 print(f"Execution time: {execution_time:.6f} seconds")
