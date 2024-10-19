@@ -64,13 +64,14 @@ def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
     y[matrix] += np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(matrix))
     return x, y
 
-def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow, uby, lby, rbxOn):
+def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow, 
+                     crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, rbxOn):
     if rbxOn:
         x = np.where(x<lbx, -x+2*lbx, x)
-    y = np.where(crossInToOutAbove, y, -y+2*uby)
-    y = np.where(crossInToOutBelow, y, -y+2*lby)
-    y = np.where(crossOutToInAbove, y, -y+2*uby)
-    y = np.where(crossOutToInBelow, y, -y+2*lby)
+    y[np.where(crossOutAbove)[0]] = np.where(crossInToOutAbove, y, -y+2*uby)
+    y[np.where(crossOutBelow)[0]] = np.where(crossInToOutBelow, y, -y+2*lby)
+    y[np.where(crossInAbove)[0]]  = np.where(crossOutToInAbove, y, -y+2*uby)
+    y[np.where(crossInBelow)[0]] = np.where(crossOutToInBelow, y, -y+2*lby)
     return x, y
 
 # Time loop ###########################################################################
@@ -101,13 +102,18 @@ while (cdf<stopBTC/100*num_particles) & (t<num_steps*dt):
     crossInAbove = outsideAbove  & (y > lby) & (y < uby)
     crossInBelow = outsideBelow & (y>lby) & (y<uby)
 
+    probCrossOutAbove = np.random.rand(np.sum(crossOutAbove)) > reflectedInward/100
+    probCrossOutBelow = np.random.rand(np.sum(crossOutBelow)) > reflectedInward/100
+    probCrossInAbove = np.random.rand(np.sum(crossInAbove)) > reflectedOutward/100
+    probCrossInBelow = np.random.rand(np.sum(crossInBelow)) > reflectedOutward/100
+
     # Successfull crossing based on uniform probability distribution
     # crossInToOut = np.random.rand(num_particles) > reflectedInward/100
     # crossOutToIn = np.random.rand(num_particles) > reflectedOutward/100
-    crossOutAbove[np.where(crossOutAbove)[0]] = (np.random.rand(np.sum(crossOutAbove)) > reflectedInward/100) & (crossOutAbove[np.where(crossOutAbove)[0]])
-    crossOutBelow[np.where(crossOutBelow)[0]] = (np.random.rand(np.sum(crossOutBelow)) > reflectedInward/100) & (crossOutBelow[np.where(crossOutBelow)[0]])
-    crossInAbove[np.where(crossInAbove)[0]] = (np.random.rand(np.sum(crossInAbove)) > reflectedOutward/100) & (crossInAbove[np.where(crossInAbove)[0]])
-    crossOutBelow[np.where(crossInAbove)[0]] = (np.random.rand(np.sum(crossInBelow)) > reflectedOutward/100) & (crossInBelow[np.where(crossInBelow)[0]])
+    crossInToOutAbove = probCrossOutAbove & (crossOutAbove[np.where(crossOutAbove)[0]])
+    crossInToOutBelow = probCrossOutBelow & (crossOutBelow[np.where(crossOutBelow)[0]])
+    crossOutToInAbove = probCrossInAbove & (crossInAbove[np.where(crossInAbove)[0]])
+    crossOutToInBelow = probCrossInBelow & (crossInBelow[np.where(crossInBelow)[0]])
     
     # Find the indeces of those particles that did not successfully corss the fracture
     # crossInToOutAbove = crossOutAbove & crossOutAbove[crossOutAbove] & crossOut # Above upper boundary y
@@ -116,8 +122,14 @@ while (cdf<stopBTC/100*num_particles) & (t<num_steps*dt):
     # crossOutToInBelow = crossInBelow & crossOutToIn # Below lower boundary y
     
     # Update the reflected particles' positions according to an elastic reflection dynamic
-    # x, y = apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow, uby, lby, rbxOn)
-    x, y = apply_reflection(x, y, crossOutAbove, crossOutBelow,  crossInAbove, crossInBelow, uby, lby, rbxOn)
+    x, y = apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow,
+                            crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, rbxOn)
+    # x, y = apply_reflection(x, y, crossOutAbove, crossOutBelow,  crossInAbove, crossInBelow, uby, lby, rbxOn)
+
+    # crossOutAbove[np.where(crossOutAbove)[0]]
+    # crossOutBelow[np.where(crossOutBelow)[0]]
+    # crossInAbove[np.where(crossInAbove)[0]] =
+    # crossOutBelow[np.where(crossInBelow)[0]] 
 
     inside = (y<uby) & (y>lby) # Particles inside the fracture
     outsideAbove = y>uby # Particles in the porous matrix above the fracture
