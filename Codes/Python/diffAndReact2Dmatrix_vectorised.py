@@ -26,7 +26,7 @@ lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
 rbx = 20 # Horizontal Right Boundary
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
-reflectedInward = 90 # Percentage of impacts from the fracture reflected again into the fracture
+reflectedInward = 99 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
 animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
@@ -72,6 +72,9 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
     y[np.where(crossOutBelow)[0]] = np.where(crossInToOutBelow, y[np.where(crossOutBelow)[0]], -y[np.where(crossOutBelow)[0]]+2*lby)
     y[np.where(crossInAbove)[0]]  = np.where(crossOutToInAbove, y[np.where(crossInAbove)[0]], -y[np.where(crossInAbove)[0]]+2*uby)
     y[np.where(crossInBelow)[0]] = np.where(crossOutToInBelow, y[np.where(crossInBelow)[0]], -y[np.where(crossInBelow)[0]]+2*lby)
+    # if np.any(y[np.where(crossOutAbove)[0]]<lby) | np.any(y[np.where(crossOutBelow)[0]]>uby): # Avoid jumps across the whole height of the fracture
+    #     y[np.where(y[np.where(crossOutAbove)[0]]<lby)] = -y[np.where(y[np.where(crossOutAbove)[0]]<lby)] + 2*lby
+    #     y[np.where(y[np.where(crossOutBelow)[0]]>uby)] = -y[np.where(y[np.where(crossOutBelow)[0]]>uby)] + 2*uby
     return x, y
 
 # Time loop ###########################################################################
@@ -102,38 +105,25 @@ while (cdf<stopBTC/100*num_particles) & (t<num_steps*dt):
     crossInAbove = outsideAbove  & (y > lby) & (y < uby)
     crossInBelow = outsideBelow & (y>lby) & (y<uby)
 
+    # Decide the number of impacts that will cross the fracture's walls
     probCrossOutAbove = np.random.rand(np.sum(crossOutAbove)) > reflectedInward/100
     probCrossOutBelow = np.random.rand(np.sum(crossOutBelow)) > reflectedInward/100
     probCrossInAbove = np.random.rand(np.sum(crossInAbove)) > reflectedOutward/100
     probCrossInBelow = np.random.rand(np.sum(crossInBelow)) > reflectedOutward/100
 
     # Successfull crossing based on uniform probability distribution
-    # crossInToOut = np.random.rand(num_particles) > reflectedInward/100
-    # crossOutToIn = np.random.rand(num_particles) > reflectedOutward/100
     crossInToOutAbove = probCrossOutAbove & (crossOutAbove[np.where(crossOutAbove)[0]])
     crossInToOutBelow = probCrossOutBelow & (crossOutBelow[np.where(crossOutBelow)[0]])
     crossOutToInAbove = probCrossInAbove & (crossInAbove[np.where(crossInAbove)[0]])
     crossOutToInBelow = probCrossInBelow & (crossInBelow[np.where(crossInBelow)[0]])
     
-    # Find the indeces of those particles that did not successfully corss the fracture
-    # crossInToOutAbove = crossOutAbove & crossOutAbove[crossOutAbove] & crossOut # Above upper boundary y
-    # crossInToOutBelow = crossOutBelow & crossInToOut # Below lower boundary y
-    # crossOutToInAbove = crossInAbove & crossOutToIn # Above upper boundary y
-    # crossOutToInBelow = crossInBelow & crossOutToIn # Below lower boundary y
-    
     # Update the reflected particles' positions according to an elastic reflection dynamic
     x, y = apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow,
                             crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, rbxOn)
-    # x, y = apply_reflection(x, y, crossOutAbove, crossOutBelow,  crossInAbove, crossInBelow, uby, lby, rbxOn)
-
-    # crossOutAbove[np.where(crossOutAbove)[0]]
-    # crossOutBelow[np.where(crossOutBelow)[0]]
-    # crossInAbove[np.where(crossInAbove)[0]] =
-    # crossOutBelow[np.where(crossInBelow)[0]] 
 
     inside = (y<uby) & (y>lby) # Particles inside the fracture
     outsideAbove = y>uby # Particles in the porous matrix above the fracture
-    outsideBelow = y<lby #Particles in the porous matrix below the fracture
+    outsideBelow = y<lby # Particles in the porous matrix below the fracture
 
     pdf_part[int(t/dt)] = sum(abs(x[isIn])>rbx) # Count the particle which exit the right boundary at each time step
 
