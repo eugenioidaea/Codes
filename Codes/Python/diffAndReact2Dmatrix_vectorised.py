@@ -15,8 +15,8 @@ if plotCharts:
 
 # Parameters #################################################################
 num_steps = int(1e3) # Number of steps
-Dm = 1  # Diffusion for particles moving in the porous matrix
-Df = 1  # Diffusion for particles moving in the fracture
+Dm = 0.1  # Diffusion for particles moving in the porous matrix
+Df = 0.1  # Diffusion for particles moving in the fracture
 dt = 1 # Time step
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
@@ -24,9 +24,9 @@ num_particles = int(1e2) # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
-rbx = 30 # Horizontal Right Boundary
+rbx = 20 # Horizontal Right Boundary
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
-reflectedInward = 100 # Percentage of impacts from the fracture reflected again into the fracture
+reflectedInward = 90 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
 animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
@@ -68,10 +68,10 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
                      crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, rbxOn):
     if rbxOn:
         x = np.where(x<lbx, -x+2*lbx, x)
-    y[np.where(crossOutAbove)[0]] = np.where(crossInToOutAbove, y, -y+2*uby)
-    y[np.where(crossOutBelow)[0]] = np.where(crossInToOutBelow, y, -y+2*lby)
-    y[np.where(crossInAbove)[0]]  = np.where(crossOutToInAbove, y, -y+2*uby)
-    y[np.where(crossInBelow)[0]] = np.where(crossOutToInBelow, y, -y+2*lby)
+    y[np.where(crossOutAbove)[0]] = np.where(crossInToOutAbove, y[np.where(crossOutAbove)[0]], -y[np.where(crossOutAbove)[0]]+2*uby)
+    y[np.where(crossOutBelow)[0]] = np.where(crossInToOutBelow, y[np.where(crossOutBelow)[0]], -y[np.where(crossOutBelow)[0]]+2*lby)
+    y[np.where(crossInAbove)[0]]  = np.where(crossOutToInAbove, y[np.where(crossInAbove)[0]], -y[np.where(crossInAbove)[0]]+2*uby)
+    y[np.where(crossInBelow)[0]] = np.where(crossOutToInBelow, y[np.where(crossInBelow)[0]], -y[np.where(crossInBelow)[0]]+2*lby)
     return x, y
 
 # Time loop ###########################################################################
