@@ -71,13 +71,13 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
         x = np.where(x<lbx, -x+2*lbx, x)
     y[np.where(crossOutAbove)[0]] = np.where(crossInToOutAbove, y[np.where(crossOutAbove)[0]], -y[np.where(crossOutAbove)[0]]+2*uby)
     y[np.where(crossOutBelow)[0]] = np.where(crossInToOutBelow, y[np.where(crossOutBelow)[0]], -y[np.where(crossOutBelow)[0]]+2*lby)
-    y[np.where(crossInAbove)[0]]  = np.where(crossOutToInAbove, y[np.where(crossInAbove)[0]], -y[np.where(crossInAbove)[0]]+2*uby)
+    y[np.where(crossInAbove)[0]] = np.where(crossOutToInAbove, y[np.where(crossInAbove)[0]], -y[np.where(crossInAbove)[0]]+2*uby)
     y[np.where(crossInBelow)[0]] = np.where(crossOutToInBelow, y[np.where(crossInBelow)[0]], -y[np.where(crossInBelow)[0]]+2*lby)
-    while np.any(y[np.where(crossOutAbove)[0]]<lby) | np.any(y[np.where(crossOutBelow)[0]]>uby): # Avoid jumps across the whole height of the fracture
-        yyb=np.where(crossOutBelow)[0] # Particles which hit the lower limit of the fracture
+    while np.any(y[np.where(~crossInToOutAbove | ~crossInToOutBelow)[0]]<lby) | np.any(y[np.where(~crossInToOutAbove | ~crossInToOutBelow)[0]]>uby): # Avoid jumps across the whole height of the fracture
+        yyb=np.where(~crossInToOutAbove | ~crossInToOutBelow)[0] # Particles which hit one of the fracture's wall
         yyyb=yyb[np.where(y[yyb.flatten()]>uby)[0]] # Get the indeces of those that would be reflected above the uby
         y[yyyb.flatten()] = -y[yyyb.flatten()] + 2*uby # Reflect them back
-        yya=np.where(crossOutAbove)[0]
+        yya=np.where(~crossInToOutAbove | ~crossInToOutBelow)[0]
         yyya=yya[np.where(y[yya.flatten()]<lby)[0]]
         y[yyya.flatten()] = -y[yyya.flatten()] + 2*lby
     return x, y
