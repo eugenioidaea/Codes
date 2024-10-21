@@ -15,8 +15,8 @@ if plotCharts:
 
 # Parameters #################################################################
 num_steps = int(1e3) # Number of steps
-Dm = 0.1  # Diffusion for particles moving in the porous matrix
-Df = 0.1  # Diffusion for particles moving in the fracture
+Dm = 1  # Diffusion for particles moving in the porous matrix
+Df = 1  # Diffusion for particles moving in the fracture
 dt = 1 # Time step
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
@@ -24,9 +24,9 @@ num_particles = int(1e2) # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
-rbx = 20 # Horizontal Right Boundary
+rbx = 50 # Horizontal Right Boundary
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
-reflectedInward = 99 # Percentage of impacts from the fracture reflected again into the fracture
+reflectedInward = 100 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
 animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
@@ -34,7 +34,7 @@ lTstp = 90 # Final time step to appear in the video
 binsTime = 50 # Number of temporal bins for the logarithmic plot
 binsSpace = 80 # Number of spatial bins for the concentration profile
 recordSpatialConc = int(1e2) # Concentration profile recorded time
-stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
+stopBTC = 10 # % of particles that need to pass the control plane before the simulation is ended
 
 # Initialisation ####################################################################
 
@@ -44,8 +44,9 @@ cdf = 0
 pdf_part = np.zeros(num_steps)
 x = np.zeros(num_particles) # Horizontal initial positions
 y = np.linspace(lby+init_shift, uby-init_shift, num_particles) # Vertical initial positions
-xPath = np.zeros((num_particles, num_steps))  # Matrix for storing x trajectories
-yPath = np.zeros((num_particles, num_steps))  # Matrix for storing y trajectories
+if recordTrajectories:
+    xPath = np.zeros((num_particles, num_steps))  # Matrix for storing x trajectories
+    yPath = np.zeros((num_particles, num_steps))  # Matrix for storing y trajectories
 inside = [True for _ in range(num_particles)]
 outsideAbove = [False for _ in range(num_particles)]
 outsideBelow = [False for _ in range(num_particles)]
@@ -72,9 +73,13 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
     y[np.where(crossOutBelow)[0]] = np.where(crossInToOutBelow, y[np.where(crossOutBelow)[0]], -y[np.where(crossOutBelow)[0]]+2*lby)
     y[np.where(crossInAbove)[0]]  = np.where(crossOutToInAbove, y[np.where(crossInAbove)[0]], -y[np.where(crossInAbove)[0]]+2*uby)
     y[np.where(crossInBelow)[0]] = np.where(crossOutToInBelow, y[np.where(crossInBelow)[0]], -y[np.where(crossInBelow)[0]]+2*lby)
-    # if np.any(y[np.where(crossOutAbove)[0]]<lby) | np.any(y[np.where(crossOutBelow)[0]]>uby): # Avoid jumps across the whole height of the fracture
-    #     y[np.where(y[np.where(crossOutAbove)[0]]<lby)] = -y[np.where(y[np.where(crossOutAbove)[0]]<lby)] + 2*lby
-    #     y[np.where(y[np.where(crossOutBelow)[0]]>uby)] = -y[np.where(y[np.where(crossOutBelow)[0]]>uby)] + 2*uby
+    while np.any(y[np.where(crossOutAbove)[0]]<lby) | np.any(y[np.where(crossOutBelow)[0]]>uby): # Avoid jumps across the whole height of the fracture
+        yyb=np.where(crossOutBelow)[0] # Particles which hit the lower limit of the fracture
+        yyyb=yyb[np.where(y[yyb.flatten()]>uby)[0]] # Get the indeces of those that would be reflected above the uby
+        y[yyyb.flatten()] = -y[yyyb.flatten()] + 2*uby # Reflect them back
+        yya=np.where(crossOutAbove)[0]
+        yyya=yya[np.where(y[yya.flatten()]<lby)[0]]
+        y[yyya.flatten()] = -y[yyya.flatten()] + 2*lby
     return x, y
 
 # Time loop ###########################################################################
@@ -132,6 +137,10 @@ while (cdf<stopBTC/100*num_particles) & (t<num_steps*dt):
 
     cdf = sum(pdf_part)
     t += dt    
+
+if recordTrajectories:
+    xPath = xPath[:, :t]
+    yPath = yPath[:, :t]
 
 end_time = time.time() # Stop timing the while loop
 execution_time = end_time - start_time
