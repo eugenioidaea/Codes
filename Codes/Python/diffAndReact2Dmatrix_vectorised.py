@@ -26,7 +26,7 @@ lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
 rbx = 50 # Horizontal Right Boundary
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
-reflectedInward = 100 # Percentage of impacts from the fracture reflected again into the fracture
+reflectedInward = 98 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
 animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
@@ -69,15 +69,15 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
                      crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, rbxOn):
     if rbxOn:
         x = np.where(x<lbx, -x+2*lbx, x)
-    y[np.where(crossOutAbove)[0]] = np.where(crossInToOutAbove, y[np.where(crossOutAbove)[0]], -y[np.where(crossOutAbove)[0]]+2*uby)
-    y[np.where(crossOutBelow)[0]] = np.where(crossInToOutBelow, y[np.where(crossOutBelow)[0]], -y[np.where(crossOutBelow)[0]]+2*lby)
-    y[np.where(crossInAbove)[0]] = np.where(crossOutToInAbove, y[np.where(crossInAbove)[0]], -y[np.where(crossInAbove)[0]]+2*uby)
-    y[np.where(crossInBelow)[0]] = np.where(crossOutToInBelow, y[np.where(crossInBelow)[0]], -y[np.where(crossInBelow)[0]]+2*lby)
-    while np.any(y[np.where(~crossInToOutAbove | ~crossInToOutBelow)[0]]<lby) | np.any(y[np.where(~crossInToOutAbove | ~crossInToOutBelow)[0]]>uby): # Avoid jumps across the whole height of the fracture
-        yyb=np.where(~crossInToOutAbove | ~crossInToOutBelow)[0] # Particles which hit one of the fracture's wall
+    y[np.where(crossOutAbove)[0]] = np.where(crossInToOutAbove[np.where(crossOutAbove)[0]], y[np.where(crossOutAbove)[0]], -y[np.where(crossOutAbove)[0]]+2*uby)
+    y[np.where(crossOutBelow)[0]] = np.where(crossInToOutBelow[np.where(crossOutBelow)[0]], y[np.where(crossOutBelow)[0]], -y[np.where(crossOutBelow)[0]]+2*lby)
+    y[np.where(crossInAbove)[0]] = np.where(crossOutToInAbove[np.where(crossInAbove)[0]], y[np.where(crossInAbove)[0]], -y[np.where(crossInAbove)[0]]+2*uby)
+    y[np.where(crossInBelow)[0]] = np.where(crossOutToInBelow[np.where(crossInBelow)[0]], y[np.where(crossInBelow)[0]], -y[np.where(crossInBelow)[0]]+2*lby)
+    # while np.any(y[np.where(~crossInToOutAbove)[0]]<lby) | np.any(y[np.where(~crossInToOutBelow)[0]]>uby): # Avoid jumps across the whole height of the fracture
+        yyb=np.where(~crossInToOutAbove)[0] # Particles which hit one of the fracture's wall
         yyyb=yyb[np.where(y[yyb.flatten()]>uby)[0]] # Get the indeces of those that would be reflected above the uby
         y[yyyb.flatten()] = -y[yyyb.flatten()] + 2*uby # Reflect them back
-        yya=np.where(~crossInToOutAbove | ~crossInToOutBelow)[0]
+        yya=np.where(~crossInToOutBelow)[0]
         yyya=yya[np.where(y[yya.flatten()]<lby)[0]]
         y[yyya.flatten()] = -y[yyya.flatten()] + 2*lby
     return x, y
@@ -111,16 +111,20 @@ while (cdf<stopBTC/100*num_particles) & (t<num_steps*dt):
     crossInBelow = outsideBelow & (y>lby) & (y<uby)
 
     # Decide the number of impacts that will cross the fracture's walls
-    probCrossOutAbove = np.random.rand(np.sum(crossOutAbove)) > reflectedInward/100
-    probCrossOutBelow = np.random.rand(np.sum(crossOutBelow)) > reflectedInward/100
-    probCrossInAbove = np.random.rand(np.sum(crossInAbove)) > reflectedOutward/100
-    probCrossInBelow = np.random.rand(np.sum(crossInBelow)) > reflectedOutward/100
+    probCrossOutAbove = np.full(num_particles, False)
+    probCrossOutBelow = np.full(num_particles, False)
+    probCrossInAbove = np.full(num_particles, False)
+    probCrossInBelow = np.full(num_particles, False)
+    probCrossOutAbove[np.where(crossOutAbove)[0]] = np.random.rand(np.sum(crossOutAbove)) > reflectedInward/100
+    probCrossOutBelow[np.where(crossOutBelow)[0]] = np.random.rand(np.sum(crossOutBelow)) > reflectedInward/100
+    probCrossInAbove[np.where(crossInAbove)[0]] = np.random.rand(np.sum(crossInAbove)) > reflectedOutward/100
+    probCrossInBelow[np.where(crossInBelow)[0]] = np.random.rand(np.sum(crossInBelow)) > reflectedOutward/100
 
     # Successfull crossing based on uniform probability distribution
-    crossInToOutAbove = probCrossOutAbove & (crossOutAbove[np.where(crossOutAbove)[0]])
-    crossInToOutBelow = probCrossOutBelow & (crossOutBelow[np.where(crossOutBelow)[0]])
-    crossOutToInAbove = probCrossInAbove & (crossInAbove[np.where(crossInAbove)[0]])
-    crossOutToInBelow = probCrossInBelow & (crossInBelow[np.where(crossInBelow)[0]])
+    crossInToOutAbove = probCrossOutAbove & crossOutAbove
+    crossInToOutBelow = probCrossOutBelow & crossOutBelow
+    crossOutToInAbove = probCrossInAbove & crossInAbove
+    crossOutToInBelow = probCrossInBelow & crossInBelow
     
     # Update the reflected particles' positions according to an elastic reflection dynamic
     x, y = apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow,
