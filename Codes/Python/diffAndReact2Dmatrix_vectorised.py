@@ -26,7 +26,7 @@ lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
 rbx = 50 # Horizontal Right Boundary
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
-reflectedInward = 98 # Percentage of impacts from the fracture reflected again into the fracture
+reflectedInward = 90 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
 animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
@@ -69,17 +69,19 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
                      crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, rbxOn):
     if rbxOn:
         x = np.where(x<lbx, -x+2*lbx, x)
-    y[np.where(crossOutAbove)[0]] = np.where(crossInToOutAbove[np.where(crossOutAbove)[0]], y[np.where(crossOutAbove)[0]], -y[np.where(crossOutAbove)[0]]+2*uby)
-    y[np.where(crossOutBelow)[0]] = np.where(crossInToOutBelow[np.where(crossOutBelow)[0]], y[np.where(crossOutBelow)[0]], -y[np.where(crossOutBelow)[0]]+2*lby)
-    y[np.where(crossInAbove)[0]] = np.where(crossOutToInAbove[np.where(crossInAbove)[0]], y[np.where(crossInAbove)[0]], -y[np.where(crossInAbove)[0]]+2*uby)
-    y[np.where(crossInBelow)[0]] = np.where(crossOutToInBelow[np.where(crossInBelow)[0]], y[np.where(crossInBelow)[0]], -y[np.where(crossInBelow)[0]]+2*lby)
-    # while np.any(y[np.where(~crossInToOutAbove)[0]]<lby) | np.any(y[np.where(~crossInToOutBelow)[0]]>uby): # Avoid jumps across the whole height of the fracture
-        yyb=np.where(~crossInToOutAbove)[0] # Particles which hit one of the fracture's wall
-        yyyb=yyb[np.where(y[yyb.flatten()]>uby)[0]] # Get the indeces of those that would be reflected above the uby
-        y[yyyb.flatten()] = -y[yyyb.flatten()] + 2*uby # Reflect them back
-        yya=np.where(~crossInToOutBelow)[0]
-        yyya=yya[np.where(y[yya.flatten()]<lby)[0]]
-        y[yyya.flatten()] = -y[yyya.flatten()] + 2*lby
+    y[crossOutAbove] = np.where(crossInToOutAbove[crossOutAbove], y[crossOutAbove], -y[crossOutAbove]+2*uby)
+    y[crossOutBelow] = np.where(crossInToOutBelow[crossOutBelow], y[crossOutBelow], -y[crossOutBelow]+2*lby)
+    y[crossInAbove] = np.where(crossOutToInAbove[crossInAbove], y[crossInAbove], -y[crossInAbove]+2*uby)
+    y[crossInBelow] = np.where(crossOutToInBelow[crossInBelow], y[crossInBelow], -y[crossInBelow]+2*lby)
+    yoa = np.where(crossOutAbove)[0]
+    yca = np.where(crossInToOutAbove)[0]
+    yob = np.where(crossOutBelow)[0]
+    ycb = np.where(crossInToOutBelow)[0]
+    reflected = np.concatenate((np.setdiff1d(yoa, yca), np.setdiff1d(yob, ycb)))
+    overjump = np.concatenate((np.where(y[reflected]<lby)[0], np.where(y[reflected]>uby)[0]))
+    while np.any(overjump): # Verify the positions of all the particles that should not cross
+        y[y[overjump]>uby] = -y[y[overjump]>uby] + 2*uby # Reflect them back
+        y[y[overjump]<lby] = -y[y[overjump]<lby] + 2*lby # Reflect them back
     return x, y
 
 # Time loop ###########################################################################
