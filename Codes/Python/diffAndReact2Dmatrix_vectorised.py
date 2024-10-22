@@ -6,7 +6,7 @@ import time
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
 recordVideo = False # It slows down the script
-recordTrajectories = True # It uses up memory
+recordTrajectories = False # It uses up memory
 rbxOn = True # It controls the right boundary condition
 
 if plotCharts:
@@ -15,26 +15,26 @@ if plotCharts:
 
 # Parameters #################################################################
 num_steps = int(1e3) # Number of steps
-Dm = 1  # Diffusion for particles moving in the porous matrix
-Df = 1  # Diffusion for particles moving in the fracture
+Dm = 0.1  # Diffusion for particles moving in the porous matrix
+Df = 0.1  # Diffusion for particles moving in the fracture
 dt = 1 # Time step
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e2) # Number of particles in the simulation
+num_particles = int(1e4) # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
 lbx = 0 # Horizontal Left Boundary
-rbx = 50 # Horizontal Right Boundary
+rbx = 5 # Horizontal Right Boundary
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
-reflectedInward = 90 # Percentage of impacts from the fracture reflected again into the fracture
+reflectedInward = 100 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
 animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
 binsTime = 50 # Number of temporal bins for the logarithmic plot
-binsSpace = 80 # Number of spatial bins for the concentration profile
+binsSpace = 10 # Number of spatial bins for the concentration profile
 recordSpatialConc = int(1e2) # Concentration profile recorded time
-stopBTC = 10 # % of particles that need to pass the control plane before the simulation is ended
+stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 
 # Initialisation ####################################################################
 
@@ -78,10 +78,9 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
     yob = np.where(crossOutBelow)[0]
     ycb = np.where(crossInToOutBelow)[0]
     reflected = np.concatenate((np.setdiff1d(yoa, yca), np.setdiff1d(yob, ycb)))
-    overjump = np.concatenate((np.where(y[reflected]<lby)[0], np.where(y[reflected]>uby)[0]))
-    while np.any(overjump): # Verify the positions of all the particles that should not cross
-        y[y[overjump]>uby] = -y[y[overjump]>uby] + 2*uby # Reflect them back
-        y[y[overjump]<lby] = -y[y[overjump]<lby] + 2*lby # Reflect them back
+    while np.any((y[reflected]<lby) | (y[reflected]>uby)): # Verify the positions of all the particles that should not cross
+        y[reflected[y[reflected]>uby]] = -y[reflected[y[reflected]>uby]] + 2*uby # Reflect them back
+        y[reflected[y[reflected]<lby]] = -y[reflected[y[reflected]<lby]] + 2*lby # Reflect them back
     return x, y
 
 # Time loop ###########################################################################
@@ -206,6 +205,8 @@ if rbxOn:
     plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
 
 # Statistichs
+if (dt*10>(uby-lby)**2/Df):
+    print("WARNING! Time step dt should be reduced to avoid jumps across the fracture width")
 print(f"Execution time: {execution_time:.6f} seconds")
 print(f"<t>: {meanTstep:.6f} s")
 print(f"sigmat: {stdTstep:.6f} s")
