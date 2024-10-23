@@ -5,25 +5,26 @@ import time
 
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
-recordVideo = False # It slows down the script
-recordTrajectories = False # It uses up memory
+# recordVideo = False # It slows down the script
+recordTrajectories = True # It uses up memory
 lbxOn = False # It controls the left boundary condition
+degradation = True # Switch for the degradation of the particles
 
 if plotCharts:
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = int(1e4) # Number of steps
+num_steps = int(1e3) # Number of steps
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 dt = 0.1 # Time step
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e4) # Number of particles in the simulation
+num_particles = int(1e2) # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
-rbx = 5 # Horizontal Right Boundary
+rbx = 10 # Horizontal Right Boundary
 if lbxOn:
     lbx = 0 # Horizontal Left Boundary
 else:
@@ -38,9 +39,9 @@ binsTime = 50 # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
+k = 2 # Degradation kinetic constant
 
 # Initialisation ####################################################################
-
 t = 0 # Time
 i = 0 # Index for converting Eulerian pdf to Lagrangian pdf
 cdf = 0
@@ -60,7 +61,6 @@ timeLogSpaced = np.logspace(np.log10(dt), np.log10(dt*num_steps), binsTime) # Lo
 xBins = np.linspace(lbx, rbx, binsSpace) # Linearly spaced bins
 
 # Functions ##########################################################################
-
 def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
     x[fracture] += np.sqrt(2*Df*dt)*np.random.normal(meanEta, stdEta, np.sum(fracture))
     y[fracture] += np.sqrt(2*Df*dt)*np.random.normal(meanEta, stdEta, np.sum(fracture))
@@ -94,21 +94,35 @@ def analytical_seminf(x, t, D):
     y = (rbx-lbx)*np.exp(-x**2/(4*D*t))/(np.sqrt(4*np.pi*D*t**3))
     return y
 
-# Time loop ###########################################################################
+def degradation_fun(num_steps, dt, k, num_particles):
+    t_steps = np.linspace(0, num_steps*dt, num_steps)
+    exp_prob = k*np.exp(-k*t_steps)
+    exp_prob /= exp_prob.sum()
+    survivalTimeProb = np.random.choice(t_steps, size=num_particles, p=exp_prob)
+    return survivalTimeProb
 
+# Time loop ###########################################################################
 start_time = time.time() # Start timing the while loop
+
+# Chemical degradation times
+if degradation:
+    survivalTimeProb = degradation_fun(num_steps, dt, k, num_particles)
+else:
+    survivalTimeProb = np.ones(num_particles)
 
 while (cdf<stopBTC/100*num_particles) & (t<num_steps*dt):
 
     # Store the positions of each particle for all the time steps 
     if recordTrajectories:
-        xPath[:, t] = x  # Store x positions for the current time step
-        yPath[:, t] = y  # Store y positions for the current time step        
+        xPath[:, int(t/dt)] = x  # Store x positions for the current time step
+        yPath[:, int(t/dt)] = y  # Store y positions for the current time step        
+
+    liveParticle = survivalTimeProb*(dt*num_steps)>t # Particles which are degradeted
 
     isIn = abs(x)<rbx # Get the positions of the particles that are in the domain (wheter inside or outside the fracture)
-    fracture = isIn & inside # Particles in the fracture
+    fracture = isIn & inside & liveParticle # Particles in the domain and inside the fracture
     outside = np.array(outsideAbove) | np.array(outsideBelow) # Particles outside the fracture
-    matrix = isIn & outside # Particles in the domain and outside the fracture
+    matrix = isIn & outside & liveParticle # Particles in the domain and outside the fracture
 
     # Update the position of all the particles at a given time steps according to the Langevin dynamics
     x, y = update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta)
@@ -152,8 +166,10 @@ while (cdf<stopBTC/100*num_particles) & (t<num_steps*dt):
     t += dt    
 
 if recordTrajectories:
-    xPath = xPath[:, :t]
-    yPath = yPath[:, :t]
+    xPath = xPath[:, :int(t/dt)]
+    yPath = yPath[:, :int(t/dt)]
+    # xPath = np.where(xPath[1:]!=0, xPath, 0)
+    # yPath = np.where(yPath[1:]!=0, yPath, 0)
 
 end_time = time.time() # Stop timing the while loop
 execution_time = end_time - start_time
@@ -163,16 +179,19 @@ for index, value in enumerate(pdf_part):
     particleRT[int(i):int(i+value)] = index*dt
     i = i+value
 
+# Compute simulation statistichs
 meanTstep = particleRT.mean()
 stdTstep = particleRT.std()
+if (dt*10>(uby-lby)**2/Df):
+    print("WARNING! Time step dt should be reduced to avoid jumps across the fracture width")
 
+# Verificaiton of the code
 if lbxOn:
     yAnalytical = analytical_seminf(xBins, recordSpatialConc, Df)
 else:
     yAnalytical = analytical_inf(xBins, recordSpatialConc, Df)
 
 # Plot section #########################################################################
-
 # Trajectories
 if plotCharts and recordTrajectories:
     plt.figure(figsize=(8, 8))
@@ -188,39 +207,45 @@ if plotCharts and recordTrajectories:
     plt.grid(True)
     plt.show()
 
-# PDF
-plt.figure(figsize=(8, 8))
-plt.plot(Time, pdf_part/num_particles)
-plt.xscale('log')
+if plotCharts:
+    # PDF
+    plt.figure(figsize=(8, 8))
+    plt.plot(Time, pdf_part/num_particles)
+    plt.xscale('log')
 
-# CDF
-plt.figure(figsize=(8, 8))
-plt.plot(Time, np.cumsum(pdf_part)/num_particles)
-plt.xscale('log')
+    # CDF
+    plt.figure(figsize=(8, 8))
+    plt.plot(Time, np.cumsum(pdf_part)/num_particles)
+    plt.xscale('log')
 
-# 1-CDF
-plt.figure(figsize=(8, 8))
-plt.plot(Time, 1-np.cumsum(pdf_part)/num_particles)
-plt.xscale('log')
-plt.yscale('log')
+    # 1-CDF
+    plt.figure(figsize=(8, 8))
+    plt.plot(Time, 1-np.cumsum(pdf_part)/num_particles)
+    plt.xscale('log')
+    plt.yscale('log')
 
-# Binning for plotting the pdf from a Lagrangian vector
-countsLog, binEdgesLog = np.histogram(particleRT, timeLogSpaced, density=True)
-plt.figure(figsize=(8, 8))
-plt.plot(binEdgesLog[:-1][countsLog!=0], countsLog[countsLog!=0], 'r*')
-plt.xscale('log')
-plt.yscale('log')
+    # Binning for plotting the pdf from a Lagrangian vector
+    countsLog, binEdgesLog = np.histogram(particleRT, timeLogSpaced, density=True)
+    plt.figure(figsize=(8, 8))
+    plt.plot(binEdgesLog[:-1][countsLog!=0], countsLog[countsLog!=0], 'r*')
+    plt.xscale('log')
+    plt.yscale('log')
 
-# Spatial concentration profile at 'recordSpatialConc' time
-plt.figure(figsize=(8, 8))
-plt.plot(binEdgeSpace[:-1][countsSpace!=0], countsSpace[countsSpace!=0], 'b-')
-plt.plot(xBins, yAnalytical, 'k-')
-if lbxOn:
-    plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
+    # Spatial concentration profile at 'recordSpatialConc' time
+    plt.figure(figsize=(8, 8))
+    plt.plot(binEdgeSpace[:-1][countsSpace!=0], countsSpace[countsSpace!=0], 'b-')
+    plt.plot(xBins, yAnalytical, 'k-')
+    if lbxOn:
+        plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
+
+    # Distribution of survival times for particles
+    plt.figure(figsize=(8, 8))
+    if recordTrajectories:
+        effTstepNum = np.array([len(row[1:]!=0) for row in xPath])/num_steps
+        plt.plot(np.arange(0, num_particles, 1), np.sort(effTstepNum)[::-1], 'b-')
+    plt.plot(np.arange(0, num_particles, 1), np.sort(survivalTimeProb)[::-1], 'k-')
 
 # Statistichs
-if (dt*10>(uby-lby)**2/Df):
-    print("WARNING! Time step dt should be reduced to avoid jumps across the fracture width")
 print(f"Execution time: {execution_time:.6f} seconds")
 print(f"<t>: {meanTstep:.6f} s")
 print(f"sigmat: {stdTstep:.6f} s")
