@@ -24,7 +24,7 @@ stdEta = 1 # Spatial jump distribution paramenter
 num_particles = int(1e2) # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
-rbx = 10 # Horizontal Right Boundary
+rbx = 100 # Horizontal Right Boundary
 if lbxOn:
     lbx = 0 # Horizontal Left Boundary
 else:
@@ -39,7 +39,7 @@ binsTime = 50 # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
-k = 2 # Degradation kinetic constant
+k = 0.01 # Degradation kinetic constant
 
 # Initialisation ####################################################################
 t = 0 # Time
@@ -98,26 +98,27 @@ def degradation_fun(num_steps, dt, k, num_particles):
     t_steps = np.linspace(0, num_steps*dt, num_steps)
     exp_prob = k*np.exp(-k*t_steps)
     exp_prob /= exp_prob.sum()
-    survivalTimeProb = np.random.choice(t_steps, size=num_particles, p=exp_prob)
-    return survivalTimeProb
+    valueRange = np.linspace(0, num_steps, num_steps)
+    survivalTimeDist = np.random.choice(valueRange, size=num_particles, p=exp_prob)
+    return survivalTimeDist, exp_prob
 
 # Time loop ###########################################################################
 start_time = time.time() # Start timing the while loop
 
 # Chemical degradation times
 if degradation:
-    survivalTimeProb = degradation_fun(num_steps, dt, k, num_particles)
+    survivalTimeDist, exp_prob = degradation_fun(num_steps, dt, k, num_particles)
 else:
-    survivalTimeProb = np.ones(num_particles)
+    survivalTimeDist, exp_prob = np.ones(num_particles)
 
 while (cdf<stopBTC/100*num_particles) & (t<num_steps*dt):
 
+    liveParticle = survivalTimeDist>t # Particles which are degradeted
+
     # Store the positions of each particle for all the time steps 
     if recordTrajectories:
-        xPath[:, int(t/dt)] = x  # Store x positions for the current time step
-        yPath[:, int(t/dt)] = y  # Store y positions for the current time step        
-
-    liveParticle = survivalTimeProb*(dt*num_steps)>t # Particles which are degradeted
+        xPath[:, int(t/dt)] = np.where(liveParticle, x, 0)  # Store x positions for the current time step
+        yPath[:, int(t/dt)] = np.where(liveParticle, y, 0)  # Store y positions for the current time step
 
     isIn = abs(x)<rbx # Get the positions of the particles that are in the domain (wheter inside or outside the fracture)
     fracture = isIn & inside & liveParticle # Particles in the domain and inside the fracture
@@ -168,8 +169,6 @@ while (cdf<stopBTC/100*num_particles) & (t<num_steps*dt):
 if recordTrajectories:
     xPath = xPath[:, :int(t/dt)]
     yPath = yPath[:, :int(t/dt)]
-    # xPath = np.where(xPath[1:]!=0, xPath, 0)
-    # yPath = np.where(yPath[1:]!=0, yPath, 0)
 
 end_time = time.time() # Stop timing the while loop
 execution_time = end_time - start_time
@@ -241,9 +240,9 @@ if plotCharts:
     # Distribution of survival times for particles
     plt.figure(figsize=(8, 8))
     if recordTrajectories:
-        effTstepNum = np.array([len(row[1:]!=0) for row in xPath])/num_steps
-        plt.plot(np.arange(0, num_particles, 1), np.sort(effTstepNum)[::-1], 'b-')
-    plt.plot(np.arange(0, num_particles, 1), np.sort(survivalTimeProb)[::-1], 'k-')
+        effTstepNum = np.array([np.count_nonzero(row) for row in xPath])/num_steps
+        plt.plot(np.arange(0, num_particles, 1), np.sort(effTstepNum)[::-1], 'b*')
+    plt.plot(np.arange(0, num_particles, 1), np.sort(survivalTimeDist)[::-1]/num_steps, 'k-')
 
 # Statistichs
 print(f"Execution time: {execution_time:.6f} seconds")
