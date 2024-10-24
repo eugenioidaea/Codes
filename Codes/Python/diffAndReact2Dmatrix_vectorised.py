@@ -8,23 +8,24 @@ plotCharts = True # It controls graphical features (disable when run on HPC)
 # recordVideo = False # It slows down the script
 recordTrajectories = True # It uses up memory
 lbxOn = False # It controls the left boundary condition
-degradation = True # Switch for the degradation of the particles
+degradation = False # Switch for the degradation of the particles
 
 if plotCharts:
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_steps = int(1e3) # Number of steps
+sim_time = int(1e3)
+dt = 0.1 # Time step
+num_steps = int(sim_time/dt) # Number of steps
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
-dt = 0.1 # Time step
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
 num_particles = int(1e2) # Number of particles in the simulation
 uby = 1 # Vertical Upper Boundary
 lby = -1 # Vertical Lower Boundary
-rbx = 100 # Horizontal Right Boundary
+rbx = 10 # Horizontal Right Boundary
 if lbxOn:
     lbx = 0 # Horizontal Left Boundary
 else:
@@ -55,7 +56,7 @@ inside = [True for _ in range(num_particles)]
 outsideAbove = [False for _ in range(num_particles)]
 outsideBelow = [False for _ in range(num_particles)]
 particleRT = np.zeros(num_particles) # Array which stores each particles' number of steps
-Time = np.linspace(dt, num_steps*dt, num_steps) # Array that stores time steps
+Time = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
 timeLinSpaced = np.linspace(dt, dt*num_steps, binsTime) # Linearly spaced bins
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(dt*num_steps), binsTime) # Logarithmic spaced bins
 xBins = np.linspace(lbx, rbx, binsSpace) # Linearly spaced bins
@@ -94,11 +95,11 @@ def analytical_seminf(x, t, D):
     y = (rbx-lbx)*np.exp(-x**2/(4*D*t))/(np.sqrt(4*np.pi*D*t**3))
     return y
 
-def degradation_fun(num_steps, dt, k, num_particles):
-    t_steps = np.linspace(0, num_steps*dt, num_steps)
+def degradation_fun(num_steps, k, num_particles):
+    t_steps = np.linspace(0, sim_time, num_steps)
     exp_prob = k*np.exp(-k*t_steps)
     exp_prob /= exp_prob.sum()
-    valueRange = np.linspace(0, num_steps, num_steps)
+    valueRange = np.linspace(0, sim_time, num_steps)
     survivalTimeDist = np.random.choice(valueRange, size=num_particles, p=exp_prob)
     return survivalTimeDist, exp_prob
 
@@ -107,11 +108,11 @@ start_time = time.time() # Start timing the while loop
 
 # Chemical degradation times
 if degradation:
-    survivalTimeDist, exp_prob = degradation_fun(num_steps, dt, k, num_particles)
+    survivalTimeDist, exp_prob = degradation_fun(num_steps, k, num_particles)
 else:
-    survivalTimeDist, exp_prob = np.ones(num_particles)
+    survivalTimeDist = np.ones(num_particles)*sim_time
 
-while (cdf<stopBTC/100*num_particles) & (t<num_steps*dt):
+while (cdf<stopBTC/100) & (t<sim_time):
 
     liveParticle = survivalTimeDist>t # Particles which are degradeted
 
@@ -166,9 +167,9 @@ while (cdf<stopBTC/100*num_particles) & (t<num_steps*dt):
     cdf = sum(pdf_part)
     t += dt    
 
-if recordTrajectories:
-    xPath = xPath[:, :int(t/dt)]
-    yPath = yPath[:, :int(t/dt)]
+#if recordTrajectories:
+#    xPath = xPath[:, :int(t/dt)]
+#    yPath = yPath[:, :int(t/dt)]
 
 end_time = time.time() # Stop timing the while loop
 execution_time = end_time - start_time
@@ -195,7 +196,7 @@ else:
 if plotCharts and recordTrajectories:
     plt.figure(figsize=(8, 8))
     for i in range(num_particles):
-        plt.plot(xPath[i], yPath[i], lw=0.5)
+        plt.plot(xPath[i][1:][xPath[i][1:]!=0], yPath[i][1:][yPath[i][1:]!=0], lw=0.5)
     plt.axhline(y=uby, color='r', linestyle='--', linewidth=2)
     plt.axhline(y=lby, color='r', linestyle='--', linewidth=2)
     if lbxOn:
@@ -217,18 +218,19 @@ if plotCharts:
     plt.plot(Time, np.cumsum(pdf_part)/num_particles)
     plt.xscale('log')
 
-    # 1-CDF
-    plt.figure(figsize=(8, 8))
-    plt.plot(Time, 1-np.cumsum(pdf_part)/num_particles)
-    plt.xscale('log')
-    plt.yscale('log')
+    if cdf>0:
+        # 1-CDF
+        plt.figure(figsize=(8, 8))
+        plt.plot(Time, 1-np.cumsum(pdf_part)/num_particles)
+        plt.xscale('log')
+        plt.yscale('log')
 
-    # Binning for plotting the pdf from a Lagrangian vector
-    countsLog, binEdgesLog = np.histogram(particleRT, timeLogSpaced, density=True)
-    plt.figure(figsize=(8, 8))
-    plt.plot(binEdgesLog[:-1][countsLog!=0], countsLog[countsLog!=0], 'r*')
-    plt.xscale('log')
-    plt.yscale('log')
+        # Binning for plotting the pdf from a Lagrangian vector
+        countsLog, binEdgesLog = np.histogram(particleRT, timeLogSpaced, density=True)
+        plt.figure(figsize=(8, 8))
+        plt.plot(binEdgesLog[:-1][countsLog!=0], countsLog[countsLog!=0], 'r*')
+        plt.xscale('log')
+        plt.yscale('log')
 
     # Spatial concentration profile at 'recordSpatialConc' time
     plt.figure(figsize=(8, 8))
@@ -240,9 +242,9 @@ if plotCharts:
     # Distribution of survival times for particles
     plt.figure(figsize=(8, 8))
     if recordTrajectories:
-        effTstepNum = np.array([np.count_nonzero(row) for row in xPath])/num_steps
+        effTstepNum = np.array([np.count_nonzero(row)*dt for row in xPath])
         plt.plot(np.arange(0, num_particles, 1), np.sort(effTstepNum)[::-1], 'b*')
-    plt.plot(np.arange(0, num_particles, 1), np.sort(survivalTimeDist)[::-1]/num_steps, 'k-')
+    plt.plot(np.arange(0, num_particles, 1), np.sort(survivalTimeDist)[::-1], 'k-')
 
 # Statistichs
 print(f"Execution time: {execution_time:.6f} seconds")
