@@ -7,15 +7,16 @@ import time
 plotCharts = True # It controls graphical features (disable when run on HPC)
 # recordVideo = False # It slows down the script
 recordTrajectories = True # It uses up memory
-lbxOn = False # It controls the left boundary condition
+lbxOn = True # It controls the left boundary condition
 degradation = False # Switch for the degradation of the particles
+reflection = False # Switch between reflection and adsorption
 
 if plotCharts:
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-sim_time = int(1e3)
+sim_time = int(1e2)
 dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
@@ -53,6 +54,7 @@ if recordTrajectories:
     xPath = np.zeros((num_particles, num_steps))  # Matrix for storing x trajectories
     yPath = np.zeros((num_particles, num_steps))  # Matrix for storing y trajectories
 inside = [True for _ in range(num_particles)]
+crossOutLeft = [False for _ in range(num_particles)]
 outsideAbove = [False for _ in range(num_particles)]
 outsideBelow = [False for _ in range(num_particles)]
 particleRT = np.zeros(num_particles) # Array which stores each particles' number of steps
@@ -85,6 +87,12 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
     while np.any((y[reflected]<lby) | (y[reflected]>uby)): # Check on the positions of all the particles that should not cross
         y[reflected[y[reflected]>uby]] = -y[reflected[y[reflected]>uby]] + 2*uby # Reflect them back
         y[reflected[y[reflected]<lby]] = -y[reflected[y[reflected]<lby]] + 2*lby # Reflect them back
+    return x, y
+
+def apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft):
+    x = np.where(crossOutLeft, lbx, x)
+    y = np.where(crossOutAbove, uby, y)  # Store x positions for the current time step
+    y = np.where(crossOutBelow, lby, y)  # Store y positions for the current time step
     return x, y
 
 def analytical_inf(x, t, D):
@@ -122,14 +130,18 @@ while (cdf<stopBTC/100) & (t<sim_time):
         yPath[:, int(t/dt)] = np.where(liveParticle, y, 0)  # Store y positions for the current time step
 
     isIn = abs(x)<rbx # Get the positions of the particles that are in the domain (wheter inside or outside the fracture)
-    fracture = isIn & inside & liveParticle # Particles in the domain and inside the fracture
+    fracture = isIn & inside & liveParticle # Particles in the domain and inside the fracture and not degradeted yet
     outside = np.array(outsideAbove) | np.array(outsideBelow) # Particles outside the fracture
-    matrix = isIn & outside & liveParticle # Particles in the domain and outside the fracture
+    matrix = isIn & outside & liveParticle # Particles in the domain and outside the fracture and not degradeted yet
+    if lbxOn:
+        fracture = fracture & np.logical_not(crossOutLeft)
+        matrix = matrix & np.logical_not(crossOutLeft)
 
     # Update the position of all the particles at a given time steps according to the Langevin dynamics
     x, y = update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta)
 
     # Particles which in principles would cross the fractures' walls
+    crossOutLeft = (x<lbx)
     crossOutAbove = fracture & (y>uby)
     crossOutBelow = fracture & (y<lby)
     crossInAbove = outsideAbove  & (y > lby) & (y < uby)
@@ -151,9 +163,12 @@ while (cdf<stopBTC/100) & (t<sim_time):
     crossOutToInAbove = probCrossInAbove & crossInAbove
     crossOutToInBelow = probCrossInBelow & crossInBelow
     
-    # Update the reflected particles' positions according to an elastic reflection dynamic
-    x, y = apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow,
-                            crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, lbxOn)
+    if reflection:
+        # Update the reflected particles' positions according to an elastic reflection dynamic
+        x, y = apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow,
+                                crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, lbxOn)
+    else:
+        x, y = apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft)
 
     inside = (y<uby) & (y>lby) # Particles inside the fracture
     outsideAbove = y>uby # Particles in the porous matrix above the fracture
@@ -166,10 +181,6 @@ while (cdf<stopBTC/100) & (t<sim_time):
 
     cdf = sum(pdf_part)
     t += dt    
-
-#if recordTrajectories:
-#    xPath = xPath[:, :int(t/dt)]
-#    yPath = yPath[:, :int(t/dt)]
 
 end_time = time.time() # Stop timing the while loop
 execution_time = end_time - start_time
@@ -239,12 +250,13 @@ if plotCharts:
     if lbxOn:
         plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
 
-    # Distribution of survival times for particles
-    plt.figure(figsize=(8, 8))
-    if recordTrajectories:
-        effTstepNum = np.array([np.count_nonzero(row)*dt for row in xPath])
-        plt.plot(np.arange(0, num_particles, 1), np.sort(effTstepNum)[::-1], 'b*')
-    plt.plot(np.arange(0, num_particles, 1), np.sort(survivalTimeDist)[::-1], 'k-')
+    if degradation:
+        # Distribution of survival times for particles
+        plt.figure(figsize=(8, 8))
+        if recordTrajectories:
+            effTstepNum = np.array([np.count_nonzero(row)*dt for row in xPath])
+            plt.plot(np.arange(0, num_particles, 1), np.sort(effTstepNum)[::-1], 'b*')
+        plt.plot(np.arange(0, num_particles, 1), np.sort(survivalTimeDist)[::-1], 'k-')
 
 # Statistichs
 print(f"Execution time: {execution_time:.6f} seconds")
