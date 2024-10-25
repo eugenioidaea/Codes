@@ -8,8 +8,8 @@ plotCharts = True # It controls graphical features (disable when run on HPC)
 # recordVideo = False # It slows down the script
 recordTrajectories = True # It uses up memory
 lbxOn = True # It controls the left boundary condition
-degradation = False # Switch for the degradation of the particles
-reflection = False # Switch between reflection and adsorption
+degradation = True # Switch for the degradation of the particles
+reflection = True # Switch between reflection and adsorption
 
 if plotCharts:
     import matplotlib.pyplot as plt
@@ -170,6 +170,7 @@ while (cdf<stopBTC/100) & (t<sim_time):
     else:
         x, y = apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft)
 
+    crossOutLeft = (x==lbx)
     inside = (y<uby) & (y>lby) # Particles inside the fracture
     outsideAbove = y>uby # Particles in the porous matrix above the fracture
     outsideBelow = y<lby # Particles in the porous matrix below the fracture
@@ -179,7 +180,7 @@ while (cdf<stopBTC/100) & (t<sim_time):
     if (t <= recordSpatialConc) & (recordSpatialConc < t+dt):
         countsSpace, binEdgeSpace = np.histogram(x, xBins, density=True)
 
-    cdf = sum(pdf_part)
+    cdf = sum(pdf_part)/num_particles
     t += dt    
 
 end_time = time.time() # Stop timing the while loop
@@ -207,7 +208,7 @@ else:
 if plotCharts and recordTrajectories:
     plt.figure(figsize=(8, 8))
     for i in range(num_particles):
-        plt.plot(xPath[i][1:][xPath[i][1:]!=0], yPath[i][1:][yPath[i][1:]!=0], lw=0.5)
+        plt.plot(xPath[i][:][xPath[i][:]!=0], yPath[i][:][xPath[i][:]!=0], lw=0.5)
     plt.axhline(y=uby, color='r', linestyle='--', linewidth=2)
     plt.axhline(y=lby, color='r', linestyle='--', linewidth=2)
     if lbxOn:
