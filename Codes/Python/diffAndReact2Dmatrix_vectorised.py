@@ -8,15 +8,15 @@ plotCharts = True # It controls graphical features (disable when run on HPC)
 # recordVideo = False # It slows down the script
 recordTrajectories = True # It uses up memory
 lbxOn = True # It controls the left boundary condition
-degradation = True # Switch for the degradation of the particles
-reflection = True # Switch between reflection and adsorption
+degradation = False # Switch for the degradation of the particles
+reflection = False # Switch between reflection and adsorption
 
 if plotCharts:
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-sim_time = int(1e2)
+sim_time = int(1e3)
 dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
@@ -41,7 +41,9 @@ binsTime = 50 # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
-k = 0.01 # Degradation kinetic constant
+k_deg = 0.01 # Degradation kinetic constant
+k_ads = 0.1 # Adsorption constant
+ap = 0.4 # Adsorption probability
 
 # Initialisation ####################################################################
 t = 0 # Time
@@ -60,8 +62,9 @@ outsideBelow = [False for _ in range(num_particles)]
 particleRT = np.zeros(num_particles) # Array which stores each particles' number of steps
 Time = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
 timeLinSpaced = np.linspace(dt, dt*num_steps, binsTime) # Linearly spaced bins
-timeLogSpaced = np.logspace(np.log10(dt), np.log10(dt*num_steps), binsTime) # Logarithmic spaced bins
+timeLogSpaced = np.logspace(np.log10(dt), np.log10(dt*num_steps), binsTime) # Logarithmically spaced bins
 xBins = np.linspace(lbx, rbx, binsSpace) # Linearly spaced bins
+xLogBins = np.logspace(np.log10(1e-10), np.log10(rbx), binsSpace) # Logarithmically spaced bins
 
 # Functions ##########################################################################
 def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
@@ -89,34 +92,45 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
         y[reflected[y[reflected]<lby]] = -y[reflected[y[reflected]<lby]] + 2*lby # Reflect them back
     return x, y
 
-def apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft):
-    x = np.where(crossOutLeft, lbx, x)
-    y = np.where(crossOutAbove, uby, y)  # Store x positions for the current time step
-    y = np.where(crossOutBelow, lby, y)  # Store y positions for the current time step
+def apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist):
+    x = np.where(crossOutLeft & (adsDist<=ap), lbx, x)
+    y = np.where(crossOutAbove & (adsDist<=ap), uby, y)  # Store x positions for the current time step
+    y = np.where(crossOutBelow & (adsDist<=ap), lby, y)  # Store y positions for the current time step
+    x = np.where(crossOutLeft & (adsDist>ap), -x+2*lbx, x)
+    y = np.where(crossOutAbove & (adsDist>ap), -y+2*uby, y)  # Store x positions for the current time step
+    y = np.where(crossOutBelow & (adsDist>ap), -y+2*lby, y)  # Store y positions for the current time step        
     return x, y
+
+def analytical_seminf(x, t, D):
+    y = x*np.exp(-x**2/(4*D*t))/(np.sqrt(4*np.pi*D*t**3))
+    return y
 
 def analytical_inf(x, t, D):
     y = np.exp(-x**2/(4*D*t))/(np.sqrt(4*np.pi*D*t))
     return y
 
-def analytical_seminf(x, t, D):
-    y = (rbx-lbx)*np.exp(-x**2/(4*D*t))/(np.sqrt(4*np.pi*D*t**3))
-    return y
-
-def degradation_fun(num_steps, k, num_particles):
+def degradation_dist(num_steps, k_deg, num_particles):
     t_steps = np.linspace(0, sim_time, num_steps)
-    exp_prob = k*np.exp(-k*t_steps)
+    exp_prob = k_deg*np.exp(-k_deg*t_steps)
     exp_prob /= exp_prob.sum()
     valueRange = np.linspace(0, sim_time, num_steps)
     survivalTimeDist = np.random.choice(valueRange, size=num_particles, p=exp_prob)
     return survivalTimeDist, exp_prob
+
+def adsorption_dist(k_ads):
+    points = np.linspace(0, 1, 1000)
+    expProbAds = np.exp(-k_ads*points)
+    expProbAds /= expProbAds.sum()
+    valueRange = np.linspace(0, 1, 1000)
+    adsDist = np.random.choice(valueRange, size=num_particles, p=expProbAds)
+    return adsDist
 
 # Time loop ###########################################################################
 start_time = time.time() # Start timing the while loop
 
 # Chemical degradation times
 if degradation:
-    survivalTimeDist, exp_prob = degradation_fun(num_steps, k, num_particles)
+    survivalTimeDist, exp_prob = degradation_dist(num_steps, k_deg, num_particles)
 else:
     survivalTimeDist = np.ones(num_particles)*sim_time
 
@@ -168,7 +182,8 @@ while (cdf<stopBTC/100) & (t<sim_time):
         x, y = apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow,
                                 crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, lbxOn)
     else:
-        x, y = apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft)
+        adsDist = adsorption_dist(k_ads)
+        x, y = apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist)
 
     crossOutLeft = (x==lbx)
     inside = (y<uby) & (y>lby) # Particles inside the fracture
@@ -178,7 +193,10 @@ while (cdf<stopBTC/100) & (t<sim_time):
     pdf_part[int(t/dt)] = sum(abs(x[isIn])>rbx) # Count the particle which exit the right boundary at each time step
 
     if (t <= recordSpatialConc) & (recordSpatialConc < t+dt):
-        countsSpace, binEdgeSpace = np.histogram(x, xBins, density=True)
+        if lbxOn:
+            countsSpaceLog, binEdgeSpaceLog = np.histogram(x, xLogBins, density=True)
+        else:
+            countsSpace, binEdgeSpace = np.histogram(x, xBins, density=True)
 
     cdf = sum(pdf_part)/num_particles
     t += dt    
@@ -199,7 +217,7 @@ if (dt*10>(uby-lby)**2/Df):
 
 # Verificaiton of the code
 if lbxOn:
-    yAnalytical = analytical_seminf(xBins, recordSpatialConc, Df)
+    yAnalytical = analytical_seminf(xLogBins, recordSpatialConc, Df)
 else:
     yAnalytical = analytical_inf(xBins, recordSpatialConc, Df)
 
@@ -224,11 +242,13 @@ if plotCharts:
     plt.figure(figsize=(8, 8))
     plt.plot(Time, pdf_part/num_particles)
     plt.xscale('log')
+    plt.title("PDF")
 
     # CDF
     plt.figure(figsize=(8, 8))
     plt.plot(Time, np.cumsum(pdf_part)/num_particles)
     plt.xscale('log')
+    plt.title("CDF")
 
     if cdf>0:
         # 1-CDF
@@ -236,6 +256,7 @@ if plotCharts:
         plt.plot(Time, 1-np.cumsum(pdf_part)/num_particles)
         plt.xscale('log')
         plt.yscale('log')
+        plt.title("1-CDF")
 
         # Binning for plotting the pdf from a Lagrangian vector
         countsLog, binEdgesLog = np.histogram(particleRT, timeLogSpaced, density=True)
@@ -246,10 +267,14 @@ if plotCharts:
 
     # Spatial concentration profile at 'recordSpatialConc' time
     plt.figure(figsize=(8, 8))
-    plt.plot(binEdgeSpace[:-1][countsSpace!=0], countsSpace[countsSpace!=0], 'b-')
-    plt.plot(xBins, yAnalytical, 'k-')
     if lbxOn:
+        plt.plot(binEdgeSpaceLog[:-1][countsSpaceLog!=0], countsSpaceLog[countsSpaceLog!=0], 'b-')    
+        plt.plot(xLogBins, yAnalytical, 'k-')
         plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
+    else:
+        plt.plot(binEdgeSpace[:-1][countsSpace!=0], countsSpace[countsSpace!=0], 'b-')
+        plt.plot(xBins, yAnalytical, 'k-')
+    plt.title("Empirical vs analytical solution")
 
     if degradation:
         # Distribution of survival times for particles
@@ -258,6 +283,7 @@ if plotCharts:
             effTstepNum = np.array([np.count_nonzero(row)*dt for row in xPath])
             plt.plot(np.arange(0, num_particles, 1), np.sort(effTstepNum)[::-1], 'b*')
         plt.plot(np.arange(0, num_particles, 1), np.sort(survivalTimeDist)[::-1], 'k-')
+        plt.title("Survival time distribution")
 
 # Statistichs
 print(f"Execution time: {execution_time:.6f} seconds")
