@@ -7,9 +7,9 @@ import time
 plotCharts = True # It controls graphical features (disable when run on HPC)
 # recordVideo = False # It slows down the script
 recordTrajectories = True # It uses up memory
-lbxOn = True # It controls the left boundary condition
+lbxOn = False # It controls the left boundary condition
 degradation = False # Switch for the degradation of the particles
-reflection = False # Switch between reflection and adsorption
+reflection = True # Switch between reflection and adsorption
 
 if plotCharts:
     import matplotlib.pyplot as plt
@@ -17,16 +17,17 @@ if plotCharts:
 
 # Parameters #################################################################
 sim_time = int(1e3)
-dt = 0.1 # Time step
+dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
+x0 = 0 # Initial horizontal position of the particles
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e2) # Number of particles in the simulation
-uby = 1 # Vertical Upper Boundary
-lby = -1 # Vertical Lower Boundary
-rbx = 10 # Horizontal Right Boundary
+num_particles = int(1e3) # Number of particles in the simulation
+uby = 1 # Upper Boundary
+lby = -1 # Lower Boundary
+rbx = 5 # Control Plane
 if lbxOn:
     lbx = 0 # Horizontal Left Boundary
 else:
@@ -50,7 +51,7 @@ t = 0 # Time
 i = 0 # Index for converting Eulerian pdf to Lagrangian pdf
 cdf = 0
 pdf_part = np.zeros(num_steps)
-x = np.zeros(num_particles) # Horizontal initial positions
+x = np.ones(num_particles)*x0 # Horizontal initial positions
 y = np.linspace(lby+init_shift, uby-init_shift, num_particles) # Vertical initial positions
 if recordTrajectories:
     xPath = np.zeros((num_particles, num_steps))  # Matrix for storing x trajectories
@@ -144,7 +145,7 @@ while (cdf<stopBTC/100) & (t<sim_time):
         yPath[:, int(t/dt)] = np.where(liveParticle, y, 0)  # Store y positions for the current time step
 
     isIn = abs(x)<rbx # Get the positions of the particles that are in the domain (wheter inside or outside the fracture)
-    fracture = isIn & inside & liveParticle # Particles in the domain and inside the fracture and not degradeted yet
+    fracture = inside & liveParticle # Particles in the domain and inside the fracture and not degradeted yet
     outside = np.array(outsideAbove) | np.array(outsideBelow) # Particles outside the fracture
     matrix = isIn & outside & liveParticle # Particles in the domain and outside the fracture and not degradeted yet
     if lbxOn:
@@ -184,8 +185,8 @@ while (cdf<stopBTC/100) & (t<sim_time):
     else:
         adsDist = adsorption_dist(k_ads)
         x, y = apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist)
+        crossOutLeft = (x==lbx)
 
-    crossOutLeft = (x==lbx)
     inside = (y<uby) & (y>lby) # Particles inside the fracture
     outsideAbove = y>uby # Particles in the porous matrix above the fracture
     outsideBelow = y<lby # Particles in the porous matrix below the fracture
@@ -231,6 +232,7 @@ if plotCharts and recordTrajectories:
     plt.axhline(y=lby, color='r', linestyle='--', linewidth=2)
     if lbxOn:
         plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
+        plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
     plt.title("2D Diffusion Process (Langevin Equation)")
     plt.xlabel("X Position")
     plt.ylabel("Y Position")
@@ -271,9 +273,11 @@ if plotCharts:
         plt.plot(binEdgeSpaceLog[:-1][countsSpaceLog!=0], countsSpaceLog[countsSpaceLog!=0], 'b-')    
         plt.plot(xLogBins, yAnalytical, 'k-')
         plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
+        plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
     else:
         plt.plot(binEdgeSpace[:-1][countsSpace!=0], countsSpace[countsSpace!=0], 'b-')
         plt.plot(xBins, yAnalytical, 'k-')
+        plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
     plt.title("Empirical vs analytical solution")
 
     if degradation:
