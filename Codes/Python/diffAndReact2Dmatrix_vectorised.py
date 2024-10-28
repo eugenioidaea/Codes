@@ -7,7 +7,8 @@ import time
 plotCharts = True # It controls graphical features (disable when run on HPC)
 # recordVideo = False # It slows down the script
 recordTrajectories = True # It uses up memory
-lbxOn = False # It controls the left boundary condition
+lbxOn = False # It controls the position of the left boundary
+lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 degradation = False # Switch for the degradation of the particles
 reflection = True # Switch between reflection and adsorption
 
@@ -27,9 +28,9 @@ stdEta = 1 # Spatial jump distribution paramenter
 num_particles = int(1e3) # Number of particles in the simulation
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
-rbx = 5 # Control Plane
+rbx = 10 # Control Plane
 if lbxOn:
-    lbx = 0 # Horizontal Left Boundary
+    lbx = 0 # Left Boundary
 else:
     lbx = -rbx
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
@@ -44,7 +45,7 @@ recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.01 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
-ap = 0.4 # Adsorption probability
+ap = 1 # Adsorption probability
 
 # Initialisation ####################################################################
 t = 0 # Time
@@ -65,7 +66,7 @@ Time = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
 timeLinSpaced = np.linspace(dt, dt*num_steps, binsTime) # Linearly spaced bins
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(dt*num_steps), binsTime) # Logarithmically spaced bins
 xBins = np.linspace(lbx, rbx, binsSpace) # Linearly spaced bins
-xLogBins = np.logspace(np.log10(1e-10), np.log10(rbx), binsSpace) # Logarithmically spaced bins
+xLogBins = np.logspace(np.log10(1e-10), np.log10(x0), binsSpace) # Logarithmically spaced bins
 
 # Functions ##########################################################################
 def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
@@ -78,7 +79,10 @@ def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
 def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow, 
                      crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, lbxOn):
     if lbxOn:
-        x = np.where(x<lbx, -x+2*lbx, x)
+        if lbxAdsorption:
+            x = np.where(crossOutLeft, lbx, x)
+        else:
+            x = np.where(x<lbx, -x+2*lbx, x)
     y[crossOutAbove] = np.where(crossInToOutAbove[crossOutAbove], y[crossOutAbove], -y[crossOutAbove]+2*uby)
     y[crossOutBelow] = np.where(crossInToOutBelow[crossOutBelow], y[crossOutBelow], -y[crossOutBelow]+2*lby)
     y[crossInAbove] = np.where(crossOutToInAbove[crossInAbove], y[crossInAbove], -y[crossInAbove]+2*uby)
@@ -144,7 +148,7 @@ while (cdf<stopBTC/100) & (t<sim_time):
         xPath[:, int(t/dt)] = np.where(liveParticle, x, 0)  # Store x positions for the current time step
         yPath[:, int(t/dt)] = np.where(liveParticle, y, 0)  # Store y positions for the current time step
 
-    isIn = abs(x)<rbx # Get the positions of the particles that are in the domain (wheter inside or outside the fracture)
+    isIn = abs(x)<rbx # Get the positions of the particles that are located within the control planes (wheter inside or outside the fracture)
     fracture = inside & liveParticle # Particles in the domain and inside the fracture and not degradeted yet
     outside = np.array(outsideAbove) | np.array(outsideBelow) # Particles outside the fracture
     matrix = isIn & outside & liveParticle # Particles in the domain and outside the fracture and not degradeted yet
@@ -156,7 +160,6 @@ while (cdf<stopBTC/100) & (t<sim_time):
     x, y = update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta)
 
     # Particles which in principles would cross the fractures' walls
-    crossOutLeft = (x<lbx)
     crossOutAbove = fracture & (y>uby)
     crossOutBelow = fracture & (y<lby)
     crossInAbove = outsideAbove  & (y > lby) & (y < uby)
@@ -177,7 +180,11 @@ while (cdf<stopBTC/100) & (t<sim_time):
     crossInToOutBelow = probCrossOutBelow & crossOutBelow
     crossOutToInAbove = probCrossInAbove & crossInAbove
     crossOutToInBelow = probCrossInBelow & crossInBelow
-    
+
+    # Particles hitting the left control plane
+    if lbxOn:
+        crossOutLeft = (x<lbx)
+
     if reflection:
         # Update the reflected particles' positions according to an elastic reflection dynamic
         x, y = apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow,
@@ -185,16 +192,16 @@ while (cdf<stopBTC/100) & (t<sim_time):
     else:
         adsDist = adsorption_dist(k_ads)
         x, y = apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist)
-        crossOutLeft = (x==lbx)
-
+        
+    crossOutLeft = (x==lbx)
     inside = (y<uby) & (y>lby) # Particles inside the fracture
     outsideAbove = y>uby # Particles in the porous matrix above the fracture
     outsideBelow = y<lby # Particles in the porous matrix below the fracture
 
-    pdf_part[int(t/dt)] = sum(abs(x[isIn])>rbx) # Count the particle which exit the right boundary at each time step
+    pdf_part[int(t/dt)] = sum(abs(x[isIn])>rbx) # Count the particle which exit the control planes at each time step
 
     if (t <= recordSpatialConc) & (recordSpatialConc < t+dt):
-        if lbxOn:
+        if lbxOn & lbxAdsorption:
             countsSpaceLog, binEdgeSpaceLog = np.histogram(x, xLogBins, density=True)
         else:
             countsSpace, binEdgeSpace = np.histogram(x, xBins, density=True)
@@ -230,9 +237,11 @@ if plotCharts and recordTrajectories:
         plt.plot(xPath[i][:][xPath[i][:]!=0], yPath[i][:][xPath[i][:]!=0], lw=0.5)
     plt.axhline(y=uby, color='r', linestyle='--', linewidth=2)
     plt.axhline(y=lby, color='r', linestyle='--', linewidth=2)
+    plt.axvline(x=lbx, color='b', linestyle='--', linewidth=2)
+    plt.axvline(x=rbx, color='b', linestyle='--', linewidth=2)
+    plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
     if lbxOn:
         plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
-        plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
     plt.title("2D Diffusion Process (Langevin Equation)")
     plt.xlabel("X Position")
     plt.ylabel("Y Position")
@@ -266,6 +275,7 @@ if plotCharts:
         plt.plot(binEdgesLog[:-1][countsLog!=0], countsLog[countsLog!=0], 'r*')
         plt.xscale('log')
         plt.yscale('log')
+        plt.title("Lagrangian PDF")
 
     # Spatial concentration profile at 'recordSpatialConc' time
     plt.figure(figsize=(8, 8))
