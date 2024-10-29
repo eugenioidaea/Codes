@@ -10,7 +10,7 @@ recordTrajectories = True # It uses up memory
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 degradation = False # Switch for the degradation of the particles
-reflection = True # Switch between reflection and adsorption
+reflection = True # It defines the upper and lower fracture's walls behaviour, wheather if particles are reflected of adsorpted
 
 if plotCharts:
     import matplotlib.pyplot as plt
@@ -31,8 +31,6 @@ lby = -1 # Lower Boundary
 cpx = 10 # Vertical Control Plane
 if lbxOn:
     lbx = 0 # Left Boundary
-else:
-    lbx = -cpx
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
 reflectedInward = 100 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
@@ -41,7 +39,7 @@ fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
 binsTime = 50 # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
-recordSpatialConc = int(50) # Concentration profile recorded time
+recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.01 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
@@ -65,8 +63,8 @@ particleRT = np.zeros(num_particles) # Array which stores each particles' number
 Time = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
 timeLinSpaced = np.linspace(dt, dt*num_steps, binsTime) # Linearly spaced bins
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(dt*num_steps), binsTime) # Logarithmically spaced bins
-xBins = np.linspace(lbx, cpx, binsSpace) # Linearly spaced bins
-xLogBins = np.logspace(np.log10(1e-10), np.log10(x0), binsSpace) # Logarithmically spaced bins
+xBins = np.linspace(-cpx, cpx, binsSpace) # Linearly spaced bins
+xLogBins = np.logspace(np.log10(1e-10), np.log10(cpx), binsSpace) # Logarithmically spaced bins
 
 # Functions ##########################################################################
 def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
@@ -98,10 +96,11 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
     return x, y
 
 def apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist):
-    x = np.where(crossOutLeft & (adsDist<=ap), lbx, x)
+    if lbxOn:
+        x = np.where(crossOutLeft & (adsDist<=ap), lbx, x)
+        x = np.where(crossOutLeft & (adsDist>ap), -x+2*lbx, x)
     y = np.where(crossOutAbove & (adsDist<=ap), uby, y)  # Store x positions for the current time step
     y = np.where(crossOutBelow & (adsDist<=ap), lby, y)  # Store y positions for the current time step
-    x = np.where(crossOutLeft & (adsDist>ap), -x+2*lbx, x)
     y = np.where(crossOutAbove & (adsDist>ap), -y+2*uby, y)  # Store x positions for the current time step
     y = np.where(crossOutBelow & (adsDist>ap), -y+2*lby, y)  # Store y positions for the current time step        
     return x, y
@@ -193,7 +192,8 @@ while (cdf<stopBTC/100) & (t<sim_time):
         adsDist = adsorption_dist(k_ads)
         x, y = apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist)
         
-    crossOutLeft = (x==lbx)
+    if lbxOn:
+        crossOutLeft = (x==lbx)
     inside = (y<uby) & (y>lby) # Particles inside the fracture
     outsideAbove = y>uby # Particles in the porous matrix above the fracture
     outsideBelow = y<lby # Particles in the porous matrix below the fracture
@@ -227,9 +227,9 @@ if (dt*10>(uby-lby)**2/Df):
 
 # Verificaiton of the code
 if lbxOn:
-    yAnalytical = analytical_seminf(xLogBins, recordSpatialConc, Df)
+    yAnalytical = analytical_seminf(binCenterSpaceLog, recordSpatialConc, Df)
 else:
-    yAnalytical = analytical_inf(xBins, recordSpatialConc, Df)
+    yAnalytical = analytical_inf(binCenterSpace, recordSpatialConc, Df)
 
 # Plot section #########################################################################
 # Trajectories
@@ -239,8 +239,8 @@ if plotCharts and recordTrajectories:
         plt.plot(xPath[i][:][xPath[i][:]!=0], yPath[i][:][xPath[i][:]!=0], lw=0.5)
     plt.axhline(y=uby, color='r', linestyle='--', linewidth=2)
     plt.axhline(y=lby, color='r', linestyle='--', linewidth=2)
-    plt.axvline(x=lbx, color='b', linestyle='--', linewidth=2)
     plt.axvline(x=cpx, color='b', linestyle='--', linewidth=2)
+    plt.axvline(x=-cpx, color='b', linestyle='--', linewidth=2)
     plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
     if lbxOn:
         plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
@@ -282,18 +282,18 @@ if plotCharts:
     # Spatial concentration profile at 'recordSpatialConc' time
     plt.figure(figsize=(8, 8))
     if lbxOn:
-        binEdges = binCenterSpaceLog[countsSpaceLog!=0]
-        counts = countsSpaceLog[countsSpaceLog!=0]
-        bins = xLogBins
+        binCenters = binCenterSpaceLog
+        counts = countsSpaceLog
         plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
     else:
-        binEdges = binCenterSpace[countsSpace!=0]
-        counts = countsSpace[countsSpace!=0]
-        bins = xBins
-    plt.plot(binEdges, counts, 'b-')
-    plt.plot(bins, yAnalytical, 'k-')
+        binCenters = binCenterSpace
+        counts = countsSpace
+    plt.plot(binCenters, counts, 'b-')
+    plt.plot(binCenters, yAnalytical, color='green', linestyle='-')
     plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
-    yAnalytical = (yAnalytical[:-1] + yAnalytical[1:]) / 2
+    plt.axvline(x=cpx, color='b', linestyle='--', linewidth=2)
+    plt.axvline(x=-cpx, color='b', linestyle='--', linewidth=2)
+    # yAnalytical = (yAnalytical[:-1] + yAnalytical[1:]) / 2
     plt.title("Empirical vs analytical solution")
 
     if degradation:
