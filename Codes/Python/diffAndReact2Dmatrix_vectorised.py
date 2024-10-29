@@ -7,10 +7,10 @@ import time
 plotCharts = True # It controls graphical features (disable when run on HPC)
 # recordVideo = False # It slows down the script
 recordTrajectories = True # It uses up memory
-lbxOn = False # It controls the position of the left boundary
-lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
+lbxOn = True # It controls the position of the left boundary
+lbxAdsorption = True # It controls whether the particles get adsorpted or reflected on the left boundary 
 degradation = False # Switch for the degradation of the particles
-reflection = True # It defines the upper and lower fracture's walls behaviour, wheather if particles are reflected of adsorpted
+reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 
 if plotCharts:
     import matplotlib.pyplot as plt
@@ -20,7 +20,7 @@ if plotCharts:
 sim_time = int(1e3)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-x0 = 0 # Initial horizontal position of the particles
+x0 = 4 # Initial horizontal position of the particles
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 meanEta = 0 # Spatial jump distribution paramenter
