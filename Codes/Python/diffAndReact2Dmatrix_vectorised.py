@@ -28,11 +28,11 @@ stdEta = 1 # Spatial jump distribution paramenter
 num_particles = int(1e3) # Number of particles in the simulation
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
-rbx = 10 # Control Plane
+cpx = 10 # Vertical Control Plane
 if lbxOn:
     lbx = 0 # Left Boundary
 else:
-    lbx = -rbx
+    lbx = -cpx
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
 reflectedInward = 100 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
@@ -41,7 +41,7 @@ fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
 binsTime = 50 # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
-recordSpatialConc = int(1e2) # Concentration profile recorded time
+recordSpatialConc = int(50) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.01 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
@@ -65,7 +65,7 @@ particleRT = np.zeros(num_particles) # Array which stores each particles' number
 Time = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
 timeLinSpaced = np.linspace(dt, dt*num_steps, binsTime) # Linearly spaced bins
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(dt*num_steps), binsTime) # Logarithmically spaced bins
-xBins = np.linspace(lbx, rbx, binsSpace) # Linearly spaced bins
+xBins = np.linspace(lbx, cpx, binsSpace) # Linearly spaced bins
 xLogBins = np.logspace(np.log10(1e-10), np.log10(x0), binsSpace) # Logarithmically spaced bins
 
 # Functions ##########################################################################
@@ -148,7 +148,7 @@ while (cdf<stopBTC/100) & (t<sim_time):
         xPath[:, int(t/dt)] = np.where(liveParticle, x, 0)  # Store x positions for the current time step
         yPath[:, int(t/dt)] = np.where(liveParticle, y, 0)  # Store y positions for the current time step
 
-    isIn = abs(x)<rbx # Get the positions of the particles that are located within the control planes (wheter inside or outside the fracture)
+    isIn = abs(x)<cpx # Get the positions of the particles that are located within the control planes (wheter inside or outside the fracture)
     fracture = inside & liveParticle # Particles in the domain and inside the fracture and not degradeted yet
     outside = np.array(outsideAbove) | np.array(outsideBelow) # Particles outside the fracture
     matrix = isIn & outside & liveParticle # Particles in the domain and outside the fracture and not degradeted yet
@@ -198,13 +198,15 @@ while (cdf<stopBTC/100) & (t<sim_time):
     outsideAbove = y>uby # Particles in the porous matrix above the fracture
     outsideBelow = y<lby # Particles in the porous matrix below the fracture
 
-    pdf_part[int(t/dt)] = sum(abs(x[isIn])>rbx) # Count the particle which exit the control planes at each time step
+    pdf_part[int(t/dt)] = sum(abs(x[isIn])>cpx) # Count the particle which exit the control planes at each time step
 
     if (t <= recordSpatialConc) & (recordSpatialConc < t+dt):
         if lbxOn & lbxAdsorption:
             countsSpaceLog, binEdgeSpaceLog = np.histogram(x, xLogBins, density=True)
+            binCenterSpaceLog = (binEdgeSpaceLog[:-1] + binEdgeSpaceLog[1:]) / 2
         else:
             countsSpace, binEdgeSpace = np.histogram(x, xBins, density=True)
+            binCenterSpace = (binEdgeSpace[:-1] + binEdgeSpace[1:]) / 2
 
     cdf = sum(pdf_part)/num_particles
     t += dt    
@@ -238,7 +240,7 @@ if plotCharts and recordTrajectories:
     plt.axhline(y=uby, color='r', linestyle='--', linewidth=2)
     plt.axhline(y=lby, color='r', linestyle='--', linewidth=2)
     plt.axvline(x=lbx, color='b', linestyle='--', linewidth=2)
-    plt.axvline(x=rbx, color='b', linestyle='--', linewidth=2)
+    plt.axvline(x=cpx, color='b', linestyle='--', linewidth=2)
     plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
     if lbxOn:
         plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
@@ -280,14 +282,18 @@ if plotCharts:
     # Spatial concentration profile at 'recordSpatialConc' time
     plt.figure(figsize=(8, 8))
     if lbxOn:
-        plt.plot(binEdgeSpaceLog[:-1][countsSpaceLog!=0], countsSpaceLog[countsSpaceLog!=0], 'b-')    
-        plt.plot(xLogBins, yAnalytical, 'k-')
+        binEdges = binCenterSpaceLog[countsSpaceLog!=0]
+        counts = countsSpaceLog[countsSpaceLog!=0]
+        bins = xLogBins
         plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
-        plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
     else:
-        plt.plot(binEdgeSpace[:-1][countsSpace!=0], countsSpace[countsSpace!=0], 'b-')
-        plt.plot(xBins, yAnalytical, 'k-')
-        plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
+        binEdges = binCenterSpace[countsSpace!=0]
+        counts = countsSpace[countsSpace!=0]
+        bins = xBins
+    plt.plot(binEdges, counts, 'b-')
+    plt.plot(bins, yAnalytical, 'k-')
+    plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
+    yAnalytical = (yAnalytical[:-1] + yAnalytical[1:]) / 2
     plt.title("Empirical vs analytical solution")
 
     if degradation:
@@ -303,3 +309,4 @@ if plotCharts:
 print(f"Execution time: {execution_time:.6f} seconds")
 print(f"<t>: {meanTstep:.6f} s")
 print(f"sigmat: {stdTstep:.6f} s")
+print(f"sum(|yEmpirical-yAnalytical|)= {sum(np.abs(countsSpace-yAnalytical))}")
