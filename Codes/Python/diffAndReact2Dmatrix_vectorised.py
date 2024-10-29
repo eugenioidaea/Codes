@@ -28,7 +28,7 @@ stdEta = 1 # Spatial jump distribution paramenter
 num_particles = int(1e3) # Number of particles in the simulation
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
-cpx = 10 # Vertical Control Plane
+cpx = 20 # Vertical Control Plane
 if lbxOn:
     lbx = 0 # Left Boundary
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
@@ -50,6 +50,7 @@ t = 0 # Time
 i = 0 # Index for converting Eulerian pdf to Lagrangian pdf
 cdf = 0
 pdf_part = np.zeros(num_steps)
+pdf_lbxOn = np.zeros(num_steps)
 x = np.ones(num_particles)*x0 # Horizontal initial positions
 y = np.linspace(lby+init_shift, uby-init_shift, num_particles) # Vertical initial positions
 if recordTrajectories:
@@ -60,6 +61,7 @@ crossOutLeft = [False for _ in range(num_particles)]
 outsideAbove = [False for _ in range(num_particles)]
 outsideBelow = [False for _ in range(num_particles)]
 particleRT = np.zeros(num_particles) # Array which stores each particles' number of steps
+particleSemiInfRT = np.zeros(num_particles)
 Time = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
 timeLinSpaced = np.linspace(dt, dt*num_steps, binsTime) # Linearly spaced bins
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(dt*num_steps), binsTime) # Logarithmically spaced bins
@@ -105,8 +107,8 @@ def apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist):
     y = np.where(crossOutBelow & (adsDist>ap), -y+2*lby, y)  # Store y positions for the current time step        
     return x, y
 
-def analytical_seminf(x, t, D):
-    y = x*np.exp(-x**2/(4*D*t))/(np.sqrt(4*np.pi*D*t**3))
+def analytical_seminf(x0, t, D):
+    y = x0*np.exp(-x0**2/(4*D*t))/(np.sqrt(4*np.pi*D*t**3))
     return y
 
 def analytical_inf(x, t, D):
@@ -194,6 +196,7 @@ while (cdf<stopBTC/100) & (t<sim_time):
         
     if lbxOn:
         crossOutLeft = (x==lbx)
+        pdf_lbxOn[int(t/dt)] = sum(x==lbx)
     inside = (y<uby) & (y>lby) # Particles inside the fracture
     outsideAbove = y>uby # Particles in the porous matrix above the fracture
     outsideBelow = y<lby # Particles in the porous matrix below the fracture
@@ -217,6 +220,10 @@ execution_time = end_time - start_time
 # Retrieve the number of steps for each particle from the pdf of the breakthrough curve
 for index, value in enumerate(pdf_part):
     particleRT[int(i):int(i+value)] = index*dt
+    i = i+value
+
+for index, value in enumerate(pdf_lbxOn):
+    particleSemiInfRT[int(i):int(i+value)] = index*dt
     i = i+value
 
 # Compute simulation statistichs
@@ -279,6 +286,15 @@ if plotCharts:
         plt.yscale('log')
         plt.title("Lagrangian PDF")
 
+    if lbxOn:
+        countsSemiInfLog, binSemiInfLog = np.histogram(particleSemiInfRT, timeLogSpaced, density=True)
+        plt.figure(figsize=(8, 8))
+        yAnal = analytical_seminf(x0, timeLogSpaced, Df)
+        plt.plot(binSemiInfLog[:-1][countsSemiInfLog!=0], countsSemiInfLog[countsSemiInfLog!=0], 'b-')
+        plt.plot(timeLogSpaced, yAnal, 'r-')
+        plt.xscale('log')
+        plt.yscale('log')
+
     # Spatial concentration profile at 'recordSpatialConc' time
     plt.figure(figsize=(8, 8))
     if lbxOn:
@@ -293,8 +309,7 @@ if plotCharts:
     plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
     plt.axvline(x=cpx, color='b', linestyle='--', linewidth=2)
     plt.axvline(x=-cpx, color='b', linestyle='--', linewidth=2)
-    # yAnalytical = (yAnalytical[:-1] + yAnalytical[1:]) / 2
-    plt.title("Empirical vs analytical solution")
+    plt.title("Simulated vs analytical solution")
 
     if degradation:
         # Distribution of survival times for particles
