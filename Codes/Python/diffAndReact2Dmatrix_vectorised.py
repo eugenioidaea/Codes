@@ -1,7 +1,7 @@
-locals().clear()
+
+from IPython import get_ipython
+get_ipython().run_line_magic('reset', '-f')
 import numpy as np
-import math
-import scipy.stats
 import time
 
 # Features ###################################################################
@@ -27,7 +27,7 @@ Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e4) # Number of particles in the simulation
+num_particles = int(1e3) # Number of particles in the simulation
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 cpx = 10 # Vertical Control Plane
