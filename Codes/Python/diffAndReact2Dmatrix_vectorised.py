@@ -7,9 +7,9 @@ import time
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
 # recordVideo = False # It slows down the script
-recordTrajectories = True # It uses up memory
-lbxOn = True # It controls the position of the left boundary
-lbxAdsorption = True # It controls whether the particles get adsorpted or reflected on the left boundary 
+recordTrajectories = False # It uses up memory
+lbxOn = False # It controls the position of the left boundary
+lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 degradation = False # Switch for the degradation of the particles
 reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
@@ -22,12 +22,12 @@ if plotCharts:
 sim_time = int(1e3)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-x0 = 2 # Initial horizontal position of the particles
+x0 = 0 # Initial horizontal position of the particles
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e3) # Number of particles in the simulation
+num_particles = int(1e4) # Number of particles in the simulation
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 cpx = 10 # Vertical Control Plane
@@ -252,6 +252,7 @@ else:
 if plotCharts and recordTrajectories:
     # Trajectories
     plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
     for i in range(num_particles):
         plt.plot(xPath[i][:][xPath[i][:]!=0], yPath[i][:][xPath[i][:]!=0], lw=0.5)
     plt.axhline(y=uby, color='r', linestyle='--', linewidth=2)
@@ -265,6 +266,8 @@ if plotCharts and recordTrajectories:
     plt.xlabel("X Position")
     plt.ylabel("Y Position")
     plt.grid(True)
+    plt.tight_layout()
+    plt.savefig("/home/eugenio/ownCloud/IDAEA/Images/trajectoriesInfinite.pdf", format="pdf", bbox_inches="tight")
     plt.show()
 
 if plotCharts:
@@ -299,6 +302,7 @@ if plotCharts and cdf>0:
 
 if plotCharts and lbxOn:
     plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
     plt.plot(timeBinsLog, countsSemiInfLog, 'b*')
     plt.plot(timeBinsLog, analPdfSemiInf, 'r-')
     plt.xscale('log')
@@ -306,6 +310,8 @@ if plotCharts and lbxOn:
     plt.title('PDF of BTC - Simulated vs analytical solution')
     plt.xlabel('Time step')
     plt.ylabel('Normalised number of particles')
+    plt.tight_layout()
+    # plt.savefig("/home/eugenio/ownCloud/IDAEA/Images/verificationSemi-infinite.pdf", format="pdf", bbox_inches="tight")
 
 if plotCharts and degradation:
     # Distribution of survival times for particles
