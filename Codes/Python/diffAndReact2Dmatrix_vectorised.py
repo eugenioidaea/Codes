@@ -214,11 +214,8 @@ while t<sim_time:
 
     # Record the spatial distribution of the particles at a given time, e.g.: 'recordSpatialConc'
     if (t >= recordSpatialConc) & (recordSpatialConc < t+dt):
-        if lbxOn & lbxAdsorption:
-            # binCenterSpaceLog = (binEdgeSpaceLog[:-1] + binEdgeSpaceLog[1:]) / 2
-        #else:
-            countsSpace, binEdgeSpace = np.histogram(x, xBins, density=True)
-            binCenterSpace = (binEdgeSpace[:-1] + binEdgeSpace[1:]) / 2
+        countsSpace, binEdgeSpace = np.histogram(x, xBins, density=True)
+        binCenterSpace = (binEdgeSpace[:-1] + binEdgeSpace[1:]) / 2
 
     # Compute the CDF and increase the time
     cdf = sum(pdf_part)/num_particles
@@ -309,22 +306,6 @@ if plotCharts and lbxOn:
     plt.title('PDF of BTC - Simulated vs analytical solution')
     plt.xlabel('Time step')
     plt.ylabel('Normalised number of particles')
-
-# # Spatial concentration profile at 'recordSpatialConc' time
-# plt.figure(figsize=(8, 8))
-# if lbxOn:
-#     binCenters = binCenterSpaceLog
-#     counts = countsSpaceLog
-#     plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
-# else:
-#     binCenters = binCenterSpace
-#     counts = countsSpace
-# plt.plot(binCenters, counts, 'b-')
-# plt.plot(binCenters, yAnalytical, color='green', linestyle='-')
-# plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
-# plt.axvline(x=cpx, color='b', linestyle='--', linewidth=2)
-# plt.axvline(x=-cpx, color='b', linestyle='--', linewidth=2)
-# plt.title("Simulated vs analytical solution")
 
 if plotCharts and degradation:
     # Distribution of survival times for particles
