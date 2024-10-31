@@ -1,4 +1,3 @@
-
 from IPython import get_ipython
 get_ipython().run_line_magic('reset', '-f')
 import numpy as np
@@ -7,9 +6,9 @@ import time
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
 # recordVideo = False # It slows down the script
-recordTrajectories = False # It uses up memory
-lbxOn = False # It controls the position of the left boundary
-lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
+recordTrajectories = True # It uses up memory
+lbxOn = True # It controls the position of the left boundary
+lbxAdsorption = True # It controls whether the particles get adsorpted or reflected on the left boundary 
 degradation = False # Switch for the degradation of the particles
 reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
@@ -22,7 +21,7 @@ if plotCharts:
 sim_time = int(1e3)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-x0 = 0 # Initial horizontal position of the particles
+x0 = 2 # Initial horizontal position of the particles
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 meanEta = 0 # Spatial jump distribution paramenter
@@ -213,7 +212,7 @@ while t<sim_time:
     pdf_part[int(t/dt)] = sum(abs(x[isIn])>cpx) # Count the particle which exit the control planes at each time step
 
     # Record the spatial distribution of the particles at a given time, e.g.: 'recordSpatialConc'
-    if (t >= recordSpatialConc) & (recordSpatialConc < t+dt):
+    if (t <= recordSpatialConc) & (recordSpatialConc < t+dt):
         countsSpace, binEdgeSpace = np.histogram(x, xBins, density=True)
         binCenterSpace = (binEdgeSpace[:-1] + binEdgeSpace[1:]) / 2
 
@@ -267,7 +266,8 @@ if plotCharts and recordTrajectories:
     plt.ylabel("Y Position")
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig("/home/eugenio/ownCloud/IDAEA/Images/trajectoriesInfinite.pdf", format="pdf", bbox_inches="tight")
+    # plt.savefig("/home/eugenio/ownCloud/IDAEA/Images/trajectoriesInfinite", format="png", bbox_inches="tight")
+    plt.savefig("/home/eugenio/ownCloud/IDAEA/Images/trajectoriesSemiInfinite", format="png", bbox_inches="tight")
     plt.show()
 
 if plotCharts:
@@ -311,7 +311,20 @@ if plotCharts and lbxOn:
     plt.xlabel('Time step')
     plt.ylabel('Normalised number of particles')
     plt.tight_layout()
-    # plt.savefig("/home/eugenio/ownCloud/IDAEA/Images/verificationSemi-infinite.pdf", format="pdf", bbox_inches="tight")
+    # plt.savefig("/home/eugenio/ownCloud/IDAEA/Images/verificationInfinite", format="pdf", bbox_inches="tight")
+
+# Spatial concentration profile at 'recordSpatialConc' time
+if np.logical_not(lbxOn):
+    plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    plt.plot(binCenterSpace, countsSpace, 'b-')
+    plt.plot(binCenterSpace, yAnalytical, color='red', linestyle='-')
+    plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
+    plt.axvline(x=cpx, color='b', linestyle='--', linewidth=2)
+    plt.axvline(x=-cpx, color='b', linestyle='--', linewidth=2)
+    plt.title("Simulated vs analytical solution")
+    plt.tight_layout()
+    # plt.savefig("/home/eugenio/ownCloud/IDAEA/Images/verificationInfinite", format="pdf", bbox_inches="tight")
 
 if plotCharts and degradation:
     # Distribution of survival times for particles
