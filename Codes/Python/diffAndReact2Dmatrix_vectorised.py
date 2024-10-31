@@ -1,3 +1,4 @@
+locals().clear()
 import numpy as np
 import math
 import scipy.stats
@@ -11,6 +12,7 @@ lbxOn = True # It controls the position of the left boundary
 lbxAdsorption = True # It controls whether the particles get adsorpted or reflected on the left boundary 
 degradation = False # Switch for the degradation of the particles
 reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
+stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
 
 if plotCharts:
     import matplotlib.pyplot as plt
@@ -20,15 +22,15 @@ if plotCharts:
 sim_time = int(1e3)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-x0 = 4 # Initial horizontal position of the particles
+x0 = 2 # Initial horizontal position of the particles
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e3) # Number of particles in the simulation
+num_particles = int(1e4) # Number of particles in the simulation
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
-cpx = 20 # Vertical Control Plane
+cpx = 10 # Vertical Control Plane
 if lbxOn:
     lbx = 0 # Left Boundary
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
@@ -37,7 +39,7 @@ reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected a
 animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
-binsTime = 50 # Number of temporal bins for the logarithmic plot
+binsTime = 20 # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
@@ -63,10 +65,14 @@ outsideBelow = [False for _ in range(num_particles)]
 particleRT = np.zeros(num_particles) # Array which stores each particles' number of steps
 particleSemiInfRT = np.zeros(num_particles)
 Time = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
-timeLinSpaced = np.linspace(dt, dt*num_steps, binsTime) # Linearly spaced bins
-timeLogSpaced = np.logspace(np.log10(dt), np.log10(dt*num_steps), binsTime) # Logarithmically spaced bins
+timeLinSpaced = np.linspace(dt, sim_time, binsTime) # Linearly spaced bins
+timeLogSpaced = np.logspace(np.log10(dt), np.log10(sim_time), binsTime) # Logarithmically spaced bins
 xBins = np.linspace(-cpx, cpx, binsSpace) # Linearly spaced bins
 xLogBins = np.logspace(np.log10(1e-10), np.log10(cpx), binsSpace) # Logarithmically spaced bins
+probCrossOutAbove = np.full(num_particles, False) # Probability of crossing the fracture's walls
+probCrossOutBelow = np.full(num_particles, False) # Probability of crossing the fracture's walls
+probCrossInAbove = np.full(num_particles, False) # Probability of crossing the fracture's walls
+probCrossInBelow = np.full(num_particles, False) # Probability of crossing the fracture's walls
 
 # Functions ##########################################################################
 def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
@@ -140,7 +146,10 @@ if degradation:
 else:
     survivalTimeDist = np.ones(num_particles)*sim_time
 
-while (cdf<stopBTC/100) & (t<sim_time):
+while t<sim_time:
+
+    if stopOnCDF & (cdf>stopBTC/100):
+        break
 
     liveParticle = survivalTimeDist>t # Particles which are degradeted
 
@@ -167,10 +176,6 @@ while (cdf<stopBTC/100) & (t<sim_time):
     crossInBelow = outsideBelow & (y>lby) & (y<uby)
 
     # Decide the number of impacts that will cross the fracture's walls
-    probCrossOutAbove = np.full(num_particles, False)
-    probCrossOutBelow = np.full(num_particles, False)
-    probCrossInAbove = np.full(num_particles, False)
-    probCrossInBelow = np.full(num_particles, False)
     probCrossOutAbove[np.where(crossOutAbove)[0]] = np.random.rand(np.sum(crossOutAbove)) > reflectedInward/100
     probCrossOutBelow[np.where(crossOutBelow)[0]] = np.random.rand(np.sum(crossOutBelow)) > reflectedInward/100
     probCrossInAbove[np.where(crossInAbove)[0]] = np.random.rand(np.sum(crossInAbove)) > reflectedOutward/100
@@ -185,7 +190,9 @@ while (cdf<stopBTC/100) & (t<sim_time):
     # Particles hitting the left control plane
     if lbxOn:
         crossOutLeft = (x<lbx)
+        pdf_lbxOn[int(t/dt)] = sum(crossOutLeft)
 
+    # Decide what happens to the particles which hit the fracture's walls: all get reflected, some get reflected some manage to escape, all get absorbed by the fracture's walls
     if reflection:
         # Update the reflected particles' positions according to an elastic reflection dynamic
         x, y = apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow,
@@ -193,38 +200,42 @@ while (cdf<stopBTC/100) & (t<sim_time):
     else:
         adsDist = adsorption_dist(k_ads)
         x, y = apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist)
-        
+
+    # Record the pdf of the btc on the left control panel        
     if lbxOn:
         crossOutLeft = (x==lbx)
-        pdf_lbxOn[int(t/dt)] = sum(x==lbx)
+
+    # Find the particle's locations with relative to the fracture's walls
     inside = (y<uby) & (y>lby) # Particles inside the fracture
     outsideAbove = y>uby # Particles in the porous matrix above the fracture
     outsideBelow = y<lby # Particles in the porous matrix below the fracture
 
     pdf_part[int(t/dt)] = sum(abs(x[isIn])>cpx) # Count the particle which exit the control planes at each time step
 
-    if (t <= recordSpatialConc) & (recordSpatialConc < t+dt):
+    # Record the spatial distribution of the particles at a given time, e.g.: 'recordSpatialConc'
+    if (t >= recordSpatialConc) & (recordSpatialConc < t+dt):
         if lbxOn & lbxAdsorption:
-            countsSpaceLog, binEdgeSpaceLog = np.histogram(x, xLogBins, density=True)
-            binCenterSpaceLog = (binEdgeSpaceLog[:-1] + binEdgeSpaceLog[1:]) / 2
-        else:
+            # binCenterSpaceLog = (binEdgeSpaceLog[:-1] + binEdgeSpaceLog[1:]) / 2
+        #else:
             countsSpace, binEdgeSpace = np.histogram(x, xBins, density=True)
             binCenterSpace = (binEdgeSpace[:-1] + binEdgeSpace[1:]) / 2
 
+    # Compute the CDF and increase the time
     cdf = sum(pdf_part)/num_particles
-    t += dt    
+    t += dt
 
 end_time = time.time() # Stop timing the while loop
 execution_time = end_time - start_time
 
+# Post processing ######################################################################
+iPart = 0
+iLbxOn = 0
 # Retrieve the number of steps for each particle from the pdf of the breakthrough curve
-for index, value in enumerate(pdf_part):
-    particleRT[int(i):int(i+value)] = index*dt
-    i = i+value
-
-for index, value in enumerate(pdf_lbxOn):
-    particleSemiInfRT[int(i):int(i+value)] = index*dt
-    i = i+value
+for index, (valPdfPart, valLbxOn) in enumerate(zip(pdf_part, pdf_lbxOn)):
+    particleRT[int(iPart):int(iPart+valPdfPart)] = index*dt
+    particleSemiInfRT[int(iLbxOn):int(iLbxOn+valLbxOn)] = index*dt
+    iPart = iPart+valPdfPart
+    iLbxOn = iLbxOn+valLbxOn
 
 # Compute simulation statistichs
 meanTstep = particleRT.mean()
@@ -234,13 +245,15 @@ if (dt*10>(uby-lby)**2/Df):
 
 # Verificaiton of the code
 if lbxOn:
-    yAnalytical = analytical_seminf(binCenterSpaceLog, recordSpatialConc, Df)
+    countsSemiInfLog, binSemiInfLog = np.histogram(particleSemiInfRT, timeLogSpaced, density=True)
+    timeBinsLog = (binSemiInfLog[:-1] + binSemiInfLog[1:]) / 2
+    analPdfSemiInf = analytical_seminf(x0, timeBinsLog, Df)
 else:
     yAnalytical = analytical_inf(binCenterSpace, recordSpatialConc, Df)
 
 # Plot section #########################################################################
-# Trajectories
 if plotCharts and recordTrajectories:
+    # Trajectories
     plt.figure(figsize=(8, 8))
     for i in range(num_particles):
         plt.plot(xPath[i][:][xPath[i][:]!=0], yPath[i][:][xPath[i][:]!=0], lw=0.5)
@@ -270,58 +283,63 @@ if plotCharts:
     plt.xscale('log')
     plt.title("CDF")
 
-    if cdf>0:
-        # 1-CDF
-        plt.figure(figsize=(8, 8))
-        plt.plot(Time, 1-np.cumsum(pdf_part)/num_particles)
-        plt.xscale('log')
-        plt.yscale('log')
-        plt.title("1-CDF")
-
-        # Binning for plotting the pdf from a Lagrangian vector
-        countsLog, binEdgesLog = np.histogram(particleRT, timeLogSpaced, density=True)
-        plt.figure(figsize=(8, 8))
-        plt.plot(binEdgesLog[:-1][countsLog!=0], countsLog[countsLog!=0], 'r*')
-        plt.xscale('log')
-        plt.yscale('log')
-        plt.title("Lagrangian PDF")
-
-    if lbxOn:
-        countsSemiInfLog, binSemiInfLog = np.histogram(particleSemiInfRT, timeLogSpaced, density=True)
-        plt.figure(figsize=(8, 8))
-        yAnal = analytical_seminf(x0, timeLogSpaced, Df)
-        plt.plot(binSemiInfLog[:-1][countsSemiInfLog!=0], countsSemiInfLog[countsSemiInfLog!=0], 'b-')
-        plt.plot(timeLogSpaced, yAnal, 'r-')
-        plt.xscale('log')
-        plt.yscale('log')
-
-    # Spatial concentration profile at 'recordSpatialConc' time
+if plotCharts and cdf>0:
+    # 1-CDF
     plt.figure(figsize=(8, 8))
-    if lbxOn:
-        binCenters = binCenterSpaceLog
-        counts = countsSpaceLog
-        plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
-    else:
-        binCenters = binCenterSpace
-        counts = countsSpace
-    plt.plot(binCenters, counts, 'b-')
-    plt.plot(binCenters, yAnalytical, color='green', linestyle='-')
-    plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
-    plt.axvline(x=cpx, color='b', linestyle='--', linewidth=2)
-    plt.axvline(x=-cpx, color='b', linestyle='--', linewidth=2)
-    plt.title("Simulated vs analytical solution")
+    plt.plot(Time, 1-np.cumsum(pdf_part)/num_particles)
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.title("1-CDF")
 
-    if degradation:
-        # Distribution of survival times for particles
-        plt.figure(figsize=(8, 8))
-        if recordTrajectories:
-            effTstepNum = np.array([np.count_nonzero(row)*dt for row in xPath])
-            plt.plot(np.arange(0, num_particles, 1), np.sort(effTstepNum)[::-1], 'b*')
-        plt.plot(np.arange(0, num_particles, 1), np.sort(survivalTimeDist)[::-1], 'k-')
-        plt.title("Survival time distribution")
+    # Binning for plotting the pdf from a Lagrangian vector
+    countsLog, binEdgesLog = np.histogram(particleRT, timeLogSpaced, density=True)
+    binCentersLog = (binEdgesLog[:-1] + binEdgesLog[1:]) / 2
+    plt.figure(figsize=(8, 8))
+    plt.plot(binCentersLog[countsLog!=0], countsLog[countsLog!=0], 'r*')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.title("Lagrangian PDF")
+
+if plotCharts and lbxOn:
+    plt.figure(figsize=(8, 8))
+    plt.plot(timeBinsLog, countsSemiInfLog, 'b*')
+    plt.plot(timeBinsLog, analPdfSemiInf, 'r-')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.title('PDF of BTC - Simulated vs analytical solution')
+    plt.xlabel('Time step')
+    plt.ylabel('Normalised number of particles')
+
+# # Spatial concentration profile at 'recordSpatialConc' time
+# plt.figure(figsize=(8, 8))
+# if lbxOn:
+#     binCenters = binCenterSpaceLog
+#     counts = countsSpaceLog
+#     plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
+# else:
+#     binCenters = binCenterSpace
+#     counts = countsSpace
+# plt.plot(binCenters, counts, 'b-')
+# plt.plot(binCenters, yAnalytical, color='green', linestyle='-')
+# plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
+# plt.axvline(x=cpx, color='b', linestyle='--', linewidth=2)
+# plt.axvline(x=-cpx, color='b', linestyle='--', linewidth=2)
+# plt.title("Simulated vs analytical solution")
+
+if plotCharts and degradation:
+    # Distribution of survival times for particles
+    plt.figure(figsize=(8, 8))
+    if recordTrajectories:
+        effTstepNum = np.array([np.count_nonzero(row)*dt for row in xPath])
+        plt.plot(np.arange(0, num_particles, 1), np.sort(effTstepNum)[::-1], 'b*')
+    plt.plot(np.arange(0, num_particles, 1), np.sort(survivalTimeDist)[::-1], 'k-')
+    plt.title("Survival time distribution")
 
 # Statistichs
 print(f"Execution time: {execution_time:.6f} seconds")
 print(f"<t>: {meanTstep:.6f} s")
 print(f"sigmat: {stdTstep:.6f} s")
-print(f"sum(|yEmpirical-yAnalytical|)= {sum(np.abs(countsSpace-yAnalytical))}")
+if lbxOn:
+    print(f"sum(|empiricalPdf-analyticalPdf|)= {sum(np.abs(countsSemiInfLog-analPdfSemiInf))}")
+else:
+    print(f"sum(|yEmpirical-yAnalytical|)= {sum(np.abs(countsSpace-yAnalytical))}")
