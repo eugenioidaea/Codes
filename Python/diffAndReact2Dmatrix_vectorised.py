@@ -3,16 +3,16 @@ get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import time
 
-
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
 # recordVideo = False # It slows down the script
 recordTrajectories = True # It uses up memory
-lbxOn = True # It controls the position of the left boundary
-lbxAdsorption = True # It controls whether the particles get adsorpted or reflected on the left boundary 
-degradation = False # Switch for the degradation of the particles
+lbxOn = False # It controls the position of the left boundary
+lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
+degradation = True # Switch for the degradation of the particles
 reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
+cpxOn = False # It regulates the vertical control plane
 
 if plotCharts:
     import matplotlib.pyplot as plt
@@ -22,17 +22,18 @@ if plotCharts:
 sim_time = int(1e3)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-x0 = 2 # Initial horizontal position of the particles
+x0 = 0 # Initial horizontal position of the particles
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e4) # Number of particles in the simulation
+num_particles = int(1e3) # Number of particles in the simulation
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 cpx = 10 # Vertical Control Plane
 if lbxOn:
     lbx = 0 # Left Boundary
+binsInterval = 10
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
 reflectedInward = 100 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
@@ -67,8 +68,7 @@ particleSemiInfRT = np.zeros(num_particles)
 Time = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
 timeLinSpaced = np.linspace(dt, sim_time, binsTime) # Linearly spaced bins
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(sim_time), binsTime) # Logarithmically spaced bins
-xBins = np.linspace(-cpx, cpx, binsSpace) # Linearly spaced bins
-xLogBins = np.logspace(np.log10(1e-10), np.log10(cpx), binsSpace) # Logarithmically spaced bins
+xBins = np.linspace(-binsInterval, binsInterval, binsSpace) # Linearly spaced bins
 probCrossOutAbove = np.full(num_particles, False) # Probability of crossing the fracture's walls
 probCrossOutBelow = np.full(num_particles, False) # Probability of crossing the fracture's walls
 probCrossInAbove = np.full(num_particles, False) # Probability of crossing the fracture's walls
@@ -125,8 +125,8 @@ def degradation_dist(num_steps, k_deg, num_particles):
     t_steps = np.linspace(0, sim_time, num_steps)
     exp_prob = k_deg*np.exp(-k_deg*t_steps)
     exp_prob /= exp_prob.sum()
-    valueRange = np.linspace(0, sim_time, num_steps)
-    survivalTimeDist = np.random.choice(valueRange, size=num_particles, p=exp_prob)
+    # valueRange = np.linspace(0, sim_time, num_steps)
+    survivalTimeDist = np.random.choice(t_steps, size=num_particles, p=exp_prob)
     return survivalTimeDist, exp_prob
 
 def adsorption_dist(k_ads):
@@ -161,7 +161,7 @@ while t<sim_time:
     isIn = abs(x)<cpx # Get the positions of the particles that are located within the control planes (wheter inside or outside the fracture)
     fracture = inside & liveParticle # Particles in the domain and inside the fracture and not degradeted yet
     outside = np.array(outsideAbove) | np.array(outsideBelow) # Particles outside the fracture
-    matrix = isIn & outside & liveParticle # Particles in the domain and outside the fracture and not degradeted yet
+    matrix = outside & liveParticle # Particles in the domain and outside the fracture and not degradeted yet
     if lbxOn:
         fracture = fracture & np.logical_not(crossOutLeft)
         matrix = matrix & np.logical_not(crossOutLeft)
@@ -257,8 +257,9 @@ if plotCharts and recordTrajectories:
         plt.plot(xPath[i][:][xPath[i][:]!=0], yPath[i][:][xPath[i][:]!=0], lw=0.5)
     plt.axhline(y=uby, color='r', linestyle='--', linewidth=2)
     plt.axhline(y=lby, color='r', linestyle='--', linewidth=2)
-    plt.axvline(x=cpx, color='b', linestyle='--', linewidth=2)
-    plt.axvline(x=-cpx, color='b', linestyle='--', linewidth=2)
+    if cpxOn:
+        plt.axvline(x=cpx, color='b', linestyle='--', linewidth=2)
+        plt.axvline(x=-cpx, color='b', linestyle='--', linewidth=2)
     plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
     if lbxOn:
         plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
@@ -267,11 +268,12 @@ if plotCharts and recordTrajectories:
     plt.ylabel("Y Position")
     plt.grid(True)
     plt.tight_layout()
-    # plt.savefig("/home/eugenio/ownCloud/IDAEA/Images/trajectoriesInfinite", format="png", bbox_inches="tight")
-    plt.savefig("/home/eugenio/ownCloud/IDAEA/Images/trajectoriesSemiInfinite", format="png", bbox_inches="tight")
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesInfinite.png", format="png", bbox_inches="tight")
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesSemiInfinite.png", format="png", bbox_inches="tight")
+    plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesDegradation.png", format="png", bbox_inches="tight")
     plt.show()
 
-if plotCharts:
+if plotCharts and cpxOn:
     # PDF
     plt.figure(figsize=(8, 8))
     plt.plot(Time, pdf_part/num_particles)
@@ -284,7 +286,6 @@ if plotCharts:
     plt.xscale('log')
     plt.title("CDF")
 
-if plotCharts and cdf>0:
     # 1-CDF
     plt.figure(figsize=(8, 8))
     plt.plot(Time, 1-np.cumsum(pdf_part)/num_particles)
@@ -299,7 +300,7 @@ if plotCharts and cdf>0:
     plt.plot(binCentersLog[countsLog!=0], countsLog[countsLog!=0], 'r*')
     plt.xscale('log')
     plt.yscale('log')
-    plt.title("Lagrangian PDF")
+    plt.title("Lagrangian PDF of the BTC")
 
 if plotCharts and lbxOn:
     plt.figure(figsize=(8, 8))
@@ -312,20 +313,21 @@ if plotCharts and lbxOn:
     plt.xlabel('Time step')
     plt.ylabel('Normalised number of particles')
     plt.tight_layout()
-    # plt.savefig("/home/eugenio/ownCloud/IDAEA/Images/verificationInfinite", format="pdf", bbox_inches="tight")
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationInfinite.pdf", format="pdf", bbox_inches="tight")
 
 # Spatial concentration profile at 'recordSpatialConc' time
-if np.logical_not(lbxOn):
+if plotCharts and np.logical_not(lbxOn):
     plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
     plt.plot(binCenterSpace, countsSpace, 'b-')
     plt.plot(binCenterSpace, yAnalytical, color='red', linestyle='-')
     plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
-    plt.axvline(x=cpx, color='b', linestyle='--', linewidth=2)
-    plt.axvline(x=-cpx, color='b', linestyle='--', linewidth=2)
+    if cpxOn:
+        plt.axvline(x=cpx, color='b', linestyle='--', linewidth=2)
+        plt.axvline(x=-cpx, color='b', linestyle='--', linewidth=2)
     plt.title("Simulated vs analytical solution")
     plt.tight_layout()
-    # plt.savefig("/home/eugenio/ownCloud/IDAEA/Images/verificationInfinite", format="pdf", bbox_inches="tight")
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationInfinite.pdf", format="pdf", bbox_inches="tight")
 
 if plotCharts and degradation:
     # Distribution of survival times for particles
@@ -336,6 +338,25 @@ if plotCharts and degradation:
     plt.plot(np.arange(0, num_particles, 1), np.sort(survivalTimeDist)[::-1], 'k-')
     plt.title("Survival time distribution")
 
+if plotCharts and degradation:
+    # Distribution of live particles in time
+    plt.figure(figsize=(8, 8))
+    if recordTrajectories:
+        effTstepNum = np.array([np.count_nonzero(row)*dt for row in xPath])
+    else:
+        effTstepNum = survivalTimeDist
+    survivedParticles = np.array([sum(effTstepNum>float(Time[i])) for i in range(len(Time))])
+    survivedParticles = survivedParticles/survivedParticles.sum()
+    plt.plot(Time, survivedParticles, 'b*')
+    plt.plot(Time, exp_prob, 'r-')
+    plt.title("Live particle distribution in time")
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('Time step')
+    plt.ylabel('PDF of live particles')
+    plt.tight_layout()
+    plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/liveParticleInTime.pdf", format="pdf", bbox_inches="tight")
+
 # Statistichs
 print(f"Execution time: {execution_time:.6f} seconds")
 print(f"<t>: {meanTstep:.6f} s")
@@ -344,3 +365,6 @@ if lbxOn:
     print(f"sum(|empiricalPdf-analyticalPdf|)= {sum(np.abs(countsSemiInfLog-analPdfSemiInf))}")
 else:
     print(f"sum(|yEmpirical-yAnalytical|)= {sum(np.abs(countsSpace-yAnalytical))}")
+
+
+saasd
