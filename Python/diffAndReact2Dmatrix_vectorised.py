@@ -3,6 +3,7 @@ get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import time
 
+
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
 # recordVideo = False # It slows down the script
