@@ -3,8 +3,11 @@ get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import matplotlib.pyplot as plt
 
-loaded = np.load('totalAbsorption.npz')
-for name, value in loaded.items():
+loadAbsorption = np.load('totalAbsorption.npz')
+for name, value in (loadAbsorption.items()):
+    globals()[name] = value
+loadDegradation = np.load('degradation.npz')
+for name, value in (loadDegradation.items()):
     globals()[name] = value
 
 # Plot section #########################################################################
@@ -97,7 +100,6 @@ if plotCharts and degradation:
     plt.plot(np.arange(0, num_particles, 1), np.sort(survivalTimeDist)[::-1], 'k-')
     plt.title("Survival time distribution")
 
-if plotCharts and degradation:
     # Distribution of live particles in time
     plt.figure(figsize=(8, 8))
     if recordTrajectories:
@@ -105,8 +107,8 @@ if plotCharts and degradation:
     else:
         effTstepNum = survivalTimeDist
     survivedParticles = np.array([sum(effTstepNum>float(Time[i])) for i in range(len(Time))])
-    survivedParticles = survivedParticles/survivedParticles.sum()
-    plt.plot(Time, survivedParticles, 'b*')
+    survivedParticlesNorm = survivedParticles/survivedParticles.sum()
+    plt.plot(Time, survivedParticlesNorm, 'b*')
     plt.plot(Time, exp_prob, 'r-')
     plt.title("Live particle distribution in time")
     plt.xscale('log')
@@ -176,3 +178,19 @@ if plotCharts and recordTrajectories and np.logical_not(reflection):
     plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
     plt.tight_layout()
     # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/nonAbsParticlesNorm.pdf", format="pdf", bbox_inches="tight")
+
+# Well-mixed vs diffusion-limited survival time distributions ##############################
+
+if len(loadAbsorption.files)>0 and len(loadDegradation.files)>0:
+    # Distribution of live particles in time
+    plt.figure(figsize=(8, 8))
+    plt.plot(Time, survivedParticlesNorm, 'b*')
+    plt.plot(Time, exp_prob, 'r-')
+    plt.plot(Time, nonAbsorbedParticlesNorm, 'g*')
+    plt.title("Live particle distribution in time")
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('Time step')
+    plt.ylabel('PDF of live particles')
+    plt.tight_layout()
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/liveParticleInTime.pdf", format="pdf", bbox_inches="tight")

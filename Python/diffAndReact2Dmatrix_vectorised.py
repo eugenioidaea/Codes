@@ -9,8 +9,8 @@ plotCharts = True # It controls graphical features (disable when run on HPC)
 recordTrajectories = True # It uses up memory
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
-degradation = False # Switch for the degradation of the particles
-reflection = False # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
+degradation = True # Switch for the degradation of the particles
+reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
 cpxOn = False # It regulates the vertical control plane
 
@@ -44,7 +44,7 @@ binsTime = 20 # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 recordSpatialConc = int(10) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
-k_deg = 0.01 # Degradation kinetic constant
+k_deg = 0.5 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
 ap = 1 # Adsorption probability
 
@@ -274,4 +274,5 @@ else:
 # Filter the variables we want to save by type
 variablesToSave = {name: value for name, value in globals().items() if isinstance(value, (np.ndarray, int, float, bool))}
 # Save all the variables to an .npz file
-np.savez('totalAbsorption.npz', **variablesToSave)
+# np.savez('totalAbsorption.npz', **variablesToSave)
+np.savez('degradation.npz', **variablesToSave)
