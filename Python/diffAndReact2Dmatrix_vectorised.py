@@ -9,8 +9,8 @@ plotCharts = True # It controls graphical features (disable when run on HPC)
 recordTrajectories = True # It uses up memory
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
-degradation = True # Switch for the degradation of the particles
-reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
+degradation = False # Switch for the degradation of the particles
+reflection = False # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
 cpxOn = False # It regulates the vertical control plane
 
@@ -19,7 +19,7 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-sim_time = int(1e3)
+sim_time = int(20)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 x0 = 0 # Initial horizontal position of the particles
@@ -27,13 +27,13 @@ Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e3) # Number of particles in the simulation
+num_particles = int(1e4) # Number of particles in the simulation
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 cpx = 10 # Vertical Control Plane
 if lbxOn:
     lbx = 0 # Left Boundary
-binsInterval = 10
+binsXinterval = 10
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
 reflectedInward = 100 # Percentage of impacts from the fracture reflected again into the fracture
 reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
@@ -42,7 +42,7 @@ fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
 binsTime = 20 # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
-recordSpatialConc = int(1e2) # Concentration profile recorded time
+recordSpatialConc = int(10) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.01 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
@@ -68,7 +68,8 @@ particleSemiInfRT = np.zeros(num_particles)
 Time = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
 timeLinSpaced = np.linspace(dt, sim_time, binsTime) # Linearly spaced bins
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(sim_time), binsTime) # Logarithmically spaced bins
-xBins = np.linspace(-binsInterval, binsInterval, binsSpace) # Linearly spaced bins
+xBins = np.linspace(-binsXinterval, binsXinterval, binsSpace) # Linearly spaced bins
+yBins = np.linspace(-binsXinterval, binsXinterval, binsSpace) # Linearly spaced bins
 probCrossOutAbove = np.full(num_particles, False) # Probability of crossing the fracture's walls
 probCrossOutBelow = np.full(num_particles, False) # Probability of crossing the fracture's walls
 probCrossInAbove = np.full(num_particles, False) # Probability of crossing the fracture's walls
@@ -248,6 +249,18 @@ if lbxOn:
 else:
     yAnalytical = analytical_inf(binCenterSpace, recordSpatialConc, Df)
 
+# Compute the number of particles at a given time within a vertical and a horizontal stripe
+if np.logical_not(reflection):
+    # Average concentration in X and Y
+    recordTdist = int(Time[-2])
+    vInterval = np.array([x0-0.1, x0+0.1])
+    hInterval = np.array([(lby+uby)/2-0.1, (lby+uby)/2+0.1])
+    yDist = yPath[(xPath[:, recordTdist]>vInterval[0]) & (xPath[:, recordTdist]<vInterval[1]), recordTdist]
+    yDist = yDist[(yDist != lby) & (yDist != uby)]
+    vDist, vBins = np.histogram(yDist, np.linspace(lby, uby, binsSpace))
+    xDist = xPath[(yPath[:, recordTdist]>hInterval[0]) & (yPath[:, recordTdist]<hInterval[1]), recordTdist]
+    hDist, hBins = np.histogram(xDist, np.linspace(-binsXinterval, binsXinterval, binsSpace))
+
 # Plot section #########################################################################
 if plotCharts and recordTrajectories:
     # Trajectories
@@ -270,7 +283,7 @@ if plotCharts and recordTrajectories:
     plt.tight_layout()
     # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesInfinite.png", format="png", bbox_inches="tight")
     # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesSemiInfinite.png", format="png", bbox_inches="tight")
-    plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesDegradation.png", format="png", bbox_inches="tight")
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesDegradation.png", format="png", bbox_inches="tight")
     plt.show()
 
 if plotCharts and cpxOn:
@@ -355,7 +368,68 @@ if plotCharts and degradation:
     plt.xlabel('Time step')
     plt.ylabel('PDF of live particles')
     plt.tight_layout()
-    plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/liveParticleInTime.pdf", format="pdf", bbox_inches="tight")
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/liveParticleInTime.pdf", format="pdf", bbox_inches="tight")
+
+if plotCharts and recordTrajectories and np.logical_not(reflection):
+    # Final particles's positions
+    plt.figure(figsize=(8, 8))
+    plt.plot(xPath[:, -1], yPath[:, -1], 'b*')
+    plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
+    plt.axhline(y=uby, color='r', linestyle='--', linewidth=1)
+    plt.axhline(y=lby, color='r', linestyle='--', linewidth=1)
+    for val in vInterval:
+        plt.axvline(x=val, color='black', linestyle='--', linewidth=2)
+    for val in hInterval:
+        plt.axhline(y=val, color='black', linestyle='--', linewidth=2)
+    plt.tight_layout()
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositions.png", format="png", bbox_inches="tight")
+
+    # Vertical distribution
+    plt.figure(figsize=(8, 8))
+    plt.bar(vBins[:-1], vDist, width=np.diff(vBins), edgecolor="black", align="edge")
+    plt.title('Particles distribution at the end of the simulation')
+    plt.xlabel('Distance along Y')
+    plt.ylabel('Number of particles EXCLUDING THOSE ON BOUNDARIES')
+    plt.tight_layout()
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verticalFinalDist.pdf", format="pdf", bbox_inches="tight")
+
+    # Horizontal distribution
+    plt.figure(figsize=(8, 8))
+    plt.bar(hBins[:-1], hDist, width=np.diff(hBins), edgecolor="black", align="edge")
+    plt.title('Particles distribution at the end of the simulation')
+    plt.xlabel('Distance along X')
+    plt.ylabel('Number of particles')
+    plt.tight_layout()
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/horizontalFinalDist.pdf", format="pdf", bbox_inches="tight")
+
+    # Distribution of non-absorbed particles in time
+    plt.figure(figsize=(8, 8))
+    pathLegnth = np.array([np.count_nonzero((row != lby) & (row != uby)) for row in yPath])
+    nonAbsorbedParticles = np.array([sum(pathLegnth>float(Time[i])) for i in range(len(Time))])
+    plt.plot(Time, nonAbsorbedParticles, 'b*')
+    plt.title("Non-absorbed particles in time")
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('Time step')
+    plt.ylabel('Number of non-absorbed particles')
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+    plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+    plt.tight_layout()
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/nonAbsParticles.pdf", format="pdf", bbox_inches="tight")
+
+    # Normalised distribution of non-absorbed particles in time
+    plt.figure(figsize=(8, 8))
+    nonAbsorbedParticlesNorm = nonAbsorbedParticles/nonAbsorbedParticles.sum()
+    plt.plot(Time, nonAbsorbedParticlesNorm, 'b*')
+    plt.title("Non-absorbed particle normalised in time")
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('Time step')
+    plt.ylabel('Non-absorbed particles normalised')
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+    plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+    plt.tight_layout()
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/nonAbsParticlesNorm.pdf", format="pdf", bbox_inches="tight")
 
 # Statistichs
 print(f"Execution time: {execution_time:.6f} seconds")
