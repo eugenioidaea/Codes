@@ -1,5 +1,5 @@
-#from IPython import get_ipython
-#get_ipython().run_line_magic('reset', '-f')
+from IPython import get_ipython
+get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import time
 
@@ -280,4 +280,4 @@ else:
 variablesToSave = {name: value for name, value in globals().items() if isinstance(value, (np.ndarray, int, float, bool))}
 # Save all the variables to an .npz file
 # np.savez('totalAbsorption.npz', **variablesToSave)
-# np.savez('degradation.npz', **variablesToSave)
+np.savez('degradation.npz', **variablesToSave)

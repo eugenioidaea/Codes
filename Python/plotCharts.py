@@ -3,9 +3,9 @@ get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import matplotlib.pyplot as plt
 
-loadAbsorption = np.load('totalAbsorption.npz')
-for name, value in (loadAbsorption.items()):
-    globals()[name] = value
+# loadAbsorption = np.load('totalAbsorption.npz')
+# for name, value in (loadAbsorption.items()):
+#     globals()[name] = value
 loadDegradation = np.load('degradation.npz')
 for name, value in (loadDegradation.items()):
     globals()[name] = value
@@ -93,23 +93,32 @@ if plotCharts and np.logical_not(lbxOn):
 
 if plotCharts and degradation:
     # Distribution of survival times for particles
+    # plt.figure(figsize=(8, 8))
+    # if recordTrajectories:
+    #     effTstepNum = np.array([np.count_nonzero(row)*dt for row in xPath])
+    #     plt.plot(np.arange(0, num_particles, 1), np.sort(effTstepNum)[::-1], 'b*')
+    # plt.plot(np.arange(0, num_particles, 1), np.sort(survivalTimeDist)[::-1], 'k-')
+    # plt.title("Survival time distribution")
+
+    # Distribution of survival times for particles
     plt.figure(figsize=(8, 8))
-    if recordTrajectories:
-        effTstepNum = np.array([np.count_nonzero(row)*dt for row in xPath])
-        plt.plot(np.arange(0, num_particles, 1), np.sort(effTstepNum)[::-1], 'b*')
+    plt.plot(np.arange(0, num_particles, 1), np.sort(particleSteps)[::-1], 'b*')
     plt.plot(np.arange(0, num_particles, 1), np.sort(survivalTimeDist)[::-1], 'k-')
     plt.title("Survival time distribution")
 
     # Distribution of live particles in time
     plt.figure(figsize=(8, 8))
-    if recordTrajectories:
-        effTstepNum = np.array([np.count_nonzero(row)*dt for row in xPath])
-    else:
-        effTstepNum = survivalTimeDist
-    survivedParticles = np.array([sum(effTstepNum>float(Time[i])) for i in range(len(Time))])
-    survivedParticlesNorm = survivedParticles/survivedParticles.sum()
-    plt.plot(Time, survivedParticlesNorm, 'b*')
+    # if recordTrajectories:
+    #     effTstepNum = np.array([np.count_nonzero(row)*dt for row in xPath])
+    # else:
+    #     effTstepNum = survivalTimeDist
+    # survivedParticles = np.array([sum(effTstepNum>float(Time[i])) for i in range(len(Time))])
+    # survivedParticlesNorm = survivedParticles/survivedParticles.sum()
+    survDistWm = np.array([sum(particleSteps>float(Time[i])) for i in range(len(Time))])
+    survDistWmNorm = survDistWm/survDistWm.sum()
+    # plt.plot(Time, survivedParticlesNorm, 'b*')
     plt.plot(Time, exp_prob, 'r-')
+    plt.plot(Time, survDistWmNorm, 'g*')
     plt.title("Live particle distribution in time")
     plt.xscale('log')
     plt.yscale('log')
