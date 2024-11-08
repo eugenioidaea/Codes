@@ -179,18 +179,38 @@ if plotCharts and recordTrajectories and np.logical_not(reflection):
     plt.tight_layout()
     # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/nonAbsParticlesNorm.pdf", format="pdf", bbox_inches="tight")
 
-# Well-mixed vs diffusion-limited survival time distributions ##############################
+# Well-mixed vs diffusion-limited survival time distributions ###########################################################
 
 if len(loadAbsorption.files)>0 and len(loadDegradation.files)>0:
     # Distribution of live particles in time
     plt.figure(figsize=(8, 8))
-    plt.plot(Time, survivedParticlesNorm, 'b*')
-    plt.plot(Time, exp_prob, 'r-')
-    plt.plot(Time, nonAbsorbedParticlesNorm, 'g*')
+    tau = (uby-lby)**2/Df
+    plt.plot(Time/tau, survivedParticlesNorm, 'b*')
+    plt.plot(Time/tau, exp_prob, 'r-')
+    plt.plot(Time/tau, nonAbsorbedParticlesNorm, 'g*')
     plt.title("Live particle distribution in time")
     plt.xscale('log')
     plt.yscale('log')
-    plt.xlabel('Time step')
+    plt.xlabel('(Time step)/tau')
     plt.ylabel('PDF of live particles')
     plt.tight_layout()
     # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/liveParticleInTime.pdf", format="pdf", bbox_inches="tight")
+
+    plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    dt = np.diff(Time)
+    dSurvPart = 1/num_particles*np.diff(survivedParticles)
+    dExpProb = np.diff(exp_prob)
+    dNonAbsPart = 1/num_particles*np.diff(nonAbsorbedParticles)
+    dSurvdt = dSurvPart/dt
+    dExpProbdt = dExpProb/dt
+    dNonAbsdt = dNonAbsPart/dt
+    midTimes = (Time[:-1] + Time[1:]) / 2
+    plt.plot(midTimes, dSurvdt, 'b-')
+    plt.plot(midTimes, dExpProbdt, 'r-')
+    #plt.axhline(y=k_deg, color='r', linestyle='-', linewidth=1)
+    plt.plot(midTimes, dNonAbsdt, 'g-')
+    plt.title("Effective reaction rate")
+    plt.xlabel('Time step')
+    plt.ylabel('k(t)=1/N*dN/dt')
+    plt.tight_layout()
