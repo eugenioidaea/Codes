@@ -1,5 +1,5 @@
-from IPython import get_ipython
-get_ipython().run_line_magic('reset', '-f')
+#from IPython import get_ipython
+#get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import time
 
@@ -30,7 +30,7 @@ stdEta = 1 # Spatial jump distribution paramenter
 num_particles = int(1e4) # Number of particles in the simulation
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
-cpx = 10 # Vertical Control Plane
+cpx = 1 # Vertical Control Plane
 if lbxOn:
     lbx = 0 # Left Boundary
 binsXinterval = 10
@@ -59,12 +59,13 @@ y = np.linspace(lby+init_shift, uby-init_shift, num_particles) # Vertical initia
 if recordTrajectories:
     xPath = np.zeros((num_particles, num_steps))  # Matrix for storing x trajectories
     yPath = np.zeros((num_particles, num_steps))  # Matrix for storing y trajectories
-inside = [True for _ in range(num_particles)]
+inside = np.ones(num_particles, dtype=bool)
 crossOutLeft = [False for _ in range(num_particles)]
 outsideAbove = [False for _ in range(num_particles)]
 outsideBelow = [False for _ in range(num_particles)]
-particleRT = np.zeros(num_particles) # Array which stores each particles' number of steps
-particleSemiInfRT = np.zeros(num_particles)
+liveParticle = [True for _ in range(num_particles)]
+particleRT = []
+particleSemiInfRT = []
 Time = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
 timeLinSpaced = np.linspace(dt, sim_time, binsTime) # Linearly spaced bins
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(sim_time), binsTime) # Logarithmically spaced bins
@@ -74,6 +75,7 @@ probCrossOutAbove = np.full(num_particles, False) # Probability of crossing the 
 probCrossOutBelow = np.full(num_particles, False) # Probability of crossing the fracture's walls
 probCrossInAbove = np.full(num_particles, False) # Probability of crossing the fracture's walls
 probCrossInBelow = np.full(num_particles, False) # Probability of crossing the fracture's walls
+particleSteps = np.zeros(num_particles)
 
 # Functions ##########################################################################
 def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
@@ -123,7 +125,7 @@ def analytical_inf(x, t, D):
     return y
 
 def degradation_dist(num_steps, k_deg, num_particles):
-    t_steps = np.linspace(0, sim_time, num_steps)
+    t_steps = np.linspace(1, sim_time, num_steps)
     exp_prob = k_deg*np.exp(-k_deg*t_steps)
     exp_prob /= exp_prob.sum()
     # valueRange = np.linspace(0, sim_time, num_steps)
@@ -149,10 +151,11 @@ else:
 
 while t<sim_time:
 
+    # Particles which are degradeted
+    liveParticle = np.array(survivalTimeDist>t)
+
     if stopOnCDF & (cdf>stopBTC/100):
         break
-
-    liveParticle = survivalTimeDist>t # Particles which are degradeted
 
     # Store the positions of each particle for all the time steps 
     if recordTrajectories:
@@ -166,6 +169,7 @@ while t<sim_time:
     if lbxOn:
         fracture = fracture & np.logical_not(crossOutLeft)
         matrix = matrix & np.logical_not(crossOutLeft)
+    particleSteps[fracture | matrix] += 1 # It keeps track of the number of steps of each particle
 
     # Update the position of all the particles at a given time steps according to the Langevin dynamics
     x, y = update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta)
@@ -211,15 +215,16 @@ while t<sim_time:
     outsideAbove = y>uby # Particles in the porous matrix above the fracture
     outsideBelow = y<lby # Particles in the porous matrix below the fracture
 
-    pdf_part[int(t/dt)] = sum(abs(x[isIn])>cpx) # Count the particle which exit the control planes at each time step
-
     # Record the spatial distribution of the particles at a given time, e.g.: 'recordSpatialConc'
     if (t <= recordSpatialConc) & (recordSpatialConc < t+dt):
         countsSpace, binEdgeSpace = np.histogram(x, xBins, density=True)
         binCenterSpace = (binEdgeSpace[:-1] + binEdgeSpace[1:]) / 2
 
+    # Count the particle which exit the control planes at each time step
+    pdf_part[int(t/dt)] = sum(abs(x[isIn])>cpx)
     # Compute the CDF and increase the time
     cdf = sum(pdf_part)/num_particles
+    # Move forward time step
     t += dt
 
 end_time = time.time() # Stop timing the while loop
@@ -230,14 +235,14 @@ iPart = 0
 iLbxOn = 0
 # Retrieve the number of steps for each particle from the pdf of the breakthrough curve
 for index, (valPdfPart, valLbxOn) in enumerate(zip(pdf_part, pdf_lbxOn)):
-    particleRT[int(iPart):int(iPart+valPdfPart)] = index*dt
-    particleSemiInfRT[int(iLbxOn):int(iLbxOn+valLbxOn)] = index*dt
+    particleRT.extend([index*dt+1]*int(valPdfPart))
+    particleSemiInfRT.extend([index*dt+1]*int(valLbxOn))
     iPart = iPart+valPdfPart
     iLbxOn = iLbxOn+valLbxOn
 
 # Compute simulation statistichs
-meanTstep = particleRT.mean()
-stdTstep = particleRT.std()
+meanTstep = np.array(particleRT).mean()
+stdTstep = np.array(particleRT).std()
 if (dt*10>(uby-lby)**2/Df):
     print("WARNING! Time step dt should be reduced to avoid jumps across the fracture width")
 
@@ -275,4 +280,4 @@ else:
 variablesToSave = {name: value for name, value in globals().items() if isinstance(value, (np.ndarray, int, float, bool))}
 # Save all the variables to an .npz file
 # np.savez('totalAbsorption.npz', **variablesToSave)
-np.savez('degradation.npz', **variablesToSave)
+# np.savez('degradation.npz', **variablesToSave)
