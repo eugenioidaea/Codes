@@ -57,8 +57,8 @@ pdf_lbxOn = np.zeros(num_steps)
 x = np.ones(num_particles)*x0 # Horizontal initial positions
 y = np.linspace(lby+init_shift, uby-init_shift, num_particles) # Vertical initial positions
 if recordTrajectories:
-    xPath = np.zeros((num_particles, num_steps))  # Matrix for storing x trajectories
-    yPath = np.zeros((num_particles, num_steps))  # Matrix for storing y trajectories
+    xPath = np.zeros((num_particles, num_steps+1))  # Matrix for storing x trajectories
+    yPath = np.zeros((num_particles, num_steps+1))  # Matrix for storing y trajectories
 inside = np.ones(num_particles, dtype=bool)
 crossOutLeft = [False for _ in range(num_particles)]
 outsideAbove = [False for _ in range(num_particles)]
@@ -157,11 +157,6 @@ while t<sim_time:
     if stopOnCDF & (cdf>stopBTC/100):
         break
 
-    # Store the positions of each particle for all the time steps 
-    if recordTrajectories:
-        xPath[:, int(t/dt)] = np.where(liveParticle, x, 0)  # Store x positions for the current time step
-        yPath[:, int(t/dt)] = np.where(liveParticle, y, 0)  # Store y positions for the current time step
-
     isIn = abs(x)<cpx # Get the positions of the particles that are located within the control planes (wheter inside or outside the fracture)
     fracture = inside & liveParticle # Particles in the domain and inside the fracture and not degradeted yet
     outside = np.array(outsideAbove) | np.array(outsideBelow) # Particles outside the fracture
@@ -215,17 +210,22 @@ while t<sim_time:
     outsideAbove = y>uby # Particles in the porous matrix above the fracture
     outsideBelow = y<lby # Particles in the porous matrix below the fracture
 
-    # Record the spatial distribution of the particles at a given time, e.g.: 'recordSpatialConc'
-    if (t <= recordSpatialConc) & (recordSpatialConc < t+dt):
-        countsSpace, binEdgeSpace = np.histogram(x, xBins, density=True)
-        binCenterSpace = (binEdgeSpace[:-1] + binEdgeSpace[1:]) / 2
-
     # Count the particle which exit the control planes at each time step
     pdf_part[int(t/dt)] = sum(abs(x[isIn])>cpx)
     # Compute the CDF and increase the time
     cdf = sum(pdf_part)/num_particles
     # Move forward time step
     t += dt
+
+    # Record the spatial distribution of the particles at a given time, e.g.: 'recordSpatialConc'
+    if (t <= recordSpatialConc) & (recordSpatialConc < t+dt):
+        countsSpace, binEdgeSpace = np.histogram(x, xBins, density=True)
+        binCenterSpace = (binEdgeSpace[:-1] + binEdgeSpace[1:]) / 2
+
+    # Store the positions of each particle for all the time steps 
+    if recordTrajectories:
+        xPath[:, int(t/dt)] = np.where(liveParticle, x, 0)  # Store x positions for the current time step
+        yPath[:, int(t/dt)] = np.where(liveParticle, y, 0)  # Store y positions for the current time step
 
 end_time = time.time() # Stop timing the while loop
 execution_time = end_time - start_time
