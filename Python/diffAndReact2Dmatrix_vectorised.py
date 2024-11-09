@@ -6,7 +6,7 @@ import time
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
 # recordVideo = False # It slows down the script
-recordTrajectories = True # It uses up memory
+recordTrajectories = False # It uses up memory
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 degradation = True # Switch for the degradation of the particles
@@ -27,7 +27,7 @@ Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e4) # Number of particles in the simulation
+num_particles = int(1e5) # Number of particles in the simulation
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 cpx = 1 # Vertical Control Plane
@@ -125,7 +125,7 @@ def analytical_inf(x, t, D):
     return y
 
 def degradation_dist(num_steps, k_deg, num_particles):
-    t_steps = np.linspace(1, sim_time, num_steps)
+    t_steps = np.linspace(0, sim_time, num_steps)
     exp_prob = k_deg*np.exp(-k_deg*t_steps)
     exp_prob /= exp_prob.sum()
     # valueRange = np.linspace(0, sim_time, num_steps)
@@ -205,7 +205,7 @@ while t<sim_time:
     if lbxOn:
         crossOutLeft = (x==lbx)
 
-    # Find the particle's locations with relative to the fracture's walls
+    # Find the particle's locations with respect to the fracture's walls and exclude those that get adsorbed on the walls from the live particles
     inside = (y<uby) & (y>lby) # Particles inside the fracture
     outsideAbove = y>uby # Particles in the porous matrix above the fracture
     outsideBelow = y<lby # Particles in the porous matrix below the fracture
@@ -255,7 +255,7 @@ else:
     yAnalytical = analytical_inf(binCenterSpace, recordSpatialConc, Df)
 
 # Compute the number of particles at a given time within a vertical and a horizontal stripe
-if np.logical_not(reflection):
+if recordTrajectories and np.logical_not(reflection):
     # Average concentration in X and Y
     recordTdist = int(Time[-2])
     vInterval = np.array([x0-0.1, x0+0.1])
@@ -279,5 +279,5 @@ else:
 # Filter the variables we want to save by type
 variablesToSave = {name: value for name, value in globals().items() if isinstance(value, (np.ndarray, int, float, bool))}
 # Save all the variables to an .npz file
-# np.savez('totalAbsorption.npz', **variablesToSave)
-np.savez('degradation.npz', **variablesToSave)
+# np.savez('totalAbsorption_1.npz', **variablesToSave)
+np.savez('degradation_1.npz', **variablesToSave)

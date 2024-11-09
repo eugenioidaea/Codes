@@ -3,12 +3,14 @@ get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import matplotlib.pyplot as plt
 
-loadAbsorption = np.load('totalAbsorption.npz')
+loadAbsorption = np.load('totalAbsorption_1.npz')
 for name, value in (loadAbsorption.items()):
     globals()[name] = value
-loadDegradation = np.load('degradation.npz')
+particleStepsAbs = particleSteps
+loadDegradation = np.load('degradation_1.npz')
 for name, value in (loadDegradation.items()):
     globals()[name] = value
+particleStepsDeg = particleSteps
 
 # Plot section #########################################################################
 if plotCharts and recordTrajectories:
@@ -94,13 +96,13 @@ if plotCharts and np.logical_not(lbxOn):
 if plotCharts and degradation:
     # Distribution of survival times for particles
     plt.figure(figsize=(8, 8))
-    plt.plot(np.arange(0, num_particles, 1), np.sort(particleSteps)[::-1], 'b*')
+    plt.plot(np.arange(0, num_particles, 1), np.sort(particleStepsDeg)[::-1], 'b*')
     plt.plot(np.arange(0, num_particles, 1), np.sort(survivalTimeDist)[::-1], 'k-')
     plt.title("Survival time distribution")
 
     # Distribution of live particles in time
     plt.figure(figsize=(8, 8))
-    survDistWm = np.array([sum(particleSteps>float(Time[i])) for i in range(len(Time))])
+    survDistWm = np.array([sum(particleStepsDeg>float(Time[i])) for i in range(len(Time))])
     survDistWmNorm = survDistWm/survDistWm.sum()
     plt.plot(Time, exp_prob, 'r-')
     plt.plot(Time, survDistWmNorm, 'b*')
@@ -144,10 +146,11 @@ if plotCharts and recordTrajectories and np.logical_not(reflection):
     plt.tight_layout()
     # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/horizontalFinalDist.pdf", format="pdf", bbox_inches="tight")
 
+if plotCharts and len(particleStepsAbs)>0:
     # Distribution of non-absorbed particles in time
     plt.figure(figsize=(8, 8))
-    pathLegnth = np.array([np.count_nonzero((row != lby) & (row != uby)) for row in yPath])
-    nonAbsorbedParticles = np.array([sum(pathLegnth>float(Time[i])) for i in range(len(Time))])
+    # pathLegnth = np.array([np.count_nonzero((row != lby) & (row != uby)) for row in yPath])
+    nonAbsorbedParticles = np.array([sum(particleStepsAbs>float(Time[i])) for i in range(len(Time))])
     plt.plot(Time, nonAbsorbedParticles, 'b*')
     plt.title("Non-absorbed particles in time")
     plt.xscale('log')
@@ -180,9 +183,9 @@ if len(loadAbsorption.files)>0 and len(loadDegradation.files)>0:
     plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})    
     tau = (uby-lby)**2/Df
-    plt.plot(Time/tau, survivedParticlesNorm, 'b*')
-    plt.plot(Time/tau, exp_prob, 'r-')
-    plt.plot(Time/tau, nonAbsorbedParticlesNorm, 'g*')
+    plt.plot(Time[:-1]/tau, survDistWmNorm[:-1], 'b*')
+    plt.plot(Time[:-1]/tau, exp_prob[:-1], 'r-')
+    plt.plot(Time[:-1]/tau, nonAbsorbedParticlesNorm[:-1], 'g*')
     plt.title("Live particle distribution in time")
     plt.xscale('log')
     plt.yscale('log')
@@ -195,19 +198,19 @@ if len(loadAbsorption.files)>0 and len(loadDegradation.files)>0:
     plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
     dt = np.diff(Time)
-    dSurvPart = 1/num_particles*np.diff(survivedParticles)
+    dSurvPart = np.diff(survDistWmNorm)
     dExpProb = np.diff(exp_prob)
-    dNonAbsPart = 1/num_particles*np.diff(nonAbsorbedParticles)
+    dNonAbsPart = np.diff(nonAbsorbedParticlesNorm)
     dSurvdt = dSurvPart/dt
     dExpProbdt = dExpProb/dt
     dNonAbsdt = dNonAbsPart/dt
     midTimes = (Time[:-1] + Time[1:]) / 2
-    plt.plot(midTimes, dSurvdt, 'b-')
-    plt.plot(midTimes, dExpProbdt, 'r-')
+    plt.plot(midTimes[:-1], dSurvdt[:-1], 'b*')
+    plt.plot(midTimes[:-1], dExpProbdt[:-1], 'r-')
     #plt.axhline(y=k_deg, color='r', linestyle='-', linewidth=1)
-    plt.plot(midTimes, dNonAbsdt, 'g-')
+    plt.plot(midTimes[:-1], dNonAbsdt[:-1], 'g-')
     plt.title("Effective reaction rate")
     plt.xlabel('Time step')
-    plt.ylabel('k(t)=1/N*dN/dt')
+    plt.ylabel('k(t)')
     plt.tight_layout()
     plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistRateCompare.pdf", format="pdf", bbox_inches="tight")
