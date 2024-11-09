@@ -280,4 +280,4 @@ else:
 variablesToSave = {name: value for name, value in globals().items() if isinstance(value, (np.ndarray, int, float, bool))}
 # Save all the variables to an .npz file
 # np.savez('totalAbsorption_1.npz', **variablesToSave)
-np.savez('degradation_1.npz', **variablesToSave)
+# np.savez('degradation_1.npz', **variablesToSave)

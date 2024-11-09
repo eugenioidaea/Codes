@@ -77,7 +77,7 @@ if plotCharts and lbxOn:
     plt.xlabel('Time step')
     plt.ylabel('Normalised number of particles')
     plt.tight_layout()
-    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationInfinite.pdf", format="pdf", bbox_inches="tight")
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationInfinite.png", format="png", bbox_inches="tight")
 
 # Spatial concentration profile at 'recordSpatialConc' time
 if plotCharts and np.logical_not(lbxOn):
@@ -91,7 +91,7 @@ if plotCharts and np.logical_not(lbxOn):
         plt.axvline(x=-cpx, color='b', linestyle='--', linewidth=2)
     plt.title("Simulated vs analytical solution")
     plt.tight_layout()
-    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationInfinite.pdf", format="pdf", bbox_inches="tight")
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationInfinite.png", format="png", bbox_inches="tight")
 
 if plotCharts and degradation:
     # Distribution of survival times for particles
@@ -112,7 +112,7 @@ if plotCharts and degradation:
     plt.xlabel('Time step')
     plt.ylabel('PDF of live particles')
     plt.tight_layout()
-    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/liveParticleInTime.pdf", format="pdf", bbox_inches="tight")
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/liveParticleInTime.png", format="png", bbox_inches="tight")
 
 if plotCharts and recordTrajectories and np.logical_not(reflection):
     # Final particles's positions
@@ -135,7 +135,7 @@ if plotCharts and recordTrajectories and np.logical_not(reflection):
     plt.xlabel('Distance along Y')
     plt.ylabel('Number of particles EXCLUDING THOSE ON BOUNDARIES')
     plt.tight_layout()
-    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verticalFinalDist.pdf", format="pdf", bbox_inches="tight")
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verticalFinalDist.png", format="png", bbox_inches="tight")
 
     # Horizontal distribution
     plt.figure(figsize=(8, 8))
@@ -144,7 +144,7 @@ if plotCharts and recordTrajectories and np.logical_not(reflection):
     plt.xlabel('Distance along X')
     plt.ylabel('Number of particles')
     plt.tight_layout()
-    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/horizontalFinalDist.pdf", format="pdf", bbox_inches="tight")
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/horizontalFinalDist.png", format="png", bbox_inches="tight")
 
 if plotCharts and len(particleStepsAbs)>0:
     # Distribution of non-absorbed particles in time
@@ -160,7 +160,7 @@ if plotCharts and len(particleStepsAbs)>0:
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
     plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
     plt.tight_layout()
-    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/nonAbsParticles.pdf", format="pdf", bbox_inches="tight")
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/nonAbsParticles.png", format="png", bbox_inches="tight")
 
     # Normalised distribution of non-absorbed particles in time
     plt.figure(figsize=(8, 8))
@@ -174,7 +174,7 @@ if plotCharts and len(particleStepsAbs)>0:
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
     plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
     plt.tight_layout()
-    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/nonAbsParticlesNorm.pdf", format="pdf", bbox_inches="tight")
+    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/nonAbsParticlesNorm.png", format="png", bbox_inches="tight")
 
 # Well-mixed vs diffusion-limited survival time distributions ###########################################################
 
@@ -192,7 +192,7 @@ if len(loadAbsorption.files)>0 and len(loadDegradation.files)>0:
     plt.xlabel('(Time step)/tau')
     plt.ylabel('PDF of live particles')
     plt.tight_layout()
-    plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompare.pdf", format="pdf", bbox_inches="tight")
+    plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompare.png", format="png", bbox_inches="tight")
 
     # Rates of particles decay
     plt.figure(figsize=(8, 8))
@@ -213,4 +213,4 @@ if len(loadAbsorption.files)>0 and len(loadDegradation.files)>0:
     plt.xlabel('Time step')
     plt.ylabel('k(t)')
     plt.tight_layout()
-    plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistRateCompare.pdf", format="pdf", bbox_inches="tight")
+    plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistRateCompare.png", format="png", bbox_inches="tight")
