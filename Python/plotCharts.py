@@ -3,9 +3,9 @@ get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import matplotlib.pyplot as plt
 
-# loadAbsorption = np.load('totalAbsorption.npz')
-# for name, value in (loadAbsorption.items()):
-#     globals()[name] = value
+loadAbsorption = np.load('totalAbsorption.npz')
+for name, value in (loadAbsorption.items()):
+    globals()[name] = value
 loadDegradation = np.load('degradation.npz')
 for name, value in (loadDegradation.items()):
     globals()[name] = value
@@ -178,6 +178,7 @@ if plotCharts and recordTrajectories and np.logical_not(reflection):
 if len(loadAbsorption.files)>0 and len(loadDegradation.files)>0:
     # Distribution of live particles in time
     plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})    
     tau = (uby-lby)**2/Df
     plt.plot(Time/tau, survivedParticlesNorm, 'b*')
     plt.plot(Time/tau, exp_prob, 'r-')
@@ -188,8 +189,9 @@ if len(loadAbsorption.files)>0 and len(loadDegradation.files)>0:
     plt.xlabel('(Time step)/tau')
     plt.ylabel('PDF of live particles')
     plt.tight_layout()
-    # plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/liveParticleInTime.pdf", format="pdf", bbox_inches="tight")
+    plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompare.pdf", format="pdf", bbox_inches="tight")
 
+    # Rates of particles decay
     plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
     dt = np.diff(Time)
@@ -208,3 +210,4 @@ if len(loadAbsorption.files)>0 and len(loadDegradation.files)>0:
     plt.xlabel('Time step')
     plt.ylabel('k(t)=1/N*dN/dt')
     plt.tight_layout()
+    plt.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistRateCompare.pdf", format="pdf", bbox_inches="tight")
