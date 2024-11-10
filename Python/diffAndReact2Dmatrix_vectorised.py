@@ -1,5 +1,5 @@
-from IPython import get_ipython
-get_ipython().run_line_magic('reset', '-f')
+#from IPython import get_ipython
+#get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import time
 
@@ -7,30 +7,30 @@ import time
 plotCharts = True # It controls graphical features (disable when run on HPC)
 # recordVideo = False # It slows down the script
 recordTrajectories = False # It uses up memory
-lbxOn = False # It controls the position of the left boundary
-lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
-degradation = True # Switch for the degradation of the particles
+lbxOn = True # It controls the position of the left boundary
+lbxAdsorption = True # It controls whether the particles get adsorpted or reflected on the left boundary 
+degradation = False # Switch for the degradation of the particles
 reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
-cpxOn = False # It regulates the vertical control plane
+cpxOn = True # It regulates the visualisation of the vertical control plane
 
 if plotCharts:
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-sim_time = int(20)
+sim_time = int(1e4)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-x0 = 0 # Initial horizontal position of the particles
+x0 = 4 # Initial horizontal position of the particles
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e5) # Number of particles in the simulation
+num_particles = int(1e4) # Number of particles in the simulation
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
-cpx = 1 # Vertical Control Plane
+cpx = 10 # Vertical Control Plane
 if lbxOn:
     lbx = 0 # Left Boundary
 binsXinterval = 10
@@ -42,7 +42,7 @@ fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
 binsTime = 20 # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
-recordSpatialConc = int(10) # Concentration profile recorded time
+recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.5 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
@@ -240,6 +240,9 @@ for index, (valPdfPart, valLbxOn) in enumerate(zip(pdf_part, pdf_lbxOn)):
     iPart = iPart+valPdfPart
     iLbxOn = iLbxOn+valLbxOn
 
+particleRT = np.array(particleRT)
+particleSemiInfRT = np.array(particleSemiInfRT)
+
 # Compute simulation statistichs
 meanTstep = np.array(particleRT).mean()
 stdTstep = np.array(particleRT).std()
@@ -281,3 +284,5 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # Save all the variables to an .npz file
 # np.savez('totalAbsorption_1.npz', **variablesToSave)
 # np.savez('degradation_1.npz', **variablesToSave)
+# np.savez('infiniteDomain.npz', **variablesToSave)
+np.savez('semiInfiniteDomain.npz', **variablesToSave)
