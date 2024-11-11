@@ -17,8 +17,12 @@ import matplotlib.pyplot as plt
 # for name, value in (loadInfiniteDomain.items()):
 #     globals()[name] = value
 
-loadSemiInfiniteDomain = np.load('semiInfiniteDomain.npz')
-for name, value in (loadSemiInfiniteDomain.items()):
+# loadSemiInfiniteDomain = np.load('semiInfiniteDomain.npz')
+# for name, value in (loadSemiInfiniteDomain.items()):
+#     globals()[name] = value
+
+loadFinalPositions = np.load('finalPositions.npz')
+for name, value in (loadFinalPositions.items()):
     globals()[name] = value
 
 compare = False
@@ -86,7 +90,7 @@ if plotCharts and lbxOn:
     plt.tight_layout()
 
 # Spatial concentration profile at 'recordSpatialConc' time
-if plotCharts and np.logical_not(lbxOn):
+if plotCharts and np.logical_not(lbxOn) and recordSpatialConc<sim_time:
     spatialConcentration = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
     plt.plot(binCenterSpace, countsSpace, 'b-')
@@ -131,6 +135,22 @@ if plotCharts and recordTrajectories and np.logical_not(reflection):
         plt.axhline(y=val, color='black', linestyle='--', linewidth=2)
     plt.tight_layout()
 
+    # Vertical distribution of all particles
+    finalPositionVertAll = plt.figure(figsize=(8, 8))
+    plt.bar(vBinsAll[:-1], vDistAll, width=np.diff(vBins), edgecolor="black", align="edge")
+    plt.title('Particles distribution at the end of the simulation')
+    plt.xlabel('Distance along Y')
+    plt.ylabel('Number of particles EXCLUDING THOSE ON BOUNDARIES')
+    plt.tight_layout()
+
+    # Horizontal distribution of all particles
+    finalPositionHorAll = plt.figure(figsize=(8, 8))
+    plt.bar(hBinsAll[:-1], hDistAll, width=np.diff(hBins), edgecolor="black", align="edge")
+    plt.title('Particles distribution at the end of the simulation')
+    plt.xlabel('Distance along X')
+    plt.ylabel('Number of particles EXCLUDING THOSE ON BOUNDARIES')
+    plt.tight_layout()
+
     # Vertical distribution
     finalPositionVert = plt.figure(figsize=(8, 8))
     plt.bar(vBins[:-1], vDist, width=np.diff(vBins), edgecolor="black", align="edge")
@@ -150,7 +170,6 @@ if plotCharts and recordTrajectories and np.logical_not(reflection):
 if plotCharts and np.logical_not(reflection):
     # Distribution of non-absorbed particles in time
     diffusionLimitedSurvTimeDist = plt.figure(figsize=(8, 8))
-    # pathLegnth = np.array([np.count_nonzero((row != lby) & (row != uby)) for row in yPath])
     nonAbsorbedParticles = np.array([sum(particleStepsAbs>float(Time[i])) for i in range(len(Time))])
     plt.plot(Time, nonAbsorbedParticles, 'b*')
     plt.title("Non-absorbed particles in time")
@@ -216,13 +235,17 @@ if compare:
 # trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesSemiInfinite.png", format="png", bbox_inches="tight")
 # trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesDegradation.png", format="png", bbox_inches="tight")
 
-pdfOfBtc.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationSemi-infiniteImproved.png", format="png", bbox_inches="tight")
+# pdfOfBtc.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationSemi-infiniteImproved.png", format="png", bbox_inches="tight")
 
 # spatialConcentration.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationInfinite1e5.png", format="png", bbox_inches="tight")
 
 # survivalTimeDistribution.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/liveParticleInTime.png", format="png", bbox_inches="tight")
 
-# finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositions.png", format="png", bbox_inches="tight")
+finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositions.png", format="png", bbox_inches="tight")
+
+finalPositionVertAll.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verticalFinalDist.png", format="png", bbox_inches="tight")
+
+finalPositionHorAll.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/horizontalFinalDist.png", format="png", bbox_inches="tight")
 
 # finalPositionVert.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verticalFinalDist.png", format="png", bbox_inches="tight")
 

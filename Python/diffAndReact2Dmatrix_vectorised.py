@@ -1,33 +1,33 @@
-#from IPython import get_ipython
-#get_ipython().run_line_magic('reset', '-f')
+from IPython import get_ipython
+get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import time
 
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
 # recordVideo = False # It slows down the script
-recordTrajectories = False # It uses up memory
-lbxOn = True # It controls the position of the left boundary
-lbxAdsorption = True # It controls whether the particles get adsorpted or reflected on the left boundary 
+recordTrajectories = True # It uses up memory
+lbxOn = False # It controls the position of the left boundary
+lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 degradation = False # Switch for the degradation of the particles
-reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
+reflection = False # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
-cpxOn = True # It regulates the visualisation of the vertical control plane
+cpxOn = False # It regulates the visualisation of the vertical control plane
 
 if plotCharts:
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-sim_time = int(1e4)
+sim_time = int(20)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-x0 = 4 # Initial horizontal position of the particles
+x0 = 0 # Initial horizontal position of the particles
 Dm = 0.1  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e4) # Number of particles in the simulation
+num_particles = int(1e5) # Number of particles in the simulation
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 cpx = 10 # Vertical Control Plane
@@ -217,10 +217,10 @@ while t<sim_time:
     # Move forward time step
     t += dt
 
+    binCenterSpace = (xBins[:-1] + xBins[1:]) / 2
     # Record the spatial distribution of the particles at a given time, e.g.: 'recordSpatialConc'
     if (t <= recordSpatialConc) & (recordSpatialConc < t+dt):
-        countsSpace, binEdgeSpace = np.histogram(x, xBins, density=True)
-        binCenterSpace = (binEdgeSpace[:-1] + binEdgeSpace[1:]) / 2
+        countsSpace = np.histogram(x, xBins, density=True)
 
     # Store the positions of each particle for all the time steps 
     if recordTrajectories:
@@ -257,6 +257,19 @@ if lbxOn:
 else:
     yAnalytical = analytical_inf(binCenterSpace, recordSpatialConc, Df)
 
+# Compute the number of particles at a given time over the whole domain extension
+if recordTrajectories and np.logical_not(reflection):
+    # Average concentration in X and Y
+    recordTdist = int(Time[-2]) # Final time step
+    vInterval = np.array([x0-0.1, x0+0.1])
+    hInterval = np.array([(lby+uby)/2-0.1, (lby+uby)/2+0.1])
+    yRecordTdist = yPath[:, recordTdist]
+    yDistAll = yRecordTdist[(yRecordTdist != lby) & (yRecordTdist != uby)]
+    vDistAll, vBinsAll = np.histogram(yDistAll, np.linspace(lby, uby, binsSpace))
+    xRecordTdist = xPath[:, recordTdist]
+    xDistAll = xRecordTdist[(yRecordTdist != lby) & (yRecordTdist != uby)]
+    hDistAll, hBinsAll = np.histogram(xDistAll, np.linspace(-binsXinterval, binsXinterval, binsSpace))
+
 # Compute the number of particles at a given time within a vertical and a horizontal stripe
 if recordTrajectories and np.logical_not(reflection):
     # Average concentration in X and Y
@@ -273,7 +286,9 @@ if recordTrajectories and np.logical_not(reflection):
 print(f"Execution time: {execution_time:.6f} seconds")
 print(f"<t>: {meanTstep:.6f} s")
 print(f"sigmat: {stdTstep:.6f} s")
-if lbxOn:
+if recordSpatialConc>sim_time:
+    print("WARNING! The simulation time is smaller than the specified time for recording the spatial distribution of the concentration")
+elif lbxOn & (recordSpatialConc<sim_time):
     print(f"sum(|empiricalPdf-analyticalPdf|)= {sum(np.abs(countsSemiInfLog-analPdfSemiInf))}")
 else:
     print(f"sum(|yEmpirical-yAnalytical|)= {sum(np.abs(countsSpace-yAnalytical))}")
@@ -285,4 +300,5 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('totalAbsorption_1.npz', **variablesToSave)
 # np.savez('degradation_1.npz', **variablesToSave)
 # np.savez('infiniteDomain.npz', **variablesToSave)
-np.savez('semiInfiniteDomain.npz', **variablesToSave)
+# np.savez('semiInfiniteDomain.npz', **variablesToSave)
+np.savez('finalPositions.npz', **variablesToSave)
