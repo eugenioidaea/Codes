@@ -129,10 +129,10 @@ if plotCharts and recordTrajectories and np.logical_not(reflection):
     plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
     plt.axhline(y=uby, color='r', linestyle='--', linewidth=1)
     plt.axhline(y=lby, color='r', linestyle='--', linewidth=1)
-    for val in vInterval:
-        plt.axvline(x=val, color='black', linestyle='--', linewidth=2)
-    for val in hInterval:
-        plt.axhline(y=val, color='black', linestyle='--', linewidth=2)
+    # for val in vInterval:
+    #     plt.axvline(x=val, color='black', linestyle='--', linewidth=2)
+    # for val in hInterval:
+    #     plt.axhline(y=val, color='black', linestyle='--', linewidth=2)
     plt.tight_layout()
 
     # Vertical distribution of all particles
@@ -241,11 +241,11 @@ if compare:
 
 # survivalTimeDistribution.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/liveParticleInTime.png", format="png", bbox_inches="tight")
 
-finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositions.png", format="png", bbox_inches="tight")
+# finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositions.png", format="png", bbox_inches="tight")
 
-finalPositionVertAll.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verticalFinalDist.png", format="png", bbox_inches="tight")
+# finalPositionVertAll.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verticalFinalDist.png", format="png", bbox_inches="tight")
 
-finalPositionHorAll.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/horizontalFinalDist.png", format="png", bbox_inches="tight")
+# finalPositionHorAll.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/horizontalFinalDist.png", format="png", bbox_inches="tight")
 
 # finalPositionVert.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verticalFinalDist.png", format="png", bbox_inches="tight")
 
