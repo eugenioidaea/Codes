@@ -21,8 +21,12 @@ import matplotlib.pyplot as plt
 # for name, value in (loadSemiInfiniteDomain.items()):
 #     globals()[name] = value
 
-loadFinalPositions = np.load('finalPositions.npz')
-for name, value in (loadFinalPositions.items()):
+# loadFinalPositions = np.load('finalPositions.npz')
+# for name, value in (loadFinalPositions.items()):
+#     globals()[name] = value
+
+loadTestSemra = np.load('testSemra.npz')
+for name, value in (loadTestSemra.items()):
     globals()[name] = value
 
 compare = False
@@ -234,10 +238,12 @@ if compare:
 # trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesInfinite.png", format="png", bbox_inches="tight")
 # trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesSemiInfinite.png", format="png", bbox_inches="tight")
 # trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesDegradation.png", format="png", bbox_inches="tight")
+trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesMatrixDiffusion.png", format="png", bbox_inches="tight")
 
 # pdfOfBtc.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationSemi-infiniteImproved.png", format="png", bbox_inches="tight")
 
 # spatialConcentration.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationInfinite1e5.png", format="png", bbox_inches="tight")
+spatialConcentration.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationMatrixDiffusion.png", format="png", bbox_inches="tight")
 
 # survivalTimeDistribution.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/liveParticleInTime.png", format="png", bbox_inches="tight")
 
