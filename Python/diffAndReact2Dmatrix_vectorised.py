@@ -6,7 +6,7 @@ import time
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
 # recordVideo = False # It slows down the script
-recordTrajectories = True # It uses up memory
+recordTrajectories = False # It uses up memory
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 degradation = False # Switch for the degradation of the particles
@@ -19,7 +19,7 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-sim_time = int(1e3)
+sim_time = int(1e4)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 x0 = 0 # Initial horizontal position of the particles
@@ -27,7 +27,7 @@ Dm = 0.001  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e2) # Number of particles in the simulation
+num_particles = int(1e4) # Number of particles in the simulation
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 cpx = 10 # Vertical Control Plane
@@ -35,9 +35,9 @@ if lbxOn:
     lbx = 0 # Left Boundary
 binsXinterval = 10
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
-# reflectedInward = 100 # Percentage of impacts from the fracture reflected again into the fracture
+# reflectedInward = 1 # Probability of impacts from the fracture reflected again into the fracture
 reflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
-reflectedOutward = 20 # Percentage of impacts from the porous matrix reflected again into the porous matrix
+reflectedOutward = 1.0 # Probability of impacts from the porous matrix reflected again into the porous matrix
 animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
@@ -177,10 +177,10 @@ while t<sim_time:
     crossInBelow = outsideBelow & (y>lby) & (y<uby)
 
     # Decide the number of impacts that will cross the fracture's walls
-    probCrossOutAbove[np.where(crossOutAbove)[0]] = np.random.rand(np.sum(crossOutAbove)) > reflectedInward/100
-    probCrossOutBelow[np.where(crossOutBelow)[0]] = np.random.rand(np.sum(crossOutBelow)) > reflectedInward/100
-    probCrossInAbove[np.where(crossInAbove)[0]] = np.random.rand(np.sum(crossInAbove)) > reflectedOutward/100
-    probCrossInBelow[np.where(crossInBelow)[0]] = np.random.rand(np.sum(crossInBelow)) > reflectedOutward/100
+    probCrossOutAbove[np.where(crossOutAbove)[0]] = np.random.rand(np.sum(crossOutAbove)) > reflectedInward
+    probCrossOutBelow[np.where(crossOutBelow)[0]] = np.random.rand(np.sum(crossOutBelow)) > reflectedInward
+    probCrossInAbove[np.where(crossInAbove)[0]] = np.random.rand(np.sum(crossInAbove)) > reflectedOutward
+    probCrossInBelow[np.where(crossInBelow)[0]] = np.random.rand(np.sum(crossInBelow)) > reflectedOutward
 
     # Successfull crossing based on uniform probability distribution
     crossInToOutAbove = probCrossOutAbove & crossOutAbove
@@ -303,4 +303,5 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('infiniteDomain.npz', **variablesToSave)
 # np.savez('semiInfiniteDomain.npz', **variablesToSave)
 # np.savez('finalPositions.npz', **variablesToSave)
-np.savez('testSemra.npz', **variablesToSave)
+# np.savez('testSemra.npz', **variablesToSave)
+# np.savez('matrixDiffusionVerification.npz', **variablesToSave)

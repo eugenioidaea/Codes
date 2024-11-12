@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 # for name, value in (loadFinalPositions.items()):
 #     globals()[name] = value
 
-loadTestSemra = np.load('testSemra.npz')
+loadTestSemra = np.load('matrixDiffusionVerification.npz')
 for name, value in (loadTestSemra.items()):
     globals()[name] = value
 
@@ -129,7 +129,8 @@ if plotCharts and degradation:
 if plotCharts and recordTrajectories and np.logical_not(reflection):
     # Final particles's positions
     finalPositions = plt.figure(figsize=(8, 8))
-    plt.plot(xPath[:, -1], yPath[:, -1], 'b*')
+    # plt.plot(xPath[:, -1], yPath[:, -1], 'b*')
+    plt.plot(x, y, 'b*')
     plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
     plt.axhline(y=uby, color='r', linestyle='--', linewidth=1)
     plt.axhline(y=lby, color='r', linestyle='--', linewidth=1)
@@ -238,16 +239,16 @@ if compare:
 # trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesInfinite.png", format="png", bbox_inches="tight")
 # trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesSemiInfinite.png", format="png", bbox_inches="tight")
 # trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesDegradation.png", format="png", bbox_inches="tight")
-trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesMatrixDiffusion.png", format="png", bbox_inches="tight")
+# trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesMatrixDiffusion.png", format="png", bbox_inches="tight")
 
 # pdfOfBtc.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationSemi-infiniteImproved.png", format="png", bbox_inches="tight")
 
 # spatialConcentration.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationInfinite1e5.png", format="png", bbox_inches="tight")
-spatialConcentration.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationMatrixDiffusion.png", format="png", bbox_inches="tight")
+# spatialConcentration.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationMatrixDiffusion.png", format="png", bbox_inches="tight")
 
 # survivalTimeDistribution.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/liveParticleInTime.png", format="png", bbox_inches="tight")
 
-# finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositions.png", format="png", bbox_inches="tight")
+finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositionsMatrixDiffusion.png", format="png", bbox_inches="tight")
 
 # finalPositionVertAll.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verticalFinalDist.png", format="png", bbox_inches="tight")
 
