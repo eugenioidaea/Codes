@@ -3,15 +3,15 @@ get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import matplotlib.pyplot as plt
 
-# loadAbsorption = np.load('totalAbsorption_1.npz')
-# for name, value in (loadAbsorption.items()):
-#     globals()[name] = value
-# particleStepsAbs = particleSteps
+loadAbsorption = np.load('totalAbsorption_2.npz')
+for name, value in (loadAbsorption.items()):
+    globals()[name] = value
+particleStepsAbs = particleSteps
 
-# loadDegradation = np.load('degradation_1.npz')
-# for name, value in (loadDegradation.items()):
-#     globals()[name] = value
-# particleStepsDeg = particleSteps
+loadDegradation = np.load('degradation_2.npz')
+for name, value in (loadDegradation.items()):
+    globals()[name] = value
+particleStepsDeg = particleSteps
 
 # loadInfiniteDomain = np.load('infiniteDomain.npz')
 # for name, value in (loadInfiniteDomain.items()):
@@ -25,11 +25,11 @@ import matplotlib.pyplot as plt
 # for name, value in (loadFinalPositions.items()):
 #     globals()[name] = value
 
-loadTestSemra = np.load('matrixDiffusionVerification.npz')
-for name, value in (loadTestSemra.items()):
-    globals()[name] = value
+# loadTestSemra = np.load('matrixDiffusionVerification.npz')
+# for name, value in (loadTestSemra.items()):
+#     globals()[name] = value
 
-compare = False
+compare = True
 
 # Plot section #########################################################################
 if plotCharts and recordTrajectories:
@@ -116,7 +116,7 @@ if plotCharts and degradation:
     # Distribution of live particles in time
     survivalTimeDistribution = plt.figure(figsize=(8, 8))
     survDistWm = np.array([sum(particleStepsDeg>float(Time[i])) for i in range(len(Time))])
-    survDistWmNorm = survDistWm/survDistWm.sum()
+    survDistWmNorm = survDistWm/num_particles #survDistWm.sum()
     plt.plot(Time, exp_prob, 'r-')
     plt.plot(Time, survDistWmNorm, 'b*')
     plt.title("Live particle distribution in time")
@@ -172,7 +172,7 @@ if plotCharts and recordTrajectories and np.logical_not(reflection):
     plt.ylabel('Number of particles')
     plt.tight_layout()
 
-if plotCharts and np.logical_not(reflection):
+if plotCharts:
     # Distribution of non-absorbed particles in time
     diffusionLimitedSurvTimeDist = plt.figure(figsize=(8, 8))
     nonAbsorbedParticles = np.array([sum(particleStepsAbs>float(Time[i])) for i in range(len(Time))])
@@ -188,7 +188,7 @@ if plotCharts and np.logical_not(reflection):
 
     # Normalised distribution of non-absorbed particles in time
     diffusionLimitedSurvTimeDistNorm = plt.figure(figsize=(8, 8))
-    nonAbsorbedParticlesNorm = nonAbsorbedParticles/nonAbsorbedParticles.sum()
+    nonAbsorbedParticlesNorm = nonAbsorbedParticles/num_particles #nonAbsorbedParticles.sum()
     plt.plot(Time, nonAbsorbedParticlesNorm, 'b*')
     plt.title("Non-absorbed particle normalised in time")
     plt.xscale('log')
@@ -206,34 +206,43 @@ if compare:
     survTimeDistCompare = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})    
     tau = (uby-lby)**2/Df
-    plt.plot(Time[:-1]/tau, survDistWmNorm[:-1], 'b*')
-    plt.plot(Time[:-1]/tau, exp_prob[:-1], 'r-')
-    plt.plot(Time[:-1]/tau, nonAbsorbedParticlesNorm[:-1], 'g*')
+    exp_decay = np.exp(-Time/tau)
+    plt.plot(Time[:-1]/tau, survDistWmNorm[:-1], label=f'p_s(t)=ke^(-kt) where k={k_deg}', color='b')
+    # plt.plot(Time[:-1]/tau, exp_prob[:-1], 'r-')
+    plt.plot(Time[:-1]/tau, exp_decay[:-1], label=f'p_s(t)=e^(-t/tau) where tau_d={tau}', color='r')
+    plt.plot(Time[:-1]/tau, nonAbsorbedParticlesNorm[:-1], label=f'tau_d={tau}', color='g')
     plt.title("Live particle distribution in time")
     plt.xscale('log')
     plt.yscale('log')
     plt.xlabel('(Time step)/tau')
     plt.ylabel('PDF of live particles')
+    plt.legend()
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+    plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
     plt.tight_layout()
 
     # Rates of particles decay
     compareDecayDegradationRates = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
     dt = np.diff(Time)
-    dSurvPart = np.diff(survDistWmNorm)
-    dExpProb = np.diff(exp_prob)
-    dNonAbsPart = np.diff(nonAbsorbedParticlesNorm)
+    dSurvPart = np.diff(np.log(survDistWmNorm))
+    # dExpProb = np.diff(exp_prob)
+    dExpProb = np.diff(np.log(exp_decay))
+    dNonAbsPart = np.diff(np.log(nonAbsorbedParticlesNorm))
     dSurvdt = dSurvPart/dt
     dExpProbdt = dExpProb/dt
     dNonAbsdt = dNonAbsPart/dt
     midTimes = (Time[:-1] + Time[1:]) / 2
-    plt.plot(midTimes[:-1], dSurvdt[:-1], 'b*')
-    plt.plot(midTimes[:-1], dExpProbdt[:-1], 'r-')
+    plt.plot(midTimes[:-1], dSurvdt[:-1], label='Well mixed', color='b')
+    plt.plot(midTimes[:-1], dExpProbdt[:-1], label='Analytical', color='r')
     #plt.axhline(y=k_deg, color='r', linestyle='-', linewidth=1)
-    plt.plot(midTimes[:-1], dNonAbsdt[:-1], 'g-')
+    plt.plot(midTimes[:-1], dNonAbsdt[:-1], label='Diff limited', color='g')
     plt.title("Effective reaction rate")
     plt.xlabel('Time step')
     plt.ylabel('k(t)')
+    plt.legend()
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
+    # plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
     plt.tight_layout()
 
 # trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesInfinite.png", format="png", bbox_inches="tight")
@@ -248,7 +257,7 @@ if compare:
 
 # survivalTimeDistribution.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/liveParticleInTime.png", format="png", bbox_inches="tight")
 
-finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositionsMatrixDiffusion.png", format="png", bbox_inches="tight")
+# finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositionsMatrixDiffusion.png", format="png", bbox_inches="tight")
 
 # finalPositionVertAll.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verticalFinalDist.png", format="png", bbox_inches="tight")
 

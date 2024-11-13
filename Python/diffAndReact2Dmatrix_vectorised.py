@@ -10,7 +10,7 @@ recordTrajectories = False # It uses up memory
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 degradation = False # Switch for the degradation of the particles
-reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
+reflection = False # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
 cpxOn = False # It regulates the visualisation of the vertical control plane
 
@@ -19,7 +19,7 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-sim_time = int(1e4)
+sim_time = int(50)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 x0 = 0 # Initial horizontal position of the particles
@@ -27,7 +27,7 @@ Dm = 0.001  # Diffusion for particles moving in the porous matrix
 Df = 0.1  # Diffusion for particles moving in the fracture
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e4) # Number of particles in the simulation
+num_particles = int(1e5) # Number of particles in the simulation
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 cpx = 10 # Vertical Control Plane
@@ -35,9 +35,10 @@ if lbxOn:
     lbx = 0 # Left Boundary
 binsXinterval = 10
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
-# reflectedInward = 1 # Probability of impacts from the fracture reflected again into the fracture
-reflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
+reflectedInward = 1.0 # Probability of impacts from the fracture reflected again into the fracture
+# reflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
 reflectedOutward = 1.0 # Probability of impacts from the porous matrix reflected again into the porous matrix
+# reflectedOutward = np.sqrt(Dm)/(np.sqrt(Df)+np.sqrt(Dm))
 animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
@@ -45,7 +46,7 @@ binsTime = 20 # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
-k_deg = 0.5 # Degradation kinetic constant
+k_deg = 0.0423 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
 ap = 1 # Adsorption probability
 
@@ -298,8 +299,8 @@ else:
 # Filter the variables we want to save by type
 variablesToSave = {name: value for name, value in globals().items() if isinstance(value, (np.ndarray, int, float, bool))}
 # Save all the variables to an .npz file
-# np.savez('totalAbsorption_1.npz', **variablesToSave)
-# np.savez('degradation_1.npz', **variablesToSave)
+# np.savez('totalAbsorption_2.npz', **variablesToSave)
+# np.savez('degradation_2.npz', **variablesToSave)
 # np.savez('infiniteDomain.npz', **variablesToSave)
 # np.savez('semiInfiniteDomain.npz', **variablesToSave)
 # np.savez('finalPositions.npz', **variablesToSave)
