@@ -1,5 +1,5 @@
-from IPython import get_ipython
-get_ipython().run_line_magic('reset', '-f')
+#from IPython import get_ipython
+#get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import time
 
@@ -9,8 +9,8 @@ plotCharts = True # It controls graphical features (disable when run on HPC)
 recordTrajectories = False # It uses up memory
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
-degradation = False # Switch for the degradation of the particles
-reflection = False # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
+degradation = True # Switch for the degradation of the particles
+reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
 cpxOn = False # It regulates the visualisation of the vertical control plane
 
@@ -19,12 +19,12 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-sim_time = int(50)
+sim_time = int(1e3)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 x0 = 0 # Initial horizontal position of the particles
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
-Df = 0.1  # Diffusion for particles moving in the fracture
+Df = 0.01  # Diffusion for particles moving in the fracture
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
 num_particles = int(1e5) # Number of particles in the simulation
@@ -46,7 +46,7 @@ binsTime = 20 # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
-k_deg = 0.0423 # Degradation kinetic constant
+k_deg = 0.05 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
 ap = 1 # Adsorption probability
 
@@ -127,10 +127,9 @@ def analytical_inf(x, t, D):
     return y
 
 def degradation_dist(num_steps, k_deg, num_particles):
-    t_steps = np.linspace(0, sim_time, num_steps)
+    t_steps = np.linspace(1, sim_time, num_steps)
     exp_prob = k_deg*np.exp(-k_deg*t_steps)
-    exp_prob /= exp_prob.sum()
-    # valueRange = np.linspace(0, sim_time, num_steps)
+    exp_prob = exp_prob/exp_prob.sum()
     survivalTimeDist = np.random.choice(t_steps, size=num_particles, p=exp_prob)
     return survivalTimeDist, exp_prob
 
@@ -167,6 +166,7 @@ while t<sim_time:
         fracture = fracture & np.logical_not(crossOutLeft)
         matrix = matrix & np.logical_not(crossOutLeft)
     particleSteps[fracture | matrix] += 1 # It keeps track of the number of steps of each particle
+    # particleSteps[survivalTimeDist>t] = particleSteps[survivalTimeDist>t] + 1 # It keeps track of the number of steps of each particle
 
     # Update the position of all the particles at a given time steps according to the Langevin dynamics
     x, y = update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta)
@@ -299,8 +299,8 @@ else:
 # Filter the variables we want to save by type
 variablesToSave = {name: value for name, value in globals().items() if isinstance(value, (np.ndarray, int, float, bool))}
 # Save all the variables to an .npz file
-# np.savez('totalAbsorption_2.npz', **variablesToSave)
-# np.savez('degradation_2.npz', **variablesToSave)
+# np.savez('totalAbsorption_3.npz', **variablesToSave)
+np.savez('degradation_3.npz', **variablesToSave)
 # np.savez('infiniteDomain.npz', **variablesToSave)
 # np.savez('semiInfiniteDomain.npz', **variablesToSave)
 # np.savez('finalPositions.npz', **variablesToSave)

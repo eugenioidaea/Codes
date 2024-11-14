@@ -3,12 +3,12 @@ get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import matplotlib.pyplot as plt
 
-loadAbsorption = np.load('totalAbsorption_2.npz')
+loadAbsorption = np.load('totalAbsorption_3.npz')
 for name, value in (loadAbsorption.items()):
     globals()[name] = value
 particleStepsAbs = particleSteps
 
-loadDegradation = np.load('degradation_2.npz')
+loadDegradation = np.load('degradation_3.npz')
 for name, value in (loadDegradation.items()):
     globals()[name] = value
 particleStepsDeg = particleSteps
@@ -116,7 +116,7 @@ if plotCharts and degradation:
     # Distribution of live particles in time
     survivalTimeDistribution = plt.figure(figsize=(8, 8))
     survDistWm = np.array([sum(particleStepsDeg>float(Time[i])) for i in range(len(Time))])
-    survDistWmNorm = survDistWm/num_particles #survDistWm.sum()
+    survDistWmNorm = survDistWm/survDistWm.sum()
     plt.plot(Time, exp_prob, 'r-')
     plt.plot(Time, survDistWmNorm, 'b*')
     plt.title("Live particle distribution in time")
@@ -188,7 +188,7 @@ if plotCharts:
 
     # Normalised distribution of non-absorbed particles in time
     diffusionLimitedSurvTimeDistNorm = plt.figure(figsize=(8, 8))
-    nonAbsorbedParticlesNorm = nonAbsorbedParticles/num_particles #nonAbsorbedParticles.sum()
+    nonAbsorbedParticlesNorm = nonAbsorbedParticles/nonAbsorbedParticles.sum()
     plt.plot(Time, nonAbsorbedParticlesNorm, 'b*')
     plt.title("Non-absorbed particle normalised in time")
     plt.xscale('log')
@@ -207,14 +207,15 @@ if compare:
     plt.rcParams.update({'font.size': 20})    
     tau = (uby-lby)**2/Df
     exp_decay = np.exp(-Time/tau)
-    plt.plot(Time[:-1]/tau, survDistWmNorm[:-1], label=f'p_s(t)=ke^(-kt) where k={k_deg}', color='b')
-    # plt.plot(Time[:-1]/tau, exp_prob[:-1], 'r-')
-    plt.plot(Time[:-1]/tau, exp_decay[:-1], label=f'p_s(t)=e^(-t/tau) where tau_d={tau}', color='r')
-    plt.plot(Time[:-1]/tau, nonAbsorbedParticlesNorm[:-1], label=f'tau_d={tau}', color='g')
+    plt.plot(Time[:-1], exp_prob[:-1], color='purple')
+    plt.plot(Time[:-1], exp_decay[:-1], label=f'p_s(t)=e^(-t/tau) where tau_d={tau}', color='r')
+    plt.plot(Time[:-1], survDistWmNorm[:-1], label=f'p_s(t)=ke^(-kt) where k={k_deg}', color='b')
+    plt.plot(Time[:-1], nonAbsorbedParticlesNorm[:-1], label=f'tau_d={tau}', color='g')
     plt.title("Live particle distribution in time")
     plt.xscale('log')
     plt.yscale('log')
-    plt.xlabel('(Time step)/tau')
+    plt.ylim(1e-4, 1)
+    plt.xlabel('Time step')
     plt.ylabel('PDF of live particles')
     plt.legend()
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
@@ -225,17 +226,17 @@ if compare:
     compareDecayDegradationRates = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
     dt = np.diff(Time)
-    dSurvPart = np.diff(np.log(survDistWmNorm))
     # dExpProb = np.diff(exp_prob)
     dExpProb = np.diff(np.log(exp_decay))
+    dSurvPart = np.diff(np.log(survDistWmNorm))
     dNonAbsPart = np.diff(np.log(nonAbsorbedParticlesNorm))
-    dSurvdt = dSurvPart/dt
     dExpProbdt = dExpProb/dt
+    dSurvdt = dSurvPart/dt
     dNonAbsdt = dNonAbsPart/dt
     midTimes = (Time[:-1] + Time[1:]) / 2
-    plt.plot(midTimes[:-1], dSurvdt[:-1], label='Well mixed', color='b')
+    plt.ylim(-0.1, 0.1)
     plt.plot(midTimes[:-1], dExpProbdt[:-1], label='Analytical', color='r')
-    #plt.axhline(y=k_deg, color='r', linestyle='-', linewidth=1)
+    plt.plot(midTimes[:-1], dSurvdt[:-1], label='Well mixed', color='b')
     plt.plot(midTimes[:-1], dNonAbsdt[:-1], label='Diff limited', color='g')
     plt.title("Effective reaction rate")
     plt.xlabel('Time step')
