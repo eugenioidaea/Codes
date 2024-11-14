@@ -234,10 +234,18 @@ if compare:
     dSurvdt = dSurvPart/dt
     dNonAbsdt = dNonAbsPart/dt
     midTimes = (Time[:-1] + Time[1:]) / 2
+
+    window_size = 100
+    window = np.ones(window_size) / window_size  # Averaging window
+    dSurvdt_smoothed = np.convolve(dSurvdt, window, mode='same')
+    dNonAbsdt_smoothed = np.convolve(dNonAbsdt, window, mode='same')
+    
     plt.ylim(-0.1, 0.1)
     plt.plot(midTimes[:-1], dExpProbdt[:-1], label='Analytical', color='r')
     plt.plot(midTimes[:-1], dSurvdt[:-1], label='Well mixed', color='b')
     plt.plot(midTimes[:-1], dNonAbsdt[:-1], label='Diff limited', color='g')
+    plt.plot(midTimes[100:-1], dSurvdt_smoothed[100:-1], label='Well mixed', color='black')
+    plt.plot(midTimes[100:-1], dNonAbsdt_smoothed[100:-1], label='Diff limited', color='black')
     plt.title("Effective reaction rate")
     plt.xlabel('Time step')
     plt.ylabel('k(t)')
