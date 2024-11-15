@@ -3,33 +3,33 @@ get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import matplotlib.pyplot as plt
 
-loadAbsorption = np.load('totalAbsorption_3.npz')
-for name, value in (loadAbsorption.items()):
-    globals()[name] = value
-particleStepsAbs = particleSteps
+# loadAbsorption = np.load('totalAbsorption_3.npz')
+# for name, value in (loadAbsorption.items()):
+#     globals()[name] = value
+# particleStepsAbs = particleSteps
 
-loadDegradation = np.load('degradation_3.npz')
-for name, value in (loadDegradation.items()):
-    globals()[name] = value
-particleStepsDeg = particleSteps
+# loadDegradation = np.load('degradation_3.npz')
+# for name, value in (loadDegradation.items()):
+#     globals()[name] = value
+# particleStepsDeg = particleSteps
 
-# loadInfiniteDomain = np.load('infiniteDomain.npz')
+# loadInfiniteDomain = np.load('infiniteDomain1e6.npz')
 # for name, value in (loadInfiniteDomain.items()):
 #     globals()[name] = value
 
-# loadSemiInfiniteDomain = np.load('semiInfiniteDomain.npz')
+# loadSemiInfiniteDomain = np.load('semiInfiniteDomain1e3.npz')
 # for name, value in (loadSemiInfiniteDomain.items()):
 #     globals()[name] = value
 
-# loadFinalPositions = np.load('finalPositions.npz')
-# for name, value in (loadFinalPositions.items()):
-#     globals()[name] = value
+loadFinalPositions = np.load('finalPositions1e5.npz')
+for name, value in (loadFinalPositions.items()):
+    globals()[name] = value
 
 # loadTestSemra = np.load('matrixDiffusionVerification.npz')
 # for name, value in (loadTestSemra.items()):
 #     globals()[name] = value
 
-compare = True
+compare = False
 
 # Plot section #########################################################################
 if plotCharts and recordTrajectories:
@@ -88,22 +88,27 @@ if plotCharts and lbxOn:
     plt.plot(timeBinsLog, analPdfSemiInf, 'r-')
     plt.xscale('log')
     plt.yscale('log')
-    plt.title('PDF of BTC - Simulated vs analytical solution')
+    plt.ylim(1e-5, 1e-2)
+    plt.title('PDF of breakthrough curve')
     plt.xlabel('Time step')
     plt.ylabel('Normalised number of particles')
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+    plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
     plt.tight_layout()
 
 # Spatial concentration profile at 'recordSpatialConc' time
 if plotCharts and np.logical_not(lbxOn) and recordSpatialConc<sim_time:
     spatialConcentration = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
-    plt.plot(binCenterSpace, countsSpace, 'b-')
+    plt.plot(binCenterSpace, countsSpace, 'b*')
     plt.plot(binCenterSpace, yAnalytical, color='red', linestyle='-')
     plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
     if cpxOn:
         plt.axvline(x=cpx, color='b', linestyle='--', linewidth=2)
         plt.axvline(x=-cpx, color='b', linestyle='--', linewidth=2)
-    plt.title("Simulated vs analytical solution")
+    plt.xlabel('X position')
+    plt.ylabel('Normalised number of particles')
+    plt.title("Spatial concentration at t=100")
     plt.tight_layout()
 
 if plotCharts and degradation:
@@ -142,18 +147,18 @@ if plotCharts and recordTrajectories and np.logical_not(reflection):
 
     # Vertical distribution of all particles
     finalPositionVertAll = plt.figure(figsize=(8, 8))
-    plt.bar(vBinsAll[:-1], vDistAll, width=np.diff(vBins), edgecolor="black", align="edge")
+    plt.bar(vBinsAll[:-1], vDistAll, width=np.diff(vBinsAll), edgecolor="black", align="edge")
     plt.title('Particles distribution at the end of the simulation')
     plt.xlabel('Distance along Y')
-    plt.ylabel('Number of particles EXCLUDING THOSE ON BOUNDARIES')
+    plt.ylabel('Number of particles')
     plt.tight_layout()
 
     # Horizontal distribution of all particles
     finalPositionHorAll = plt.figure(figsize=(8, 8))
-    plt.bar(hBinsAll[:-1], hDistAll, width=np.diff(hBins), edgecolor="black", align="edge")
+    plt.bar(hBinsAll[:-1], hDistAll, width=np.diff(hBinsAll), edgecolor="black", align="edge")
     plt.title('Particles distribution at the end of the simulation')
     plt.xlabel('Distance along X')
-    plt.ylabel('Number of particles EXCLUDING THOSE ON BOUNDARIES')
+    plt.ylabel('Number of particles')
     plt.tight_layout()
 
     # Vertical distribution
@@ -161,7 +166,7 @@ if plotCharts and recordTrajectories and np.logical_not(reflection):
     plt.bar(vBins[:-1], vDist, width=np.diff(vBins), edgecolor="black", align="edge")
     plt.title('Particles distribution at the end of the simulation')
     plt.xlabel('Distance along Y')
-    plt.ylabel('Number of particles EXCLUDING THOSE ON BOUNDARIES')
+    plt.ylabel('Number of particles')
     plt.tight_layout()
 
     # Horizontal distribution
@@ -255,18 +260,19 @@ if compare:
 # trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesDegradation.png", format="png", bbox_inches="tight")
 # trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesMatrixDiffusion.png", format="png", bbox_inches="tight")
 
-# pdfOfBtc.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationSemi-infiniteImproved.png", format="png", bbox_inches="tight")
-
+# spatialConcentration.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationInfinite1e6.png", format="png", bbox_inches="tight")
 # spatialConcentration.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationInfinite1e5.png", format="png", bbox_inches="tight")
 # spatialConcentration.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationMatrixDiffusion.png", format="png", bbox_inches="tight")
 
+# pdfOfBtc.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verificationSemi-infinite1e3.png", format="png", bbox_inches="tight")
+
 # survivalTimeDistribution.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/liveParticleInTime.png", format="png", bbox_inches="tight")
 
-# finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositionsMatrixDiffusion.png", format="png", bbox_inches="tight")
+finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositionsMatrixDiffusion.png", format="png", bbox_inches="tight")
 
-# finalPositionVertAll.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verticalFinalDist.png", format="png", bbox_inches="tight")
+finalPositionVertAll.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verticalFinalDist.png", format="png", bbox_inches="tight")
 
-# finalPositionHorAll.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/horizontalFinalDist.png", format="png", bbox_inches="tight")
+finalPositionHorAll.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/horizontalFinalDist.png", format="png", bbox_inches="tight")
 
 # finalPositionVert.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verticalFinalDist.png", format="png", bbox_inches="tight")
 
@@ -276,6 +282,6 @@ if compare:
 
 # diffusionLimitedSurvTimeDistNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/nonAbsParticlesNorm.png", format="png", bbox_inches="tight")
 
-survTimeDistCompare.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompare.png", format="png", bbox_inches="tight")
+# survTimeDistCompare.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompare.png", format="png", bbox_inches="tight")
 
-compareDecayDegradationRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistRateCompare.png", format="png", bbox_inches="tight")
+# compareDecayDegradationRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistRateCompare.png", format="png", bbox_inches="tight")

@@ -1,54 +1,54 @@
-#from IPython import get_ipython
-#get_ipython().run_line_magic('reset', '-f')
+from IPython import get_ipython
+get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import time
 
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
-# recordVideo = False # It slows down the script
 recordTrajectories = False # It uses up memory
-lbxOn = False # It controls the position of the left boundary
-lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 degradation = False # Switch for the degradation of the particles
 reflection = False # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
+lbxOn = False # It controls the position of the left boundary
+lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
 cpxOn = False # It regulates the visualisation of the vertical control plane
+# recordVideo = False # It slows down the script
 
 if plotCharts:
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-sim_time = int(500)
+num_particles = int(1e5) # Number of particles in the simulation
+sim_time = int(20)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-x0 = 0 # Initial horizontal position of the particles
+Df = 0.1  # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
-Df = 0.01  # Diffusion for particles moving in the fracture
-meanEta = 0 # Spatial jump distribution paramenter
-stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e6) # Number of particles in the simulation
+x0 = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 cpx = 10 # Vertical Control Plane
 if lbxOn:
     lbx = 0 # Left Boundary
-binsXinterval = 10
-init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
-reflectedInward = 1.0 # Probability of impacts from the fracture reflected again into the fracture
-# reflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
-reflectedOutward = 1.0 # Probability of impacts from the porous matrix reflected again into the porous matrix
-# reflectedOutward = np.sqrt(Dm)/(np.sqrt(Df)+np.sqrt(Dm))
-animatedParticle = 0 # Index of the particle whose trajectory will be animated
-fTstp = 0 # First time step to be recorded in the video
-lTstp = 90 # Final time step to appear in the video
-binsTime = 20 # Number of temporal bins for the logarithmic plot
-binsSpace = 50 # Number of spatial bins for the concentration profile
 recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.05 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
 ap = 1 # Adsorption probability
+binsXinterval = 10 # Extension of the region where spatial concentration is recorded
+binsTime = 40 # Number of temporal bins for the logarithmic plot
+binsSpace = 50 # Number of spatial bins for the concentration profile
+reflectedInward = 1.0 # Probability of impacts from the fracture reflected again into the fracture
+# reflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
+reflectedOutward = 1.0 # Probability of impacts from the porous matrix reflected again into the porous matrix
+# reflectedOutward = np.sqrt(Dm)/(np.sqrt(Df)+np.sqrt(Dm))
+init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
+meanEta = 0 # Spatial jump distribution paramenter
+stdEta = 1 # Spatial jump distribution paramenter
+animatedParticle = 0 # Index of the particle whose trajectory will be animated
+fTstp = 0 # First time step to be recorded in the video
+lTstp = 90 # Final time step to appear in the video
 
 # Initialisation ####################################################################
 t = 0 # Time
@@ -69,7 +69,7 @@ liveParticle = [True for _ in range(num_particles)]
 particleRT = []
 particleSemiInfRT = []
 Time = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
-timeLinSpaced = np.linspace(dt, sim_time, binsTime) # Linearly spaced bins
+# timeLinSpaced = np.linspace(dt, sim_time, binsTime) # Linearly spaced bins
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(sim_time), binsTime) # Logarithmically spaced bins
 xBins = np.linspace(-binsXinterval, binsXinterval, binsSpace) # Linearly spaced bins
 yBins = np.linspace(-binsXinterval, binsXinterval, binsSpace) # Linearly spaced bins
@@ -260,15 +260,21 @@ else:
     yAnalytical = analytical_inf(binCenterSpace, recordSpatialConc, Df)
 
 # Compute the number of particles at a given time over the whole domain extension
-if recordTrajectories and np.logical_not(reflection):
+if np.logical_not(reflection):
     # Average concentration in X and Y
     recordTdist = int(Time[-2]) # Final time step
     vInterval = np.array([x0-0.1, x0+0.1])
     hInterval = np.array([(lby+uby)/2-0.1, (lby+uby)/2+0.1])
-    yRecordTdist = yPath[:, recordTdist]
+    if recordTrajectories:
+        yRecordTdist = yPath[:, recordTdist]
+    else:
+        yRecordTdist = y
     yDistAll = yRecordTdist[(yRecordTdist != lby) & (yRecordTdist != uby)]
     vDistAll, vBinsAll = np.histogram(yDistAll, np.linspace(lby, uby, binsSpace))
-    xRecordTdist = xPath[:, recordTdist]
+    if recordTrajectories:
+        xRecordTdist = xPath[:, recordTdist]
+    else:
+        xRecordTdist = x
     xDistAll = xRecordTdist[(yRecordTdist != lby) & (yRecordTdist != uby)]
     hDistAll, hBinsAll = np.histogram(xDistAll, np.linspace(-binsXinterval, binsXinterval, binsSpace))
 
@@ -299,10 +305,10 @@ else:
 # Filter the variables we want to save by type
 variablesToSave = {name: value for name, value in globals().items() if isinstance(value, (np.ndarray, int, float, bool))}
 # Save all the variables to an .npz file
-np.savez('totalAbsorption_3.npz', **variablesToSave)
+# np.savez('infiniteDomain1e6.npz', **variablesToSave)
+# np.savez('semiInfiniteDomain1e3.npz', **variablesToSave)
 # np.savez('degradation_3.npz', **variablesToSave)
-# np.savez('infiniteDomain.npz', **variablesToSave)
-# np.savez('semiInfiniteDomain.npz', **variablesToSave)
-# np.savez('finalPositions.npz', **variablesToSave)
+# np.savez('totalAbsorption_3.npz', **variablesToSave)
+np.savez('finalPositions1e5.npz', **variablesToSave)
 # np.savez('testSemra.npz', **variablesToSave)
 # np.savez('matrixDiffusionVerification.npz', **variablesToSave)
