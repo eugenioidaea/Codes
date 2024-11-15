@@ -210,23 +210,22 @@ if compare:
     plt.plot(Time[:-1], exp_prob[:-1], color='purple')
     plt.plot(Time[:-1], exp_decay[:-1], label=f'p_s(t)=e^(-t/tau) where tau_d={tau}', color='r')
     plt.plot(Time[:-1], survDistWmNorm[:-1], label=f'p_s(t)=ke^(-kt) where k={k_deg}', color='b')
-    plt.plot(Time[:-1], nonAbsorbedParticlesNorm[:-1], label=f'tau_d={tau}', color='g')
+    plt.plot(Time[:-1], nonAbsorbedParticlesNorm[:-1], label='p_s(t)=absorbing boundaries', color='g')
     plt.title("Live particle distribution in time")
     plt.xscale('log')
     plt.yscale('log')
     plt.ylim(1e-4, 1)
     plt.xlabel('Time step')
     plt.ylabel('PDF of live particles')
-    plt.legend()
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
     plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+    plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
     plt.tight_layout()
 
     # Rates of particles decay
     compareDecayDegradationRates = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
     dt = np.diff(Time)
-    # dExpProb = np.diff(exp_prob)
     dExpProb = np.diff(np.log(exp_decay))
     dSurvPart = np.diff(np.log(survDistWmNorm))
     dNonAbsPart = np.diff(np.log(nonAbsorbedParticlesNorm))
@@ -234,24 +233,21 @@ if compare:
     dSurvdt = dSurvPart/dt
     dNonAbsdt = dNonAbsPart/dt
     midTimes = (Time[:-1] + Time[1:]) / 2
-
     window_size = 100
     window = np.ones(window_size) / window_size  # Averaging window
     dSurvdt_smoothed = np.convolve(dSurvdt, window, mode='same')
     dNonAbsdt_smoothed = np.convolve(dNonAbsdt, window, mode='same')
-    
-    plt.ylim(-0.1, 0.1)
+    plt.ylim(-0.2, 0)
     plt.plot(midTimes[:-1], dExpProbdt[:-1], label='Analytical', color='r')
     plt.plot(midTimes[:-1], dSurvdt[:-1], label='Well mixed', color='b')
     plt.plot(midTimes[:-1], dNonAbsdt[:-1], label='Diff limited', color='g')
-    plt.plot(midTimes[100:-1], dSurvdt_smoothed[100:-1], label='Well mixed', color='black')
-    plt.plot(midTimes[100:-1], dNonAbsdt_smoothed[100:-1], label='Diff limited', color='black')
+    plt.plot(midTimes[100:-1], dSurvdt_smoothed[100:-1], color='black')
+    plt.plot(midTimes[100:-1], dNonAbsdt_smoothed[100:-1], color='black')
     plt.title("Effective reaction rate")
     plt.xlabel('Time step')
     plt.ylabel('k(t)')
-    plt.legend()
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
-    # plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+    plt.legend(loc='best')
     plt.tight_layout()
 
 # trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesInfinite.png", format="png", bbox_inches="tight")
@@ -280,6 +276,6 @@ if compare:
 
 # diffusionLimitedSurvTimeDistNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/nonAbsParticlesNorm.png", format="png", bbox_inches="tight")
 
-# survTimeDistCompare.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompare.png", format="png", bbox_inches="tight")
+survTimeDistCompare.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompare.png", format="png", bbox_inches="tight")
 
-# compareDecayDegradationRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistRateCompare.png", format="png", bbox_inches="tight")
+compareDecayDegradationRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistRateCompare.png", format="png", bbox_inches="tight")

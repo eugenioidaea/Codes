@@ -9,8 +9,8 @@ plotCharts = True # It controls graphical features (disable when run on HPC)
 recordTrajectories = False # It uses up memory
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
-degradation = True # Switch for the degradation of the particles
-reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
+degradation = False # Switch for the degradation of the particles
+reflection = False # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
 cpxOn = False # It regulates the visualisation of the vertical control plane
 
@@ -19,7 +19,7 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-sim_time = int(1e3)
+sim_time = int(500)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 x0 = 0 # Initial horizontal position of the particles
@@ -27,7 +27,7 @@ Dm = 0.001  # Diffusion for particles moving in the porous matrix
 Df = 0.01  # Diffusion for particles moving in the fracture
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
-num_particles = int(1e5) # Number of particles in the simulation
+num_particles = int(1e6) # Number of particles in the simulation
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 cpx = 10 # Vertical Control Plane
@@ -299,8 +299,8 @@ else:
 # Filter the variables we want to save by type
 variablesToSave = {name: value for name, value in globals().items() if isinstance(value, (np.ndarray, int, float, bool))}
 # Save all the variables to an .npz file
-# np.savez('totalAbsorption_3.npz', **variablesToSave)
-np.savez('degradation_3.npz', **variablesToSave)
+np.savez('totalAbsorption_3.npz', **variablesToSave)
+# np.savez('degradation_3.npz', **variablesToSave)
 # np.savez('infiniteDomain.npz', **variablesToSave)
 # np.savez('semiInfiniteDomain.npz', **variablesToSave)
 # np.savez('finalPositions.npz', **variablesToSave)
