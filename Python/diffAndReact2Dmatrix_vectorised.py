@@ -5,7 +5,7 @@ import time
 
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
-recordTrajectories = False # It uses up memory
+recordTrajectories = True # It uses up memory
 degradation = False # Switch for the degradation of the particles
 reflection = False # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 lbxOn = False # It controls the position of the left boundary
@@ -19,8 +19,8 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_particles = int(1e5) # Number of particles in the simulation
-sim_time = int(20)
+num_particles = int(1e2) # Number of particles in the simulation
+sim_time = int(1e3)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1  # Diffusion for particles moving in the fracture
@@ -35,7 +35,7 @@ recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.05 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
-ap = 1 # Adsorption probability
+ap = 0.6 # Adsorption probability
 binsXinterval = 10 # Extension of the region where spatial concentration is recorded
 binsTime = 40 # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
@@ -112,10 +112,12 @@ def apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist):
     if lbxOn:
         x = np.where(crossOutLeft & (adsDist<=ap), lbx, x)
         x = np.where(crossOutLeft & (adsDist>ap), -x+2*lbx, x)
-    y = np.where(crossOutAbove & (adsDist<=ap), uby, y)  # Store x positions for the current time step
-    y = np.where(crossOutBelow & (adsDist<=ap), lby, y)  # Store y positions for the current time step
-    y = np.where(crossOutAbove & (adsDist>ap), -y+2*uby, y)  # Store x positions for the current time step
-    y = np.where(crossOutBelow & (adsDist>ap), -y+2*lby, y)  # Store y positions for the current time step        
+    y[crossOutAbove] = np.where(adsDist[crossOutAbove]<=ap, uby, -y[crossOutAbove]+2*uby)
+    y[crossOutBelow] = np.where(adsDist[crossOutBelow]<=ap, lby, -y[crossOutBelow]+2*lby)
+    # y = np.where(crossOutAbove & (adsDist<=ap), uby, y)  # Particles get adsorbed with probability 'ap'
+    # y = np.where(crossOutBelow & (adsDist<=ap), lby, y)  # Particles get adsorbed with probability 'ap'
+    # y = np.where(crossOutAbove & (adsDist>ap), -y+2*uby, y)  # Particles are reflected with probability '1-ap'
+    # y = np.where(crossOutBelow & (adsDist>ap), -y+2*lby, y)  # Particles are reflected with probability '1-ap'
     return x, y
 
 def analytical_seminf(x0, t, D):
@@ -200,7 +202,8 @@ while t<sim_time:
         x, y = apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow,
                                 crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, lbxOn)
     else:
-        adsDist = adsorption_dist(k_ads)
+        # adsDist = adsorption_dist(k_ads) # Exponential distribution
+        adsDist = np.random.uniform(0, 1, num_particles) # Uniform distribution
         x, y = apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist)
 
     # Record the pdf of the btc on the left control panel        
@@ -309,6 +312,7 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('semiInfiniteDomain1e3.npz', **variablesToSave)
 # np.savez('degradation_3.npz', **variablesToSave)
 # np.savez('totalAbsorption_3.npz', **variablesToSave)
-np.savez('finalPositions1e5.npz', **variablesToSave)
+# np.savez('finalPositions1e5.npz', **variablesToSave)
 # np.savez('testSemra.npz', **variablesToSave)
 # np.savez('matrixDiffusionVerification.npz', **variablesToSave)
+np.savez('partialAdsorption.npz', **variablesToSave)

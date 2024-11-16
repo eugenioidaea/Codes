@@ -21,13 +21,17 @@ import matplotlib.pyplot as plt
 # for name, value in (loadSemiInfiniteDomain.items()):
 #     globals()[name] = value
 
-loadFinalPositions = np.load('finalPositions1e5.npz')
-for name, value in (loadFinalPositions.items()):
-    globals()[name] = value
+# loadFinalPositions = np.load('finalPositions1e5.npz')
+# for name, value in (loadFinalPositions.items()):
+#     globals()[name] = value
 
 # loadTestSemra = np.load('matrixDiffusionVerification.npz')
 # for name, value in (loadTestSemra.items()):
 #     globals()[name] = value
+
+loadFinalPositions = np.load('partialAdsorption.npz')
+for name, value in (loadFinalPositions.items()):
+    globals()[name] = value
 
 compare = False
 
@@ -268,11 +272,11 @@ if compare:
 
 # survivalTimeDistribution.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/liveParticleInTime.png", format="png", bbox_inches="tight")
 
-finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositionsMatrixDiffusion.png", format="png", bbox_inches="tight")
+# finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositionsMatrixDiffusion.png", format="png", bbox_inches="tight")
 
-finalPositionVertAll.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verticalFinalDist.png", format="png", bbox_inches="tight")
+# finalPositionVertAll.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verticalFinalDist.png", format="png", bbox_inches="tight")
 
-finalPositionHorAll.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/horizontalFinalDist.png", format="png", bbox_inches="tight")
+# finalPositionHorAll.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/horizontalFinalDist.png", format="png", bbox_inches="tight")
 
 # finalPositionVert.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/verticalFinalDist.png", format="png", bbox_inches="tight")
 
