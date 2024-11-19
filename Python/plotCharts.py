@@ -1,7 +1,25 @@
-from IPython import get_ipython
-get_ipython().run_line_magic('reset', '-f')
+debug = False
+if not debug:
+    from IPython import get_ipython
+    get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import matplotlib.pyplot as plt
+
+# Choose what should be plot ################################################################
+
+plotTrajectories = False
+plotEulerianPdfCdf = False
+plotLagrangianPdf = False
+plotBreakthroughCurveVerification = False
+plotSpatialConcentration = False
+plotDegradation = False
+plotFinalPositions = False
+plotSruvivalTimeDistOfNonAdsorbed = False
+plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption = False
+
+compare = False
+
+# Load simulation results from .npz files ###################################################
 
 # loadAbsorption = np.load('totalAbsorption_3.npz')
 # for name, value in (loadAbsorption.items()):
@@ -29,14 +47,12 @@ import matplotlib.pyplot as plt
 # for name, value in (loadTestSemra.items()):
 #     globals()[name] = value
 
-loadFinalPositions = np.load('partialAdsorption.npz')
-for name, value in (loadFinalPositions.items()):
-    globals()[name] = value
-
-compare = False
+# loadFinalPositions = np.load('partialAdsorption.npz')
+# for name, value in (loadFinalPositions.items()):
+#     globals()[name] = value
 
 # Plot section #########################################################################
-if plotCharts and recordTrajectories:
+if plotTrajectories:
     # Trajectories
     trajectories = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
@@ -44,19 +60,19 @@ if plotCharts and recordTrajectories:
         plt.plot(xPath[i][:][xPath[i][:]!=0], yPath[i][:][xPath[i][:]!=0], lw=0.5)
     plt.axhline(y=uby, color='r', linestyle='--', linewidth=2)
     plt.axhline(y=lby, color='r', linestyle='--', linewidth=2)
-    if cpxOn:
-        plt.axvline(x=cpx, color='b', linestyle='--', linewidth=2)
-        plt.axvline(x=-cpx, color='b', linestyle='--', linewidth=2)
-    plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
     if lbxOn:
-        plt.axvline(x=lbx, color='black', linestyle='-', linewidth=2)
+        plt.axvline(x=lbx, color='b', linestyle='--', linewidth=2)
+        plt.axvline(x=-lbx, color='b', linestyle='--', linewidth=2)
+    plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
+    if vcpOn:
+        plt.axvline(x=vcp, color='black', linestyle='-', linewidth=2)
     plt.title("2D Diffusion Process (Langevin Equation)")
     plt.xlabel("X Position")
     plt.ylabel("Y Position")
     plt.grid(True)
     plt.tight_layout()
 
-if plotCharts and cpxOn:
+if plotEulerianPdfCdf:
     # PDF
     plt.figure(figsize=(8, 8))
     plt.plot(Time, pdf_part/num_particles)
@@ -76,6 +92,7 @@ if plotCharts and cpxOn:
     plt.yscale('log')
     plt.title("1-CDF")
 
+if plotLagrangianPdf:
     # Binning for plotting the pdf from a Lagrangian vector
     countsLog, binEdgesLog = np.histogram(particleRT, timeLogSpaced, density=True)
     binCentersLog = (binEdgesLog[:-1] + binEdgesLog[1:]) / 2
@@ -85,7 +102,7 @@ if plotCharts and cpxOn:
     plt.yscale('log')
     plt.title("Lagrangian PDF of the BTC")
 
-if plotCharts and lbxOn:
+if plotBreakthroughCurveVerification:
     pdfOfBtc = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
     plt.plot(timeBinsLog, countsSemiInfLog, 'b*')
@@ -101,21 +118,21 @@ if plotCharts and lbxOn:
     plt.tight_layout()
 
 # Spatial concentration profile at 'recordSpatialConc' time
-if plotCharts and np.logical_not(lbxOn) and recordSpatialConc<sim_time:
+if plotSpatialConcentration:
     spatialConcentration = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
     plt.plot(binCenterSpace, countsSpace, 'b*')
     plt.plot(binCenterSpace, yAnalytical, color='red', linestyle='-')
     plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
-    if cpxOn:
-        plt.axvline(x=cpx, color='b', linestyle='--', linewidth=2)
-        plt.axvline(x=-cpx, color='b', linestyle='--', linewidth=2)
+    if lbxOn:
+        plt.axvline(x=lbx, color='b', linestyle='--', linewidth=2)
+        plt.axvline(x=-lbx, color='b', linestyle='--', linewidth=2)
     plt.xlabel('X position')
     plt.ylabel('Normalised number of particles')
     plt.title("Spatial concentration at t=100")
     plt.tight_layout()
 
-if plotCharts and degradation:
+if plotDegradation:
     # Distribution of survival times for particles
     plt.figure(figsize=(8, 8))
     plt.plot(np.arange(0, num_particles, 1), np.sort(particleStepsDeg)[::-1], 'b*')
@@ -135,7 +152,7 @@ if plotCharts and degradation:
     plt.ylabel('PDF of live particles')
     plt.tight_layout()
 
-if plotCharts and recordTrajectories and np.logical_not(reflection):
+if plotFinalPositions:
     # Final particles's positions
     finalPositions = plt.figure(figsize=(8, 8))
     # plt.plot(xPath[:, -1], yPath[:, -1], 'b*')
@@ -181,7 +198,7 @@ if plotCharts and recordTrajectories and np.logical_not(reflection):
     plt.ylabel('Number of particles')
     plt.tight_layout()
 
-if plotCharts:
+if plotSruvivalTimeDistOfNonAdsorbed:
     # Distribution of non-absorbed particles in time
     diffusionLimitedSurvTimeDist = plt.figure(figsize=(8, 8))
     nonAbsorbedParticles = np.array([sum(particleStepsAbs>float(Time[i])) for i in range(len(Time))])
@@ -210,7 +227,7 @@ if plotCharts:
 
 # Well-mixed vs diffusion-limited survival time distributions ###########################################################
 
-if compare:
+if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
     # Distribution of live particles in time
     survTimeDistCompare = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})    

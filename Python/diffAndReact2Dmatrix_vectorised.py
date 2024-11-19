@@ -1,17 +1,20 @@
-#from IPython import get_ipython
-#get_ipython().run_line_magic('reset', '-f')
+debug = True
+if not debug:
+    from IPython import get_ipython
+    get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import time
 
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
-recordTrajectories = False # It uses up memory
+recordTrajectories = True # It uses up memory
 degradation = False # Switch for the degradation of the particles
-reflection = False # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
+reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
-cpxOn = False # It regulates the visualisation of the vertical control plane
+vcpOn = False # It regulates the visualisation of the vertical control plane
+matrixDiffVerification = True # It activates the matrix-diffusion verification testcase
 # recordVideo = False # It slows down the script
 
 if plotCharts:
@@ -19,18 +22,18 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_particles = int(1e3) # Number of particles in the simulation
-sim_time = int(1e3)
+num_particles = int(10) # Number of particles in the simulation
+sim_time = int(1e2)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1  # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
-x0 = 0 # Initial horizontal position of the particles
+x0 = 5 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
-cpx = 10 # Vertical Control Plane
+vcp = 10 # Vertical Control Plane
 if lbxOn:
-    lbx = 0 # Left Boundary
+    lbx = 0 # Vertical control plane
 recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.05 # Degradation kinetic constant
@@ -49,6 +52,9 @@ stdEta = 1 # Spatial jump distribution paramenter
 animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
+if matrixDiffVerification:
+    lbx = 4
+    rbx = 8
 
 # Initialisation ####################################################################
 t = 0 # Time
@@ -63,6 +69,7 @@ if recordTrajectories:
     yPath = np.zeros((num_particles, num_steps+1))  # Matrix for storing y trajectories
 inside = np.ones(num_particles, dtype=bool)
 crossOutLeft = [False for _ in range(num_particles)]
+crossOutRight = [False for _ in range(num_particles)]
 outsideAbove = [False for _ in range(num_particles)]
 outsideBelow = [False for _ in range(num_particles)]
 liveParticle = np.array([True for _ in range(num_particles)])
@@ -107,6 +114,9 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
     while np.any((y[reflected]<lby) | (y[reflected]>uby)): # Check on the positions of all the particles that should not cross
         y[reflected[y[reflected]>uby]] = -y[reflected[y[reflected]>uby]] + 2*uby # Reflect them back
         y[reflected[y[reflected]<lby]] = -y[reflected[y[reflected]<lby]] + 2*lby # Reflect them back
+    if matrixDiffVerification:
+        x[crossOutLeft] = -x[crossOutLeft]+2*lbx
+        x[crossOutRight] = -x[crossOutRight]+2*rbx
     return x, y
 
 def apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist, impacts):
@@ -155,13 +165,13 @@ else:
     survivalTimeDist = np.ones(num_particles)*sim_time
 
 while t<sim_time and bool(liveParticle.any()) and bool(((y!=-1) & (y!=1)).any()):
-    
+
     liveParticle = np.array(survivalTimeDist>t) # Particles which are not degradeted
 
     if stopOnCDF & (cdf>stopBTC/100):
         break
 
-    isIn = abs(x)<cpx # Get the positions of the particles that are located within the control planes (wheter inside or outside the fracture)
+    isIn = abs(x)<vcp # Get the positions of the particles that are located within the control planes (wheter inside or outside the fracture)
     fracture = inside & liveParticle # Particles in the domain and inside the fracture and not degradeted yet
     outside = np.array(outsideAbove) | np.array(outsideBelow) # Particles outside the fracture
     matrix = outside & liveParticle # Particles in the domain and outside the fracture and not degradeted yet
@@ -179,6 +189,9 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=-1) & (y!=1)).any())
     crossOutBelow = fracture & (y<lby)
     crossInAbove = outsideAbove  & (y > lby) & (y < uby)
     crossInBelow = outsideBelow & (y>lby) & (y<uby)
+    if matrixDiffVerification:
+        crossOutLeft = x<lbx
+        crossOutRight = x>rbx
 
     # Decide the number of impacts that will cross the fracture's walls
     probCrossOutAbove[np.where(crossOutAbove)[0]] = np.random.rand(np.sum(crossOutAbove)) > reflectedInward
@@ -217,7 +230,7 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=-1) & (y!=1)).any())
     outsideBelow = y<lby # Particles in the porous matrix below the fracture
 
     # Count the particle which exit the control planes at each time step
-    pdf_part[int(t/dt)] = sum(abs(x[isIn])>cpx)
+    pdf_part[int(t/dt)] = sum(abs(x[isIn])>vcp)
     # Compute the CDF and increase the time
     cdf = sum(pdf_part)/num_particles
     # Move forward time step
@@ -319,3 +332,22 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('testSemra.npz', **variablesToSave)
 # np.savez('matrixDiffusionVerification.npz', **variablesToSave)
 # np.savez('partialAdsorption.npz', **variablesToSave)
+
+# Trajectories
+trajectories = plt.figure(figsize=(8, 8))
+plt.rcParams.update({'font.size': 20})
+for i in range(num_particles):
+    plt.plot(xPath[i][:][xPath[i][:]!=0], yPath[i][:][xPath[i][:]!=0], lw=0.5)
+plt.axhline(y=uby, color='r', linestyle='--', linewidth=2)
+plt.axhline(y=lby, color='r', linestyle='--', linewidth=2)
+if lbxOn:
+    plt.axvline(x=lbx, color='b', linestyle='--', linewidth=2)
+    plt.axvline(x=-lbx, color='b', linestyle='--', linewidth=2)
+plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
+if vcpOn:
+    plt.axvline(x=vcp, color='black', linestyle='-', linewidth=2)
+plt.title("2D Diffusion Process (Langevin Equation)")
+plt.xlabel("X Position")
+plt.ylabel("Y Position")
+plt.grid(True)
+plt.tight_layout()
