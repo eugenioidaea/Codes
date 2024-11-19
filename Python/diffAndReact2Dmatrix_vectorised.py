@@ -1,11 +1,11 @@
-from IPython import get_ipython
-get_ipython().run_line_magic('reset', '-f')
+#from IPython import get_ipython
+#get_ipython().run_line_magic('reset', '-f')
 import numpy as np
 import time
 
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
-recordTrajectories = True # It uses up memory
+recordTrajectories = False # It uses up memory
 degradation = False # Switch for the degradation of the particles
 reflection = False # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 lbxOn = False # It controls the position of the left boundary
@@ -19,7 +19,7 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_particles = int(1e2) # Number of particles in the simulation
+num_particles = int(1e3) # Number of particles in the simulation
 sim_time = int(1e3)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
@@ -35,7 +35,7 @@ recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.05 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
-ap = 0.6 # Adsorption probability
+ap = 0.4 # Adsorption probability
 binsXinterval = 10 # Extension of the region where spatial concentration is recorded
 binsTime = 40 # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
@@ -65,7 +65,7 @@ inside = np.ones(num_particles, dtype=bool)
 crossOutLeft = [False for _ in range(num_particles)]
 outsideAbove = [False for _ in range(num_particles)]
 outsideBelow = [False for _ in range(num_particles)]
-liveParticle = [True for _ in range(num_particles)]
+liveParticle = np.array([True for _ in range(num_particles)])
 particleRT = []
 particleSemiInfRT = []
 Time = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
@@ -78,6 +78,7 @@ probCrossOutBelow = np.full(num_particles, False) # Probability of crossing the 
 probCrossInAbove = np.full(num_particles, False) # Probability of crossing the fracture's walls
 probCrossInBelow = np.full(num_particles, False) # Probability of crossing the fracture's walls
 particleSteps = np.zeros(num_particles)
+impacts = 0
 
 # Functions ##########################################################################
 def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
@@ -108,17 +109,18 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
         y[reflected[y[reflected]<lby]] = -y[reflected[y[reflected]<lby]] + 2*lby # Reflect them back
     return x, y
 
-def apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist):
+def apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist, impacts):
     if lbxOn:
         x = np.where(crossOutLeft & (adsDist<=ap), lbx, x)
         x = np.where(crossOutLeft & (adsDist>ap), -x+2*lbx, x)
     y[crossOutAbove] = np.where(adsDist[crossOutAbove]<=ap, uby, -y[crossOutAbove]+2*uby)
     y[crossOutBelow] = np.where(adsDist[crossOutBelow]<=ap, lby, -y[crossOutBelow]+2*lby)
+    impacts = impacts+np.count_nonzero(crossOutAbove | crossOutBelow)
     # y = np.where(crossOutAbove & (adsDist<=ap), uby, y)  # Particles get adsorbed with probability 'ap'
     # y = np.where(crossOutBelow & (adsDist<=ap), lby, y)  # Particles get adsorbed with probability 'ap'
     # y = np.where(crossOutAbove & (adsDist>ap), -y+2*uby, y)  # Particles are reflected with probability '1-ap'
     # y = np.where(crossOutBelow & (adsDist>ap), -y+2*lby, y)  # Particles are reflected with probability '1-ap'
-    return x, y
+    return x, y, impacts
 
 def analytical_seminf(x0, t, D):
     y = x0*np.exp(-x0**2/(4*D*t))/(np.sqrt(4*np.pi*D*t**3))
@@ -152,10 +154,9 @@ if degradation:
 else:
     survivalTimeDist = np.ones(num_particles)*sim_time
 
-while t<sim_time:
-
-    # Particles which are degradeted
-    liveParticle = np.array(survivalTimeDist>t)
+while t<sim_time and bool(liveParticle.any()) and bool(((y!=-1) & (y!=1)).any()):
+    
+    liveParticle = np.array(survivalTimeDist>t) # Particles which are not degradeted
 
     if stopOnCDF & (cdf>stopBTC/100):
         break
@@ -167,7 +168,7 @@ while t<sim_time:
     if lbxOn:
         fracture = fracture & np.logical_not(crossOutLeft)
         matrix = matrix & np.logical_not(crossOutLeft)
-    particleSteps[fracture | matrix] += 1 # It keeps track of the number of steps of each particle
+    particleSteps[fracture | matrix] += 1 # It keeps track of the number of steps of each particle (no degradeted nor adsorbed are moving)
     # particleSteps[survivalTimeDist>t] = particleSteps[survivalTimeDist>t] + 1 # It keeps track of the number of steps of each particle
 
     # Update the position of all the particles at a given time steps according to the Langevin dynamics
@@ -204,7 +205,7 @@ while t<sim_time:
     else:
         # adsDist = adsorption_dist(k_ads) # Exponential distribution
         adsDist = np.random.uniform(0, 1, num_particles) # Uniform distribution
-        x, y = apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist)
+        x, y, impacts = apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist, impacts)
 
     # Record the pdf of the btc on the left control panel        
     if lbxOn:
@@ -297,6 +298,8 @@ if recordTrajectories and np.logical_not(reflection):
 print(f"Execution time: {execution_time:.6f} seconds")
 print(f"<t>: {meanTstep:.6f} s")
 print(f"sigmat: {stdTstep:.6f} s")
+if np.logical_not(reflection):
+    print(f"# adsorbed particles/# impacts: {num_particles/impacts}")
 if recordSpatialConc>sim_time:
     print("WARNING! The simulation time is smaller than the specified time for recording the spatial distribution of the concentration")
 elif lbxOn & (recordSpatialConc<sim_time):
@@ -315,4 +318,4 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('finalPositions1e5.npz', **variablesToSave)
 # np.savez('testSemra.npz', **variablesToSave)
 # np.savez('matrixDiffusionVerification.npz', **variablesToSave)
-np.savez('partialAdsorption.npz', **variablesToSave)
+# np.savez('partialAdsorption.npz', **variablesToSave)
