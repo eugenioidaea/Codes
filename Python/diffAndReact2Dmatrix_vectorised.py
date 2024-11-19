@@ -55,6 +55,7 @@ lTstp = 90 # Final time step to appear in the video
 if matrixDiffVerification:
     lbx = 4
     rbx = 8
+    cbx = 6
 
 # Initialisation ####################################################################
 t = 0 # Time
@@ -192,12 +193,15 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=-1) & (y!=1)).any())
     if matrixDiffVerification:
         crossOutLeft = x<lbx
         crossOutRight = x>rbx
+        crossLeftToRight = x>cbx
+        crossRightToLeft = x<cbx
 
     # Decide the number of impacts that will cross the fracture's walls
     probCrossOutAbove[np.where(crossOutAbove)[0]] = np.random.rand(np.sum(crossOutAbove)) > reflectedInward
     probCrossOutBelow[np.where(crossOutBelow)[0]] = np.random.rand(np.sum(crossOutBelow)) > reflectedInward
     probCrossInAbove[np.where(crossInAbove)[0]] = np.random.rand(np.sum(crossInAbove)) > reflectedOutward
     probCrossInBelow[np.where(crossInBelow)[0]] = np.random.rand(np.sum(crossInBelow)) > reflectedOutward
+    probCrossCenterWall
 
     # Successfull crossing based on uniform probability distribution
     crossInToOutAbove = probCrossOutAbove & crossOutAbove
