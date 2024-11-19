@@ -1,4 +1,4 @@
-debug = True
+debug = False
 if not debug:
     from IPython import get_ipython
     get_ipython().run_line_magic('reset', '-f')
@@ -7,14 +7,14 @@ import time
 
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
-recordTrajectories = True # It uses up memory
-degradation = False # Switch for the degradation of the particles
+recordTrajectories = False # It uses up memory
+degradation = True # Switch for the degradation of the particles
 reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
 vcpOn = False # It regulates the visualisation of the vertical control plane
-matrixDiffVerification = True # It activates the matrix-diffusion verification testcase
+matrixDiffVerification = False # It activates the matrix-diffusion verification testcase
 # recordVideo = False # It slows down the script
 
 if plotCharts:
@@ -22,13 +22,13 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_particles = int(10) # Number of particles in the simulation
-sim_time = int(1e2)
+num_particles = int(1e6) # Number of particles in the simulation
+sim_time = int(500)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1  # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
-x0 = 5 # Initial horizontal position of the particles
+x0 = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 vcp = 10 # Vertical Control Plane
@@ -38,7 +38,7 @@ recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.05 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
-ap = 0.4 # Adsorption probability
+ap = 1 # Adsorption probability
 binsXinterval = 10 # Extension of the region where spatial concentration is recorded
 binsTime = 40 # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
@@ -197,11 +197,12 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=-1) & (y!=1)).any())
         crossRightToLeft = x<cbx
 
     # Decide the number of impacts that will cross the fracture's walls
-    probCrossOutAbove[np.where(crossOutAbove)[0]] = np.random.rand(np.sum(crossOutAbove)) > reflectedInward
-    probCrossOutBelow[np.where(crossOutBelow)[0]] = np.random.rand(np.sum(crossOutBelow)) > reflectedInward
-    probCrossInAbove[np.where(crossInAbove)[0]] = np.random.rand(np.sum(crossInAbove)) > reflectedOutward
-    probCrossInBelow[np.where(crossInBelow)[0]] = np.random.rand(np.sum(crossInBelow)) > reflectedOutward
-    probCrossCenterWall
+    probCrossOutAbove[crossOutAbove] = np.random.rand(np.sum(crossOutAbove)) > reflectedInward
+    probCrossOutBelow[crossOutBelow] = np.random.rand(np.sum(crossOutBelow)) > reflectedInward
+    probCrossInAbove[crossInAbove] = np.random.rand(np.sum(crossInAbove)) > reflectedOutward
+    probCrossInBelow[crossInBelow] = np.random.rand(np.sum(crossInBelow)) > reflectedOutward
+    # probCrossCenterWall[np.where(crossLeftToRight)[0]] = np.random.rand(np.sum(crossLeftToRight)) > reflectedLeft
+    # probCrossCenterWall[np.where(crossRightToLeft)[0]] = np.random.rand(np.sum(crossLeftToRight)) > reflectedRight
 
     # Successfull crossing based on uniform probability distribution
     crossInToOutAbove = probCrossOutAbove & crossOutAbove
@@ -311,15 +312,19 @@ if recordTrajectories and np.logical_not(reflection):
     xDist = xPath[(yPath[:, recordTdist]>hInterval[0]) & (yPath[:, recordTdist]<hInterval[1]), recordTdist]
     hDist, hBins = np.histogram(xDist, np.linspace(-binsXinterval, binsXinterval, binsSpace))
 
+# Survival time distribution
+liveParticlesInTime = np.sum(particleSteps[:, None] > Time, axis=0)
+liveParticlesInTimeNorm = liveParticlesInTime/liveParticlesInTime.sum()
+
 # Statistichs ########################################################################
 print(f"Execution time: {execution_time:.6f} seconds")
 print(f"<t>: {meanTstep:.6f} s")
 print(f"sigmat: {stdTstep:.6f} s")
 if np.logical_not(reflection):
     print(f"# adsorbed particles/# impacts: {num_particles/impacts}")
-if recordSpatialConc>sim_time:
+if recordSpatialConc>t:
     print("WARNING! The simulation time is smaller than the specified time for recording the spatial distribution of the concentration")
-elif lbxOn & (recordSpatialConc<sim_time):
+elif lbxOn & (recordSpatialConc<t):
     print(f"sum(|empiricalPdf-analyticalPdf|)= {sum(np.abs(countsSemiInfLog-analPdfSemiInf))}")
 else:
     print(f"sum(|yEmpirical-yAnalytical|)= {sum(np.abs(countsSpace-yAnalytical))}")
@@ -331,27 +336,8 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('infiniteDomain1e6.npz', **variablesToSave)
 # np.savez('semiInfiniteDomain1e3.npz', **variablesToSave)
 # np.savez('degradation_3.npz', **variablesToSave)
-# np.savez('totalAbsorption_3.npz', **variablesToSave)
+# np.savez('totalAdsorption_3.npz', **variablesToSave)
 # np.savez('finalPositions1e5.npz', **variablesToSave)
 # np.savez('testSemra.npz', **variablesToSave)
 # np.savez('matrixDiffusionVerification.npz', **variablesToSave)
 # np.savez('partialAdsorption.npz', **variablesToSave)
-
-# Trajectories
-trajectories = plt.figure(figsize=(8, 8))
-plt.rcParams.update({'font.size': 20})
-for i in range(num_particles):
-    plt.plot(xPath[i][:][xPath[i][:]!=0], yPath[i][:][xPath[i][:]!=0], lw=0.5)
-plt.axhline(y=uby, color='r', linestyle='--', linewidth=2)
-plt.axhline(y=lby, color='r', linestyle='--', linewidth=2)
-if lbxOn:
-    plt.axvline(x=lbx, color='b', linestyle='--', linewidth=2)
-    plt.axvline(x=-lbx, color='b', linestyle='--', linewidth=2)
-plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
-if vcpOn:
-    plt.axvline(x=vcp, color='black', linestyle='-', linewidth=2)
-plt.title("2D Diffusion Process (Langevin Equation)")
-plt.xlabel("X Position")
-plt.ylabel("Y Position")
-plt.grid(True)
-plt.tight_layout()
