@@ -33,14 +33,14 @@ uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 vcp = 10 # Vertical Control Plane
 if lbxOn:
-    lbx = 0 # Vertical control plane
+    lbx = 0 # Left Boundary X
 recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.05 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
 ap = 1 # Adsorption probability
 binsXinterval = 10 # Extension of the region where spatial concentration is recorded
-binsTime = 40 # Number of temporal bins for the logarithmic plot
+binsTime = 100 # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 reflectedInward = 1.0 # Probability of impacts from the fracture reflected again into the fracture
 # reflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
@@ -76,7 +76,7 @@ outsideBelow = [False for _ in range(num_particles)]
 liveParticle = np.array([True for _ in range(num_particles)])
 particleRT = []
 particleSemiInfRT = []
-Time = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
+timeStep = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
 # timeLinSpaced = np.linspace(dt, sim_time, binsTime) # Linearly spaced bins
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(sim_time), binsTime) # Logarithmically spaced bins
 xBins = np.linspace(-binsXinterval, binsXinterval, binsSpace) # Linearly spaced bins
@@ -284,7 +284,7 @@ else:
 # Compute the number of particles at a given time over the whole domain extension
 if np.logical_not(reflection):
     # Average concentration in X and Y
-    recordTdist = int(Time[-2]) # Final time step
+    recordTdist = int(timeStep[-2]) # Final time step
     vInterval = np.array([x0-0.1, x0+0.1])
     hInterval = np.array([(lby+uby)/2-0.1, (lby+uby)/2+0.1])
     if recordTrajectories:
@@ -303,7 +303,7 @@ if np.logical_not(reflection):
 # Compute the number of particles at a given time within a vertical and a horizontal stripe
 if recordTrajectories and np.logical_not(reflection):
     # Average concentration in X and Y
-    recordTdist = int(Time[-2])
+    recordTdist = int(timeStep[-2])
     vInterval = np.array([x0-0.1, x0+0.1])
     hInterval = np.array([(lby+uby)/2-0.1, (lby+uby)/2+0.1])
     yDist = yPath[(xPath[:, recordTdist]>vInterval[0]) & (xPath[:, recordTdist]<vInterval[1]), recordTdist]
@@ -313,8 +313,11 @@ if recordTrajectories and np.logical_not(reflection):
     hDist, hBins = np.histogram(xDist, np.linspace(-binsXinterval, binsXinterval, binsSpace))
 
 # Survival time distribution
-liveParticlesInTime = np.sum(particleSteps[:, None] > Time, axis=0)
+
+liveParticlesInTime = np.sum(particleSteps[:, None] > timeStep, axis=0)
 liveParticlesInTimeNorm = liveParticlesInTime/liveParticlesInTime.sum()
+liveParticlesInLogTime = np.sum(particleSteps[:, None] > timeLogSpaced, axis=0)
+liveParticlesInLogTimeNorm = liveParticlesInLogTime/liveParticlesInLogTime.sum()
 
 # Statistichs ########################################################################
 print(f"Execution time: {execution_time:.6f} seconds")
