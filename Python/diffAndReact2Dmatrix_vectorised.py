@@ -8,8 +8,8 @@ import time
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
 recordTrajectories = False # It uses up memory
-degradation = True # Switch for the degradation of the particles
-reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
+degradation = False # Switch for the degradation of the particles
+reflection = False # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
@@ -40,7 +40,7 @@ k_deg = 0.05 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
 ap = 1 # Adsorption probability
 binsXinterval = 10 # Extension of the region where spatial concentration is recorded
-binsTime = 100 # Number of temporal bins for the logarithmic plot
+binsTime = num_steps # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 reflectedInward = 1.0 # Probability of impacts from the fracture reflected again into the fracture
 # reflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
@@ -339,7 +339,7 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('infiniteDomain1e6.npz', **variablesToSave)
 # np.savez('semiInfiniteDomain1e3.npz', **variablesToSave)
 # np.savez('degradation_3.npz', **variablesToSave)
-# np.savez('totalAdsorption_3.npz', **variablesToSave)
+np.savez('totalAdsorption_3.npz', **variablesToSave)
 # np.savez('finalPositions1e5.npz', **variablesToSave)
 # np.savez('testSemra.npz', **variablesToSave)
 # np.savez('matrixDiffusionVerification.npz', **variablesToSave)

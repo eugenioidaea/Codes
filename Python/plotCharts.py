@@ -24,20 +24,13 @@ loadAdsorption = np.load('totalAdsorption_3.npz')
 for name, value in (loadAdsorption.items()):
     globals()[name] = value
 liveParticlesInTimeNormAds = liveParticlesInTimeNorm
-
-timeStep = np.linspace(dt, sim_time, num_steps)
-timeLogSpaced = np.logspace(np.log10(dt), np.log10(sim_time), 500) # Logarithmically spaced bins
-liveParticlesInLogTimeAds = np.sum(particleSteps[:, None] > timeLogSpaced, axis=0)
-liveParticlesInLogTimeNormAds = liveParticlesInLogTimeAds/liveParticlesInLogTimeAds.sum()
+liveParticlesInLogTimeNormAds = liveParticlesInLogTimeNorm
 
 loadDegradation = np.load('degradation_3.npz')
 for name, value in (loadDegradation.items()):
     globals()[name] = value
 liveParticlesInTimeNormDeg = liveParticlesInTimeNorm
-
-timeLogSpaced = np.logspace(np.log10(dt), np.log10(sim_time), 500) # Logarithmically spaced bins
-liveParticlesInLogTimeDeg = np.sum(particleSteps[:, None] > timeLogSpaced, axis=0)
-liveParticlesInLogTimeNormDeg = liveParticlesInLogTimeDeg/liveParticlesInLogTimeDeg.sum()
+liveParticlesInLogTimeNormDeg = liveParticlesInLogTimeNorm
 
 # loadInfiniteDomain = np.load('infiniteDomain1e6.npz')
 # for name, value in (loadInfiniteDomain.items()):
