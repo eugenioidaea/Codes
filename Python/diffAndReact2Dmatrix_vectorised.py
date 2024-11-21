@@ -7,14 +7,14 @@ import time
 
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
-recordTrajectories = False # It uses up memory
-degradation = True # Switch for the degradation of the particles
+recordTrajectories = True # It uses up memory
+degradation = False # Switch for the degradation of the particles
 reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
 vcpOn = False # It regulates the visualisation of the vertical control plane
-matrixDiffVerification = False # It activates the matrix-diffusion verification testcase
+matrixDiffVerification = True # It activates the matrix-diffusion verification testcase
 # recordVideo = False # It slows down the script
 
 if plotCharts:
@@ -22,13 +22,13 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_particles = int(1e4) # Number of particles in the simulation
+num_particles = int(10) # Number of particles in the simulation
 sim_time = int(100)
 dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1  # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
-x0 = 0 # Initial horizontal position of the particles
+x0 = 5 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 vcp = 10 # Vertical Control Plane
@@ -46,6 +46,8 @@ reflectedInward = 1.0 # Probability of impacts from the fracture reflected again
 # reflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
 reflectedOutward = 1.0 # Probability of impacts from the porous matrix reflected again into the porous matrix
 # reflectedOutward = np.sqrt(Dm)/(np.sqrt(Df)+np.sqrt(Dm))
+reflectedLeft = 1.0 # Particles being reflected while crossing left to right the central wall
+reflectedRight = 1.0 # Particles being reflected while crossing right to left the central wall
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
@@ -85,6 +87,8 @@ probCrossOutAbove = np.full(num_particles, False) # Probability of crossing the 
 probCrossOutBelow = np.full(num_particles, False) # Probability of crossing the fracture's walls
 probCrossInAbove = np.full(num_particles, False) # Probability of crossing the fracture's walls
 probCrossInBelow = np.full(num_particles, False) # Probability of crossing the fracture's walls
+probCrossLeftToRight = np.full(num_particles, False)
+probCrossRightToLeft = np.full(num_particles, False)
 particleSteps = np.zeros(num_particles)
 impacts = 0
 
@@ -118,6 +122,8 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
     if matrixDiffVerification:
         x[crossOutLeft] = -x[crossOutLeft]+2*lbx
         x[crossOutRight] = -x[crossOutRight]+2*rbx
+        x[crossLtR] = -x[crossLtR]+2*cbx
+        x[crossRtL] = -x[crossRtL]+2*cbx
     return x, y
 
 def apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist, impacts):
@@ -201,14 +207,18 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=-1) & (y!=1)).any())
     probCrossOutBelow[crossOutBelow] = np.random.rand(np.sum(crossOutBelow)) > reflectedInward
     probCrossInAbove[crossInAbove] = np.random.rand(np.sum(crossInAbove)) > reflectedOutward
     probCrossInBelow[crossInBelow] = np.random.rand(np.sum(crossInBelow)) > reflectedOutward
-    # probCrossCenterWall[np.where(crossLeftToRight)[0]] = np.random.rand(np.sum(crossLeftToRight)) > reflectedLeft
-    # probCrossCenterWall[np.where(crossRightToLeft)[0]] = np.random.rand(np.sum(crossLeftToRight)) > reflectedRight
+    if matrixDiffVerification:
+        probCrossLeftToRight[crossLeftToRight] = np.random.rand(np.sum(crossLeftToRight)) > reflectedLeft
+        probCrossRightToLeft[crossRightToLeft] = np.random.rand(np.sum(crossRightToLeft)) > reflectedRight
 
     # Successfull crossing based on uniform probability distribution
     crossInToOutAbove = probCrossOutAbove & crossOutAbove
     crossInToOutBelow = probCrossOutBelow & crossOutBelow
     crossOutToInAbove = probCrossInAbove & crossInAbove
     crossOutToInBelow = probCrossInBelow & crossInBelow
+    if matrixDiffVerification:
+        crossLtR = probCrossLeftToRight & crossLeftToRight
+        crossRtL = probCrossRightToLeft & crossRightToLeft
 
     # Particles hitting the left control plane
     if lbxOn:
@@ -338,9 +348,31 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # Save all the variables to an .npz file
 # np.savez('infiniteDomain1e6.npz', **variablesToSave)
 # np.savez('semiInfiniteDomain1e3.npz', **variablesToSave)
-np.savez('degradation_4.npz', **variablesToSave)
+# np.savez('degradation_4.npz', **variablesToSave)
 # np.savez('totalAdsorption_4.npz', **variablesToSave)
 # np.savez('finalPositions1e5.npz', **variablesToSave)
 # np.savez('testSemra.npz', **variablesToSave)
 # np.savez('matrixDiffusionVerification.npz', **variablesToSave)
 # np.savez('partialAdsorption.npz', **variablesToSave)
+
+
+
+
+# Trajectories
+trajectories = plt.figure(figsize=(8, 8))
+plt.rcParams.update({'font.size': 20})
+for i in range(num_particles):
+    plt.plot(xPath[i][:][xPath[i][:]!=0], yPath[i][:][xPath[i][:]!=0], lw=0.5)
+plt.axhline(y=uby, color='r', linestyle='--', linewidth=2)
+plt.axhline(y=lby, color='r', linestyle='--', linewidth=2)
+if lbxOn:
+    plt.axvline(x=lbx, color='b', linestyle='--', linewidth=2)
+    plt.axvline(x=-lbx, color='b', linestyle='--', linewidth=2)
+plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
+if vcpOn:
+    plt.axvline(x=vcp, color='black', linestyle='-', linewidth=2)
+plt.title("2D Diffusion Process (Langevin Equation)")
+plt.xlabel("X Position")
+plt.ylabel("Y Position")
+plt.grid(True)
+plt.tight_layout()

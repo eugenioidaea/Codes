@@ -15,9 +15,9 @@ plotSpatialConcentration = False
 plotDegradation = False
 plotFinalPositions = False
 plotSruvivalTimeDistOfNonAdsorbed = False
-plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption = True
+plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption = False
 
-compare = True
+compare = False
 
 # Load simulation results from .npz files ###################################################
 loadAdsorption = np.load('totalAdsorption_3.npz')
