@@ -8,8 +8,8 @@ import time
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
 recordTrajectories = False # It uses up memory
-degradation = False # Switch for the degradation of the particles
-reflection = False # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
+degradation = True # Switch for the degradation of the particles
+reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
@@ -22,9 +22,9 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_particles = int(1e6) # Number of particles in the simulation
-sim_time = int(500)
-dt = 1 # Time step
+num_particles = int(1e4) # Number of particles in the simulation
+sim_time = int(100)
+dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1  # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
@@ -259,8 +259,8 @@ iPart = 0
 iLbxOn = 0
 # Retrieve the number of steps for each particle from the pdf of the breakthrough curve
 for index, (valPdfPart, valLbxOn) in enumerate(zip(pdf_part, pdf_lbxOn)):
-    particleRT.extend([index*dt+1]*int(valPdfPart))
-    particleSemiInfRT.extend([index*dt+1]*int(valLbxOn))
+    particleRT.extend([index+1]*int(valPdfPart))
+    particleSemiInfRT.extend([index+1]*int(valLbxOn))
     iPart = iPart+valPdfPart
     iLbxOn = iLbxOn+valLbxOn
 
@@ -315,9 +315,9 @@ if recordTrajectories and np.logical_not(reflection):
 # Survival time distribution
 
 liveParticlesInTime = np.sum(particleSteps[:, None] > timeStep, axis=0)
-liveParticlesInTimeNorm = liveParticlesInTime/liveParticlesInTime.sum()
+liveParticlesInTimeNorm = liveParticlesInTime/sum(liveParticlesInTime*np.diff(np.insert(timeStep, 0, 0)))
 liveParticlesInLogTime = np.sum(particleSteps[:, None] > timeLogSpaced, axis=0)
-liveParticlesInLogTimeNorm = liveParticlesInLogTime/liveParticlesInLogTime.sum()
+liveParticlesInLogTimeNorm = liveParticlesInLogTime/sum(liveParticlesInLogTime*np.diff(np.insert(timeLogSpaced, 0, 0)))
 
 # Statistichs ########################################################################
 print(f"Execution time: {execution_time:.6f} seconds")
@@ -338,8 +338,8 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # Save all the variables to an .npz file
 # np.savez('infiniteDomain1e6.npz', **variablesToSave)
 # np.savez('semiInfiniteDomain1e3.npz', **variablesToSave)
-# np.savez('degradation_3.npz', **variablesToSave)
-np.savez('totalAdsorption_3.npz', **variablesToSave)
+np.savez('degradation_4.npz', **variablesToSave)
+# np.savez('totalAdsorption_4.npz', **variablesToSave)
 # np.savez('finalPositions1e5.npz', **variablesToSave)
 # np.savez('testSemra.npz', **variablesToSave)
 # np.savez('matrixDiffusionVerification.npz', **variablesToSave)

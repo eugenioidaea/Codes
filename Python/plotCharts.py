@@ -76,19 +76,19 @@ if plotTrajectories:
 if plotEulerianPdfCdf:
     # PDF
     plt.figure(figsize=(8, 8))
-    plt.plot(timeStep*dt, pdf_part/num_particles)
+    plt.plot(timeStep, pdf_part/num_particles)
     plt.xscale('log')
     plt.title("PDF")
 
     # CDF
     plt.figure(figsize=(8, 8))
-    plt.plot(timeStep*dt, np.cumsum(pdf_part)/num_particles)
+    plt.plot(timeStep, np.cumsum(pdf_part)/num_particles)
     plt.xscale('log')
     plt.title("CDF")
 
     # 1-CDF
     plt.figure(figsize=(8, 8))
-    plt.plot(timeStep*dt, 1-np.cumsum(pdf_part)/num_particles)
+    plt.plot(timeStep, 1-np.cumsum(pdf_part)/num_particles)
     plt.xscale('log')
     plt.yscale('log')
     plt.title("1-CDF")
@@ -142,8 +142,8 @@ if plotDegradation:
 
     # Distribution of live particles in time
     survivalTimeDistribution = plt.figure(figsize=(8, 8))
-    plt.plot(timeStep*dt, exp_prob, 'r-')
-    plt.plot(timeStep*dt, liveParticlesInTimeNormDeg, 'b*')
+    plt.plot(timeStep, exp_prob, 'r-')
+    plt.plot(timeStep, liveParticlesInTimeNormDeg, 'b*')
     plt.title("Live particle distribution in time")
     plt.xscale('log')
     plt.yscale('log')
@@ -200,7 +200,7 @@ if plotFinalPositions:
 if plotSruvivalTimeDistOfNonAdsorbed:
     # Normalised distribution of non-absorbed particles in time
     diffusionLimitedSurvTimeDistNorm = plt.figure(figsize=(8, 8))
-    plt.plot(timeStep*dt, liveParticlesInTimeNormAds, 'b*')
+    plt.plot(timeStep, liveParticlesInTimeNormAds, 'b*')
     plt.title("Non-absorbed particle normalised in time")
     plt.xscale('log')
     plt.yscale('log')
@@ -219,8 +219,8 @@ if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
     tau = (uby-lby)**2/Df
     # exp_decay = np.exp(-Time/tau)
     # plt.plot(Time[:-1], np.log(exp_decay[:-1]), label=f'p_s(t)=e^(-t/tau) where tau_d={tau}', color='r')
-    plt.plot(timeStep*dt/tau, liveParticlesInTimeNormDeg, label=r'$p_s(t)=ke^{-kt} \, lin \, bins$', color='blue')
-    plt.plot(timeStep*dt/tau, liveParticlesInTimeNormAds, label=r'$p_s(t)=ads \, bc \, lin \, bins$', color='green')
+    plt.plot(timeStep/tau, liveParticlesInTimeNormDeg, label=r'$p_s(t)=ke^{-kt} \, lin \, bins$', color='blue')
+    plt.plot(timeStep/tau, liveParticlesInTimeNormAds, label=r'$p_s(t)=ads \, bc \, lin \, bins$', color='green')
     plt.plot(timeLogSpaced/tau, liveParticlesInLogTimeNormDeg, label=r'$p_s(t)=ke^{-kt} \, log \, bins$', color='b', linestyle='--')
     plt.plot(timeLogSpaced/tau, liveParticlesInLogTimeNormAds, label=r'$p_s(t)=ads \, bc \, log \, bins$', color='g', linestyle='--')
     plt.title("Survival time PDFs")
@@ -237,12 +237,12 @@ if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
     # Rates of particles decay
     compareDecayDegradationRatesLin = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
-    tDiff = np.diff(timeStep*dt)
+    tDiff = np.diff(timeStep)
     dSurvPart = np.diff(np.log(liveParticlesInTimeNormDeg))
     dNonAdsPart = np.diff(np.log(liveParticlesInTimeNormAds))
     dSurvdt = dSurvPart/tDiff
     dNonAdsdt = dNonAdsPart/tDiff
-    midTimes = ((timeStep*dt)[:-1] + (timeStep*dt)[1:]) / 2
+    midTimes = ((timeStep)[:-1] + (timeStep)[1:]) / 2
     plt.plot(midTimes/tau, dSurvdt, label='Well mixed lin bins', color='b') # , marker='+', linestyle='none', markersize='5')
     plt.plot(midTimes/tau, dNonAdsdt, label='Diff limited lin bins', color='g') # , marker='x', linestyle='none', markersize='5')
     plt.title("Effective reaction rate")
@@ -260,11 +260,12 @@ if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
     dSurvLogdt = dSurvPartLog/tLogDiff
     dNonAdsLogdt = dNonAdsPartLog/tLogDiff
     midTimesLog = (timeLogSpaced[:-1] + timeLogSpaced[1:]) / 2
-    plt.plot(midTimesLog/tau, dSurvLogdt, label='Well mixed log bins', color='b', linestyle='--', linewidth='5') # marker='p', linestyle='none', markersize='5')
+    plt.plot(midTimesLog/tau, dSurvLogdt, label='Well mixed log bins', color='b', linestyle='--') # marker='p', linestyle='none', markersize='5')
     plt.plot(midTimesLog/tau, dNonAdsLogdt, label='Diff limited log bins', color='g', linestyle='--') # marker='*', linestyle='none', markersize='5')
     plt.title("Effective reaction rate")
     plt.xlabel('Time/tau')
     plt.ylabel('k(t)')
+    plt.ylim(-0.7, 0.01)
     plt.xscale('log')
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
     plt.legend(loc='best')
