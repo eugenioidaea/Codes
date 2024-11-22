@@ -23,11 +23,13 @@ if plotCharts:
 
 # Parameters #################################################################
 num_particles = int(10) # Number of particles in the simulation
-sim_time = int(100)
+sim_time = int(1e3)
 dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1  # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
+Dl = 0.1
+Dr = 0.001
 x0 = 5 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
@@ -46,8 +48,10 @@ reflectedInward = 1.0 # Probability of impacts from the fracture reflected again
 # reflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
 reflectedOutward = 1.0 # Probability of impacts from the porous matrix reflected again into the porous matrix
 # reflectedOutward = np.sqrt(Dm)/(np.sqrt(Df)+np.sqrt(Dm))
-reflectedLeft = 1.0 # Particles being reflected while crossing left to right the central wall
-reflectedRight = 1.0 # Particles being reflected while crossing right to left the central wall
+# reflectedLeft = 1.0 # Particles being reflected while crossing left to right the central wall
+reflectedLeft = np.sqrt(Dl)/(np.sqrt(Dl)+np.sqrt(Dr))
+#reflectedRight = 1.0 # Particles being reflected while crossing right to left the central wall
+reflectedRight = np.sqrt(Dr)/(np.sqrt(Dl)+np.sqrt(Dr))
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
@@ -94,10 +98,16 @@ impacts = 0
 
 # Functions ##########################################################################
 def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
-    x[fracture] += np.sqrt(2*Df*dt)*np.random.normal(meanEta, stdEta, np.sum(fracture))
-    y[fracture] += np.sqrt(2*Df*dt)*np.random.normal(meanEta, stdEta, np.sum(fracture))
-    x[matrix] += np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(matrix))
-    y[matrix] += np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(matrix))
+    if matrixDiffVerification:
+        x[x<cbx] += np.sqrt(2*Dl*dt)*np.random.normal(meanEta, stdEta, np.sum(x<cbx))
+        y[x<cbx] += np.sqrt(2*Dl*dt)*np.random.normal(meanEta, stdEta, np.sum(x<cbx))
+        x[x>cbx] += np.sqrt(2*Dr*dt)*np.random.normal(meanEta, stdEta, np.sum(x>cbx))
+        y[x>cbx] += np.sqrt(2*Dr*dt)*np.random.normal(meanEta, stdEta, np.sum(x>cbx))
+    else:
+        x[fracture] += np.sqrt(2*Df*dt)*np.random.normal(meanEta, stdEta, np.sum(fracture))
+        y[fracture] += np.sqrt(2*Df*dt)*np.random.normal(meanEta, stdEta, np.sum(fracture))
+        x[matrix] += np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(matrix))
+        y[matrix] += np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(matrix))
     return x, y
 
 def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow, 
@@ -122,8 +132,8 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
     if matrixDiffVerification:
         x[crossOutLeft] = -x[crossOutLeft]+2*lbx
         x[crossOutRight] = -x[crossOutRight]+2*rbx
-        x[crossLtR] = -x[crossLtR]+2*cbx
-        x[crossRtL] = -x[crossRtL]+2*cbx
+        x[crossLeftToRight] = np.where(crossLtR[crossLeftToRight], x[crossLeftToRight], -x[crossLeftToRight]+2*cbx)
+        x[crossRightToLeft] = np.where(crossRtL[crossRightToLeft], x[crossRightToLeft], -x[crossRightToLeft]+2*cbx)
     return x, y
 
 def apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist, impacts):
@@ -187,6 +197,9 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=-1) & (y!=1)).any())
         matrix = matrix & np.logical_not(crossOutLeft)
     particleSteps[fracture | matrix] += 1 # It keeps track of the number of steps of each particle (no degradeted nor adsorbed are moving)
     # particleSteps[survivalTimeDist>t] = particleSteps[survivalTimeDist>t] + 1 # It keeps track of the number of steps of each particle
+    if matrixDiffVerification:
+        left = x<cbx
+        right = x>cbx
 
     # Update the position of all the particles at a given time steps according to the Langevin dynamics
     x, y = update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta)
@@ -199,17 +212,17 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=-1) & (y!=1)).any())
     if matrixDiffVerification:
         crossOutLeft = x<lbx
         crossOutRight = x>rbx
-        crossLeftToRight = x>cbx
-        crossRightToLeft = x<cbx
+        crossLeftToRight = left & (x>cbx)
+        crossRightToLeft = right & (x<cbx)
 
     # Decide the number of impacts that will cross the fracture's walls
-    probCrossOutAbove[crossOutAbove] = np.random.rand(np.sum(crossOutAbove)) > reflectedInward
-    probCrossOutBelow[crossOutBelow] = np.random.rand(np.sum(crossOutBelow)) > reflectedInward
-    probCrossInAbove[crossInAbove] = np.random.rand(np.sum(crossInAbove)) > reflectedOutward
-    probCrossInBelow[crossInBelow] = np.random.rand(np.sum(crossInBelow)) > reflectedOutward
+    probCrossOutAbove = np.random.rand(len(crossOutAbove)) > reflectedInward
+    probCrossOutBelow = np.random.rand(len(crossOutBelow)) > reflectedInward
+    probCrossInAbove = np.random.rand(len(crossInAbove)) > reflectedOutward
+    probCrossInBelow = np.random.rand(len(crossInBelow)) > reflectedOutward
     if matrixDiffVerification:
-        probCrossLeftToRight[crossLeftToRight] = np.random.rand(np.sum(crossLeftToRight)) > reflectedLeft
-        probCrossRightToLeft[crossRightToLeft] = np.random.rand(np.sum(crossRightToLeft)) > reflectedRight
+        probCrossLeftToRight = np.random.rand(len(crossLeftToRight)) > reflectedLeft
+        probCrossRightToLeft = np.random.rand(len(crossRightToLeft)) > reflectedRight
 
     # Successfull crossing based on uniform probability distribution
     crossInToOutAbove = probCrossOutAbove & crossOutAbove
@@ -235,7 +248,7 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=-1) & (y!=1)).any())
         adsDist = np.random.uniform(0, 1, num_particles) # Uniform distribution
         x, y, impacts = apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist, impacts)
 
-    # Record the pdf of the btc on the left control panel        
+    # Record the pdf of the btc on the left control panel
     if lbxOn:
         crossOutLeft = (x==lbx)
 
