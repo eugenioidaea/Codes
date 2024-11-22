@@ -1,4 +1,4 @@
-debug = False
+debug = True
 if not debug:
     from IPython import get_ipython
     get_ipython().run_line_magic('reset', '-f')
@@ -7,7 +7,7 @@ import time
 
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
-recordTrajectories = True # It uses up memory
+recordTrajectories = False # It uses up memory
 degradation = False # Switch for the degradation of the particles
 reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
 lbxOn = False # It controls the position of the left boundary
@@ -22,15 +22,15 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_particles = int(10) # Number of particles in the simulation
+num_particles = int(1e2) # Number of particles in the simulation
 sim_time = int(1e3)
-dt = 0.1 # Time step
+dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1  # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
 Dl = 0.1
-Dr = 0.001
-x0 = 5 # Initial horizontal position of the particles
+Dr = 0.1
+xInit = 5 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 vcp = 10 # Vertical Control Plane
@@ -48,10 +48,10 @@ reflectedInward = 1.0 # Probability of impacts from the fracture reflected again
 # reflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
 reflectedOutward = 1.0 # Probability of impacts from the porous matrix reflected again into the porous matrix
 # reflectedOutward = np.sqrt(Dm)/(np.sqrt(Df)+np.sqrt(Dm))
-# reflectedLeft = 1.0 # Particles being reflected while crossing left to right the central wall
-reflectedLeft = np.sqrt(Dl)/(np.sqrt(Dl)+np.sqrt(Dr))
-#reflectedRight = 1.0 # Particles being reflected while crossing right to left the central wall
-reflectedRight = np.sqrt(Dr)/(np.sqrt(Dl)+np.sqrt(Dr))
+reflectedLeft = 0.0 # Particles being reflected while crossing left to right the central wall
+# reflectedLeft = np.sqrt(Dl)/(np.sqrt(Dl)+np.sqrt(Dr))
+reflectedRight = 0.0 # Particles being reflected while crossing right to left the central wall
+# reflectedRight = np.sqrt(Dr)/(np.sqrt(Dl)+np.sqrt(Dr))
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
@@ -69,8 +69,8 @@ i = 0 # Index for converting Eulerian pdf to Lagrangian pdf
 cdf = 0
 pdf_part = np.zeros(num_steps)
 pdf_lbxOn = np.zeros(num_steps)
-x = np.ones(num_particles)*x0 # Horizontal initial positions
-y = np.linspace(lby+init_shift, uby-init_shift, num_particles) # Vertical initial positions
+x0 = np.ones(num_particles)*xInit # Horizontal initial positions
+y0 = np.linspace(lby+init_shift, uby-init_shift, num_particles) # Vertical initial positions
 if recordTrajectories:
     xPath = np.zeros((num_particles, num_steps+1))  # Matrix for storing x trajectories
     yPath = np.zeros((num_particles, num_steps+1))  # Matrix for storing y trajectories
@@ -149,8 +149,8 @@ def apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist, 
     # y = np.where(crossOutBelow & (adsDist>ap), -y+2*lby, y)  # Particles are reflected with probability '1-ap'
     return x, y, impacts
 
-def analytical_seminf(x0, t, D):
-    y = x0*np.exp(-x0**2/(4*D*t))/(np.sqrt(4*np.pi*D*t**3))
+def analytical_seminf(xInit, t, D):
+    y = xInit*np.exp(-xInit**2/(4*D*t))/(np.sqrt(4*np.pi*D*t**3))
     return y
 
 def analytical_inf(x, t, D):
@@ -174,6 +174,9 @@ def adsorption_dist(k_ads):
 
 # Time loop ###########################################################################
 start_time = time.time() # Start timing the while loop
+
+x = x0.copy()
+y = y0.copy()
 
 # Chemical degradation times
 if degradation:
@@ -300,7 +303,7 @@ if (dt*10>(uby-lby)**2/Df):
 if lbxOn:
     countsSemiInfLog, binSemiInfLog = np.histogram(particleSemiInfRT, timeLogSpaced, density=True)
     timeBinsLog = (binSemiInfLog[:-1] + binSemiInfLog[1:]) / 2
-    analPdfSemiInf = analytical_seminf(x0, timeBinsLog, Df)
+    analPdfSemiInf = analytical_seminf(xInit, timeBinsLog, Df)
 else:
     yAnalytical = analytical_inf(binCenterSpace, recordSpatialConc, Df)
 
@@ -308,7 +311,7 @@ else:
 if np.logical_not(reflection):
     # Average concentration in X and Y
     recordTdist = int(timeStep[-2]) # Final time step
-    vInterval = np.array([x0-0.1, x0+0.1])
+    vInterval = np.array([xInit-0.1, xInit+0.1])
     hInterval = np.array([(lby+uby)/2-0.1, (lby+uby)/2+0.1])
     if recordTrajectories:
         yRecordTdist = yPath[:, recordTdist]
@@ -327,7 +330,7 @@ if np.logical_not(reflection):
 if recordTrajectories and np.logical_not(reflection):
     # Average concentration in X and Y
     recordTdist = int(timeStep[-2])
-    vInterval = np.array([x0-0.1, x0+0.1])
+    vInterval = np.array([xInit-0.1, xInit+0.1])
     hInterval = np.array([(lby+uby)/2-0.1, (lby+uby)/2+0.1])
     yDist = yPath[(xPath[:, recordTdist]>vInterval[0]) & (xPath[:, recordTdist]<vInterval[1]), recordTdist]
     yDist = yDist[(yDist != lby) & (yDist != uby)]
@@ -370,22 +373,22 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 
 
 
-
-# Trajectories
-trajectories = plt.figure(figsize=(8, 8))
-plt.rcParams.update({'font.size': 20})
-for i in range(num_particles):
-    plt.plot(xPath[i][:][xPath[i][:]!=0], yPath[i][:][xPath[i][:]!=0], lw=0.5)
-plt.axhline(y=uby, color='r', linestyle='--', linewidth=2)
-plt.axhline(y=lby, color='r', linestyle='--', linewidth=2)
-if lbxOn:
-    plt.axvline(x=lbx, color='b', linestyle='--', linewidth=2)
-    plt.axvline(x=-lbx, color='b', linestyle='--', linewidth=2)
-plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
-if vcpOn:
-    plt.axvline(x=vcp, color='black', linestyle='-', linewidth=2)
-plt.title("2D Diffusion Process (Langevin Equation)")
-plt.xlabel("X Position")
-plt.ylabel("Y Position")
-plt.grid(True)
+# Final particles's positions
+finalPositions = plt.figure(figsize=(8, 8))
+if matrixDiffVerification:
+    plt.plot(x, y, 'b*')
+    plt.plot([lbx, rbx, rbx, lbx, lbx], [lby, lby, uby, uby, lby], color='black', linewidth=2)    
+    if (reflectedLeft!=0) & (reflectedRight!=0):
+        plt.plot([cbx, cbx], [lby, uby], color='green', linewidth=2, linestyle='--')
+    plt.plot(x0, y0, marker='o', markerfacecolor='none')
+else:
+    # plt.plot(xPath[:, -1], yPath[:, -1], 'b*')
+    plt.plot(x, y, 'b*')
+    plt.axvline(x=xInit, color='yellow', linestyle='--', linewidth=2)
+    plt.axhline(y=uby, color='r', linestyle='--', linewidth=1)
+    plt.axhline(y=lby, color='r', linestyle='--', linewidth=1)
+    # for val in vInterval:
+    #     plt.axvline(x=val, color='black', linestyle='--', linewidth=2)
+    # for val in hInterval:
+    #     plt.axhline(y=val, color='black', linestyle='--', linewidth=2)
 plt.tight_layout()

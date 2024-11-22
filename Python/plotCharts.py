@@ -64,7 +64,7 @@ if plotTrajectories:
     if lbxOn:
         plt.axvline(x=lbx, color='b', linestyle='--', linewidth=2)
         plt.axvline(x=-lbx, color='b', linestyle='--', linewidth=2)
-    plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
+    plt.axvline(x=xInit, color='yellow', linestyle='--', linewidth=2)
     if vcpOn:
         plt.axvline(x=vcp, color='black', linestyle='-', linewidth=2)
     plt.title("2D Diffusion Process (Langevin Equation)")
@@ -124,7 +124,7 @@ if plotSpatialConcentration:
     plt.rcParams.update({'font.size': 20})
     plt.plot(binCenterSpace, countsSpace, 'b*')
     plt.plot(binCenterSpace, yAnalytical, color='red', linestyle='-')
-    plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
+    plt.axvline(x=xInit, color='yellow', linestyle='--', linewidth=2)
     if lbxOn:
         plt.axvline(x=lbx, color='b', linestyle='--', linewidth=2)
         plt.axvline(x=-lbx, color='b', linestyle='--', linewidth=2)
@@ -156,7 +156,7 @@ if plotFinalPositions:
     finalPositions = plt.figure(figsize=(8, 8))
     # plt.plot(xPath[:, -1], yPath[:, -1], 'b*')
     plt.plot(x, y, 'b*')
-    plt.axvline(x=x0, color='yellow', linestyle='--', linewidth=2)
+    plt.axvline(x=xInit, color='yellow', linestyle='--', linewidth=2)
     plt.axhline(y=uby, color='r', linestyle='--', linewidth=1)
     plt.axhline(y=lby, color='r', linestyle='--', linewidth=1)
     # for val in vInterval:
