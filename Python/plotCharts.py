@@ -13,24 +13,28 @@ plotLagrangianPdf = False
 plotBreakthroughCurveVerification = False
 plotSpatialConcentration = False
 plotDegradation = False
-plotFinalPositions = False
+FinalPositions = True
+FinalPositionVertAll = False
+FinalPositionHorAll = False
+FinalPositionVert = False
+FinalPositionHor = False
 plotSruvivalTimeDistOfNonAdsorbed = False
 plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption = False
 
 compare = False
 
 # Load simulation results from .npz files ###################################################
-loadAdsorption = np.load('totalAdsorption_3.npz')
-for name, value in (loadAdsorption.items()):
-    globals()[name] = value
-liveParticlesInTimeNormAds = liveParticlesInTimeNorm
-liveParticlesInLogTimeNormAds = liveParticlesInLogTimeNorm
+# loadAdsorption = np.load('totalAdsorption_3.npz')
+# for name, value in (loadAdsorption.items()):
+#     globals()[name] = value
+# liveParticlesInTimeNormAds = liveParticlesInTimeNorm
+# liveParticlesInLogTimeNormAds = liveParticlesInLogTimeNorm
 
-loadDegradation = np.load('degradation_3.npz')
-for name, value in (loadDegradation.items()):
-    globals()[name] = value
-liveParticlesInTimeNormDeg = liveParticlesInTimeNorm
-liveParticlesInLogTimeNormDeg = liveParticlesInLogTimeNorm
+# loadDegradation = np.load('degradation_3.npz')
+# for name, value in (loadDegradation.items()):
+#     globals()[name] = value
+# liveParticlesInTimeNormDeg = liveParticlesInTimeNorm
+# liveParticlesInLogTimeNormDeg = liveParticlesInLogTimeNorm
 
 # loadInfiniteDomain = np.load('infiniteDomain1e6.npz')
 # for name, value in (loadInfiniteDomain.items()):
@@ -49,6 +53,22 @@ liveParticlesInLogTimeNormDeg = liveParticlesInLogTimeNorm
 #     globals()[name] = value
 
 # loadFinalPositions = np.load('partialAdsorption.npz')
+# for name, value in (loadFinalPositions.items()):
+#     globals()[name] = value
+
+loadFinalPositions = np.load('Dl01Dr01Rl0Rr0.npz')
+for name, value in (loadFinalPositions.items()):
+    globals()[name] = value
+
+# loadFinalPositions = np.load('Dl01Dr001Rl0Rr0.npz')
+# for name, value in (loadFinalPositions.items()):
+#     globals()[name] = value
+
+# loadFinalPositions = np.load('Dl01Dr01RlPlRrPr.npz')
+# for name, value in (loadFinalPositions.items()):
+#     globals()[name] = value
+
+# loadFinalPositions = np.load('Dl01Dr001RlPlRrPr.npz')
 # for name, value in (loadFinalPositions.items()):
 #     globals()[name] = value
 
@@ -151,20 +171,32 @@ if plotDegradation:
     plt.ylabel('PDF of live particles')
     plt.tight_layout()
 
-if plotFinalPositions:
-    # Final particles's positions
+if FinalPositions:
+# Final particles's positions
     finalPositions = plt.figure(figsize=(8, 8))
-    # plt.plot(xPath[:, -1], yPath[:, -1], 'b*')
-    plt.plot(x, y, 'b*')
-    plt.axvline(x=xInit, color='yellow', linestyle='--', linewidth=2)
-    plt.axhline(y=uby, color='r', linestyle='--', linewidth=1)
-    plt.axhline(y=lby, color='r', linestyle='--', linewidth=1)
-    # for val in vInterval:
-    #     plt.axvline(x=val, color='black', linestyle='--', linewidth=2)
-    # for val in hInterval:
-    #     plt.axhline(y=val, color='black', linestyle='--', linewidth=2)
+    if matrixDiffVerification:
+        plt.plot(x, y, 'b*')
+        plt.plot([lbx, rbx, rbx, lbx, lbx], [lby, lby, uby, uby, lby], color='black', linewidth=2)
+        plt.scatter(x0, y0, s=2, c='purple', alpha=1, edgecolor='none', marker='o')
+        if (reflectedLeft!=0) & (reflectedRight!=0):
+            plt.plot([cbx, cbx], [lby, uby], color='orange', linewidth=3, linestyle='--')
+        histoMatriDiff = plt.figure(figsize=(8, 8))
+        hDist, hBins = np.histogram(x, np.linspace(lbx, rbx, 100), density=True)
+        plt.bar(hBins[:-1], hDist, width=np.diff(hBins), edgecolor="black", align="edge")
+        plt.axvline(x=cbx, color='orange', linestyle='-', linewidth=2)
+    else:
+        # plt.plot(xPath[:, -1], yPath[:, -1], 'b*')
+        plt.plot(x, y, 'b*')
+        plt.axvline(x=xInit, color='yellow', linestyle='--', linewidth=2)
+        plt.axhline(y=uby, color='r', linestyle='--', linewidth=1)
+        plt.axhline(y=lby, color='r', linestyle='--', linewidth=1)
+        # for val in vInterval:
+        #     plt.axvline(x=val, color='black', linestyle='--', linewidth=2)
+        # for val in hInterval:
+        #     plt.axhline(y=val, color='black', linestyle='--', linewidth=2)
     plt.tight_layout()
 
+if FinalPositionVertAll:
     # Vertical distribution of all particles
     finalPositionVertAll = plt.figure(figsize=(8, 8))
     plt.bar(vBinsAll[:-1], vDistAll, width=np.diff(vBinsAll), edgecolor="black", align="edge")
@@ -173,6 +205,7 @@ if plotFinalPositions:
     plt.ylabel('Number of particles')
     plt.tight_layout()
 
+if FinalPositionHorAll:
     # Horizontal distribution of all particles
     finalPositionHorAll = plt.figure(figsize=(8, 8))
     plt.bar(hBinsAll[:-1], hDistAll, width=np.diff(hBinsAll), edgecolor="black", align="edge")
@@ -181,6 +214,7 @@ if plotFinalPositions:
     plt.ylabel('Number of particles')
     plt.tight_layout()
 
+if FinalPositionVert:
     # Vertical distribution
     finalPositionVert = plt.figure(figsize=(8, 8))
     plt.bar(vBins[:-1], vDist, width=np.diff(vBins), edgecolor="black", align="edge")
@@ -189,6 +223,7 @@ if plotFinalPositions:
     plt.ylabel('Number of particles')
     plt.tight_layout()
 
+if FinalPositionHor:
     # Horizontal distribution
     finalPositionHor = plt.figure(figsize=(8, 8))
     plt.bar(hBins[:-1], hDist, width=np.diff(hBins), edgecolor="black", align="edge")
@@ -314,3 +349,19 @@ if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
 # survTimeDistCompare.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompare.png", format="png", bbox_inches="tight")
 
 # compareDecayDegradationRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistRateCompare.png", format="png", bbox_inches="tight")
+
+
+
+
+
+finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
+histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
+
+# finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
+# histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
+# 
+# finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
+# histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
+# 
+# finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
+# histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")

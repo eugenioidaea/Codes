@@ -1,4 +1,4 @@
-debug = True
+debug = False
 if not debug:
     from IPython import get_ipython
     get_ipython().run_line_magic('reset', '-f')
@@ -22,14 +22,14 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_particles = int(1e2) # Number of particles in the simulation
-sim_time = int(1e3)
+num_particles = int(1e4) # Number of particles in the simulation
+sim_time = int(1e4)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1  # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
-Dl = 0.1
-Dr = 0.1
+Dl = 0.1 # Diffusion left side of the domain (matrixDiffVerification only)
+Dr = 0.01 # Diffusion right side of the domain (matrixDiffVerification only)
 xInit = 5 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
@@ -44,14 +44,15 @@ ap = 1 # Adsorption probability
 binsXinterval = 10 # Extension of the region where spatial concentration is recorded
 binsTime = num_steps # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
+if matrixDiffVerification:
+    reflectedLeft = 0.0 # Particles being reflected while crossing left to right the central wall
+    # reflectedLeft = np.sqrt(Dl)/(np.sqrt(Dl)+np.sqrt(Dr))
+    reflectedRight = 0.0 # Particles being reflected while crossing right to left the central wall
+    # reflectedRight = np.sqrt(Dr)/(np.sqrt(Dl)+np.sqrt(Dr))
 reflectedInward = 1.0 # Probability of impacts from the fracture reflected again into the fracture
 # reflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
 reflectedOutward = 1.0 # Probability of impacts from the porous matrix reflected again into the porous matrix
 # reflectedOutward = np.sqrt(Dm)/(np.sqrt(Df)+np.sqrt(Dm))
-reflectedLeft = 0.0 # Particles being reflected while crossing left to right the central wall
-# reflectedLeft = np.sqrt(Dl)/(np.sqrt(Dl)+np.sqrt(Dr))
-reflectedRight = 0.0 # Particles being reflected while crossing right to left the central wall
-# reflectedRight = np.sqrt(Dr)/(np.sqrt(Dl)+np.sqrt(Dr))
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
@@ -69,8 +70,17 @@ i = 0 # Index for converting Eulerian pdf to Lagrangian pdf
 cdf = 0
 pdf_part = np.zeros(num_steps)
 pdf_lbxOn = np.zeros(num_steps)
-x0 = np.ones(num_particles)*xInit # Horizontal initial positions
-y0 = np.linspace(lby+init_shift, uby-init_shift, num_particles) # Vertical initial positions
+if matrixDiffVerification:
+    noc = 100 # Number of columns
+    nor = int(num_particles/noc) # Number of rows
+    x0 = np.linspace(lbx, cbx, noc) # Particles initial positions: left
+    # x0 = np.linspace(cbx, rbx, noc) # Particles initial positions: right
+    y0 = np.linspace(lby-(lby*0.01), uby-(uby*0.01), nor) # Small shift is needed otherwise particles tend to escape during first/second step
+    x0 = np.tile(x0, nor)
+    y0 = np.repeat(y0, noc)
+else:
+    x0 = np.ones(num_particles)*xInit # Horizontal initial positions
+    y0 = np.linspace(lby+init_shift, uby-init_shift, num_particles) # Vertical initial positions
 if recordTrajectories:
     xPath = np.zeros((num_particles, num_steps+1))  # Matrix for storing x trajectories
     yPath = np.zeros((num_particles, num_steps+1))  # Matrix for storing y trajectories
@@ -370,6 +380,12 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('testSemra.npz', **variablesToSave)
 # np.savez('matrixDiffusionVerification.npz', **variablesToSave)
 # np.savez('partialAdsorption.npz', **variablesToSave)
+# np.savez('Dl01Dr01Rl0Rr0.npz', **variablesToSave)
+# np.savez('Dl01Dr001Rl0Rr0.npz', **variablesToSave)
+# np.savez('Dl01Dr01RlPlRrPr.npz', **variablesToSave)
+# np.savez('Dl01Dr001RlPlRrPr.npz', **variablesToSave)
+
+
 
 
 
@@ -377,18 +393,11 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 finalPositions = plt.figure(figsize=(8, 8))
 if matrixDiffVerification:
     plt.plot(x, y, 'b*')
-    plt.plot([lbx, rbx, rbx, lbx, lbx], [lby, lby, uby, uby, lby], color='black', linewidth=2)    
+    plt.plot([lbx, rbx, rbx, lbx, lbx], [lby, lby, uby, uby, lby], color='black', linewidth=2)
+    plt.scatter(x0, y0, s=2, c='purple', alpha=1, edgecolor='none', marker='o')
     if (reflectedLeft!=0) & (reflectedRight!=0):
-        plt.plot([cbx, cbx], [lby, uby], color='green', linewidth=2, linestyle='--')
-    plt.plot(x0, y0, marker='o', markerfacecolor='none')
-else:
-    # plt.plot(xPath[:, -1], yPath[:, -1], 'b*')
-    plt.plot(x, y, 'b*')
-    plt.axvline(x=xInit, color='yellow', linestyle='--', linewidth=2)
-    plt.axhline(y=uby, color='r', linestyle='--', linewidth=1)
-    plt.axhline(y=lby, color='r', linestyle='--', linewidth=1)
-    # for val in vInterval:
-    #     plt.axvline(x=val, color='black', linestyle='--', linewidth=2)
-    # for val in hInterval:
-    #     plt.axhline(y=val, color='black', linestyle='--', linewidth=2)
-plt.tight_layout()
+        plt.plot([cbx, cbx], [lby, uby], color='orange', linewidth=3, linestyle='--')
+    histoMatriDiff = plt.figure(figsize=(8, 8))
+    hDist, hBins = np.histogram(x, np.linspace(lbx, rbx, 100), density=True)
+    plt.bar(hBins[:-1], hDist, width=np.diff(hBins), edgecolor="black", align="edge")
+    plt.axvline(x=cbx, color='orange', linestyle='-', linewidth=2)
