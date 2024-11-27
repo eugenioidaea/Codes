@@ -20,6 +20,8 @@ FinalPositionVert = False
 FinalPositionHor = False
 plotSruvivalTimeDistOfNonAdsorbed = False
 plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption = False
+compareAdsDiff = False
+compareAdsApertures = True
 
 compare = False
 
@@ -71,6 +73,50 @@ compare = False
 # loadFinalPositions = np.load('Dl01Dr001RlPlRrPr.npz')
 # for name, value in (loadFinalPositions.items()):
 #     globals()[name] = value
+
+if compareAdsDiff:
+    loadCompareAdsD1 = np.load('compareAdsD1.npz')
+    for name, value in (loadCompareAdsD1.items()):
+        globals()[name] = value
+    liveParticlesInTimeD1 = liveParticlesInTime.copy()
+    liveParticlesInTimeNormD1 = liveParticlesInTimeNorm.copy()
+    tauD1 = (uby-lby)**2/Df
+
+    loadCompareAdsD01 = np.load('compareAdsD01.npz')
+    for name, value in (loadCompareAdsD01.items()):
+        globals()[name] = value
+    liveParticlesInTimeD01 = liveParticlesInTime.copy()
+    liveParticlesInTimeNormD01 = liveParticlesInTimeNorm.copy()
+    tauD01 = (uby-lby)**2/Df
+
+    loadCompareAdsD001 = np.load('compareAdsD001.npz')
+    for name, value in (loadCompareAdsD001.items()):
+        globals()[name] = value
+    liveParticlesInTimeD001 = liveParticlesInTime.copy()
+    liveParticlesInTimeNormD001 = liveParticlesInTimeNorm.copy()
+    tauD001 = (uby-lby)**2/Df
+
+if compareAdsApertures:
+    loadCompareAdsAp2 = np.load('compareAp2.npz')
+    for name, value in (loadCompareAdsAp2.items()):
+        globals()[name] = value
+    liveParticlesInTimeAp2 = liveParticlesInTime.copy()
+    liveParticlesInTimeNormAp2 = liveParticlesInTimeNorm.copy()
+    tauAp2 = (uby-lby)**2/Df
+
+    loadCompareAdsAp4 = np.load('compareAp4.npz')
+    for name, value in (loadCompareAdsAp4.items()):
+        globals()[name] = value
+    liveParticlesInTimeAp4 = liveParticlesInTime.copy()
+    liveParticlesInTimeNormAp4 = liveParticlesInTimeNorm.copy()
+    tauAp4 = (uby-lby)**2/Df
+
+    loadCompareAdsAp6 = np.load('compareAp6.npz')
+    for name, value in (loadCompareAdsAp6.items()):
+        globals()[name] = value
+    liveParticlesInTimeAp6 = liveParticlesInTime.copy()
+    liveParticlesInTimeNormAp6 = liveParticlesInTimeNorm.copy()
+    tauAp6 = (uby-lby)**2/Df
 
 # Plot section #########################################################################
 if plotTrajectories:
@@ -245,8 +291,73 @@ if plotSruvivalTimeDistOfNonAdsorbed:
     plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
     plt.tight_layout()
 
-# Well-mixed vs diffusion-limited survival time distributions ###########################################################
+if compareAdsDiff:
+    # Distribution of live particles in time
+    survTimeDistCompareDiff = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    plt.plot(timeLinSpaced, liveParticlesInTimeD1, label=r'$D_f = 1$', color='b', linestyle='-')
+    plt.plot(timeLinSpaced, liveParticlesInTimeD01, label=r'$D_f = 0.1$', color='r', linestyle='-')
+    plt.plot(timeLinSpaced, liveParticlesInTimeD001, label=r'$D_f = 0.01$', color='g', linestyle='-')
+    plt.title("Survival times")
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('Time')
+    plt.ylabel('Number of live particles')
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+    plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+    plt.legend(loc='best')
+    plt.tight_layout()
 
+    # Normalised distribution of live particles in time
+    survTimeDistCompareDiffNorm = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    plt.plot(timeLinSpaced/tauD1, liveParticlesInTimeNormD1, label=r'$D_f = 1$', color='b', linestyle='-')
+    plt.plot(timeLinSpaced/tauD01, liveParticlesInTimeNormD01, label=r'$D_f = 0.1$', color='r', linestyle='-')
+    plt.plot(timeLinSpaced/tauD001, liveParticlesInTimeNormD001, label=r'$D_f = 0.01$', color='g', linestyle='-')
+    plt.title("Survival time PDFs")
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel(r'$Time/tau_i$')
+    plt.ylabel('Normalised number of live particles')
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+    plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+    plt.legend(loc='best')
+    plt.tight_layout()
+
+if compareAdsApertures:
+    # Distribution of live particles in time
+    survTimeDistCompareApe = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    plt.plot(timeLinSpaced, liveParticlesInTimeAp2, label=r'$Aperture=2$', color='b', linestyle='-')
+    plt.plot(timeLinSpaced, liveParticlesInTimeAp4, label=r'$Aperture=4$', color='r', linestyle='-')
+    plt.plot(timeLinSpaced, liveParticlesInTimeAp6, label=r'$Aperture=6$', color='g', linestyle='-')
+    plt.title("Survival times")
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('Time')
+    plt.ylabel('Number of live particles')
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+    plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+    plt.legend(loc='best')
+    plt.tight_layout()
+
+    # Normalised distribution of live particles in time
+    survTimeDistCompareApeNorm = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    plt.plot(timeLinSpaced/tauAp2, liveParticlesInTimeNormAp2, label=r'$Aperture=2$', color='b', linestyle='-')
+    plt.plot(timeLinSpaced/tauAp4, liveParticlesInTimeNormAp4, label=r'$Aperture=4$', color='r', linestyle='-')
+    plt.plot(timeLinSpaced/tauAp6, liveParticlesInTimeNormAp6, label=r'$Aperture=6$', color='g', linestyle='-')
+    plt.title("Survival time PDFs")
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel(r'$Time/tau_i$')
+    plt.ylabel('Normalised number of live particles')
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+    plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+    plt.legend(loc='best')
+    plt.tight_layout()
+
+# Well-mixed vs diffusion-limited survival time distributions ###########################################################
 if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
     # Distribution of live particles in time
     survTimeDistCompare = plt.figure(figsize=(8, 8))
@@ -306,19 +417,6 @@ if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
     plt.legend(loc='best')
     plt.tight_layout()
 
-    # dExpProb = np.diff(np.log(exp_decay))
-    #dExpProbdt = dExpProb/tLogDiff
-
-    # window_size = 100
-    # window = np.ones(window_size) / window_size  # Averaging window
-    # dSurvdt_smoothed = np.convolve(dSurvdt, window, mode='same')
-    # dNonAdsdt_smoothed = np.convolve(dNonAdsdt, window, mode='same')
-    # plt.ylim(-0.2, 0)
-    # plt.plot(midTimes[:-1], dExpProbdt[:-1], label='Analytical', color='r')
-
-    # plt.plot(midTimes[100:-1], dSurvdt_smoothed[100:-1], color='black')
-    # plt.plot(midTimes[100:-1], dNonAdsdt_smoothed[100:-1], color='black')
-
 # trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesInfinite.png", format="png", bbox_inches="tight")
 # trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesSemiInfinite.png", format="png", bbox_inches="tight")
 # trajectories.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/trajectoriesDegradation.png", format="png", bbox_inches="tight")
@@ -363,3 +461,4 @@ if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
  
 # finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
 # histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
+

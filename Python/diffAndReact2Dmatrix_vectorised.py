@@ -1,4 +1,4 @@
-debug = True
+debug = False
 if not debug:
     from IPython import get_ipython
     get_ipython().run_line_magic('reset', '-f')
@@ -26,13 +26,13 @@ num_particles = int(1e5) # Number of particles in the simulation
 sim_time = int(8e3)
 dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-Df = 0.01 # Diffusion for particles moving in the fracture
+Df = 0.1 # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
 Dl = 0.1 # Diffusion left side of the domain (matrixDiffVerification only)
 Dr = 0.1 # Diffusion right side of the domain (matrixDiffVerification only)
 xInit = 0 # Initial horizontal position of the particles
-uby = 1 # Upper Boundary
-lby = -1 # Lower Boundary
+uby = 3 # Upper Boundary
+lby = -3 # Lower Boundary
 vcp = 10 # Vertical Control Plane
 if lbxOn:
     lbx = 0 # Left Boundary X
@@ -194,7 +194,7 @@ if degradation:
 else:
     survivalTimeDist = np.ones(num_particles)*sim_time
 
-while t<sim_time and bool(liveParticle.any()) and bool(((y!=-1) & (y!=1)).any()):
+while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any()):
 
     liveParticle = np.array(survivalTimeDist>t) # Particles which are not degradeted
 
@@ -384,8 +384,11 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('Dl01Dr01RlPlRrPr.npz', **variablesToSave)
 # np.savez('Dl01Dr001RlPlRrPr.npz', **variablesToSave)
 # np.savez('compareAdsD1.npz', **variablesToSave)
+# np.savez('compareAdsD01.npz', **variablesToSave)
 # np.savez('compareAdsD001.npz', **variablesToSave)
-np.savez('compareAdsD001.npz', **variablesToSave)
+# np.savez('compareAp2.npz', **variablesToSave)
+# np.savez('compareAp4.npz', **variablesToSave)
+# np.savez('compareAp6.npz', **variablesToSave)
 
 # Final particles's positions
 # finalPositions = plt.figure(figsize=(8, 8))
@@ -409,39 +412,41 @@ np.savez('compareAdsD001.npz', **variablesToSave)
 # liveParticlesInTimeD01 = liveParticlesInTime.copy()
 # liveParticlesInTimeNormD01 = liveParticlesInTimeNorm.copy()
 # tauD01 = (uby-lby)**2/Df
-liveParticlesInTimeD001 = liveParticlesInTime.copy()
-liveParticlesInTimeNormD001 = liveParticlesInTimeNorm.copy()
-tauD001 = (uby-lby)**2/Df
+# liveParticlesInTimeD001 = liveParticlesInTime.copy()
+# liveParticlesInTimeNormD001 = liveParticlesInTimeNorm.copy()
+# tauD001 = (uby-lby)**2/Df
+
+
 
 
 # Distribution of live particles in time
-survTimeDistCompareDiff = plt.figure(figsize=(8, 8))
-plt.rcParams.update({'font.size': 20})
-plt.plot(timeLinSpaced, liveParticlesInTimeD1, label=r'$D_f = 1$', color='b', linestyle='-')
-plt.plot(timeLinSpaced, liveParticlesInTimeD01, label=r'$D_f = 0.1$', color='r', linestyle='-')
-plt.plot(timeLinSpaced, liveParticlesInTimeD001, label=r'$D_f = 0.01$', color='g', linestyle='-')
-plt.title("Survival times")
-plt.xscale('log')
-plt.yscale('log')
-plt.xlabel('Time')
-plt.ylabel('Number of live particles')
-plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
-plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
-plt.legend(loc='best')
-plt.tight_layout()
+# survTimeDistCompareDiff = plt.figure(figsize=(8, 8))
+# plt.rcParams.update({'font.size': 20})
+# plt.plot(timeLinSpaced, liveParticlesInTimeD1, label=r'$D_f = 1$', color='b', linestyle='-')
+# plt.plot(timeLinSpaced, liveParticlesInTimeD01, label=r'$D_f = 0.1$', color='r', linestyle='-')
+# plt.plot(timeLinSpaced, liveParticlesInTimeD001, label=r'$D_f = 0.01$', color='g', linestyle='-')
+# plt.title("Survival times")
+# plt.xscale('log')
+# plt.yscale('log')
+# plt.xlabel('Time')
+# plt.ylabel('Number of live particles')
+# plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+# plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+# plt.legend(loc='b# est')
+# plt.tight_layout(# )
 
-# Distribution of live particles in time
-survTimeDistCompareDiffNorm = plt.figure(figsize=(8, 8))
-plt.rcParams.update({'font.size': 20})
-plt.plot(timeLinSpaced/tauD1, liveParticlesInTimeNormD1, label=r'$D_f = 1$', color='b', linestyle='-')
-plt.plot(timeLinSpaced/tauD01, liveParticlesInTimeNormD01, label=r'$D_f = 0.1$', color='r', linestyle='-')
-plt.plot(timeLinSpaced/tauD001, liveParticlesInTimeNormD001, label=r'$D_f = 0.01$', color='g', linestyle='-')
-plt.title("Survival time PDFs")
-plt.xscale('log')
-plt.yscale('log')
-plt.xlabel(r'$Time/tau_i$')
-plt.ylabel('Normalised number of live particles')
-plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
-plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
-plt.legend(loc='best')
-plt.tight_layout()
+# Normalised distribution of live particles in time
+# survTimeDistCompareDiffNorm = plt.figure(figsize=(8, 8))
+# plt.rcParams.update({'font.size': 20})
+# plt.plot(timeLinSpaced/tauD1, liveParticlesInTimeNormD1, label=r'$D_f = 1$', color='b', linestyle='-')
+# plt.plot(timeLinSpaced/tauD01, liveParticlesInTimeNormD01, label=r'$D_f = 0.1$', color='r', linestyle='-')
+# plt.plot(timeLinSpaced/tauD001, liveParticlesInTimeNormD001, label=r'$D_f = 0.01$', color='g', linestyle='-')
+# plt.title("Survival time PDFs")
+# plt.xscale('log')
+# plt.yscale('log')
+# plt.xlabel(r'$Time/tau_i$')
+# plt.ylabel('Normalised number of live particles')
+# plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+# plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+# plt.legend(loc='best')
+# plt.tight_layout()
