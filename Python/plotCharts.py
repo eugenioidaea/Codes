@@ -13,7 +13,7 @@ plotLagrangianPdf = False
 plotBreakthroughCurveVerification = False
 plotSpatialConcentration = False
 plotDegradation = False
-FinalPositions = True
+FinalPositions = False
 FinalPositionVertAll = False
 FinalPositionHorAll = False
 FinalPositionVert = False
@@ -27,14 +27,14 @@ compare = False
 # loadAdsorption = np.load('totalAdsorption_3.npz')
 # for name, value in (loadAdsorption.items()):
 #     globals()[name] = value
-# liveParticlesInTimeNormAds = liveParticlesInTimeNorm
-# liveParticlesInLogTimeNormAds = liveParticlesInLogTimeNorm
+# liveParticlesInTimeNormAds = liveParticlesInTimeNorm.copy()
+# liveParticlesInLogTimeNormAds = liveParticlesInLogTimeNorm.copy()
 
 # loadDegradation = np.load('degradation_3.npz')
 # for name, value in (loadDegradation.items()):
 #     globals()[name] = value
-# liveParticlesInTimeNormDeg = liveParticlesInTimeNorm
-# liveParticlesInLogTimeNormDeg = liveParticlesInLogTimeNorm
+# liveParticlesInTimeNormDeg = liveParticlesInTimeNorm.copy()
+# liveParticlesInLogTimeNormDeg = liveParticlesInLogTimeNorm.copy()
 
 # loadInfiniteDomain = np.load('infiniteDomain1e6.npz')
 # for name, value in (loadInfiniteDomain.items()):
@@ -56,9 +56,9 @@ compare = False
 # for name, value in (loadFinalPositions.items()):
 #     globals()[name] = value
 
-loadFinalPositions = np.load('Dl01Dr01Rl0Rr0.npz')
-for name, value in (loadFinalPositions.items()):
-    globals()[name] = value
+# loadFinalPositions = np.load('Dl01Dr01Rl0Rr0.npz')
+# for name, value in (loadFinalPositions.items()):
+#     globals()[name] = value
 
 # loadFinalPositions = np.load('Dl01Dr001Rl0Rr0.npz')
 # for name, value in (loadFinalPositions.items()):
@@ -348,20 +348,18 @@ if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
 
 # survTimeDistCompare.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompare.png", format="png", bbox_inches="tight")
 
-# compareDecayDegradationRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistRateCompare.png", format="png", bbox_inches="tight")
+# compareDecayDegradationRatesLin.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDecayDegradationRatesLin.png", format="png", bbox_inches="tight")
 
+# compareDecayDegradationRatesLog.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDecayDegradationRatesLog.png", format="png", bbox_inches="tight")
 
-
-
-
-finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
-histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
+# finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
+# histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
 
 # finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
 # histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
-# 
+ 
 # finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
 # histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
-# 
+ 
 # finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
 # histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")

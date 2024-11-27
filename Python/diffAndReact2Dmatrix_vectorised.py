@@ -8,13 +8,13 @@ import time
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
 recordTrajectories = False # It uses up memory
-degradation = False # Switch for the degradation of the particles
-reflection = True # It defines the upper and lower fracture's walls behaviour, wheather particles are reflected or adsorpted
+degradation = True # Switch for the degradation of the particles
+reflection = True # If False, the particles get adsorbed
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
 vcpOn = False # It regulates the visualisation of the vertical control plane
-matrixDiffVerification = True # It activates the matrix-diffusion verification testcase
+matrixDiffVerification = False # It activates the matrix-diffusion verification testcase
 # recordVideo = False # It slows down the script
 
 if plotCharts:
@@ -22,15 +22,15 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_particles = int(1e4) # Number of particles in the simulation
-sim_time = int(1e4)
-dt = 1 # Time step
+num_particles = int(1e5) # Number of particles in the simulation
+sim_time = int(100)
+dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1  # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
 Dl = 0.1 # Diffusion left side of the domain (matrixDiffVerification only)
-Dr = 0.01 # Diffusion right side of the domain (matrixDiffVerification only)
-xInit = 5 # Initial horizontal position of the particles
+Dr = 0.1 # Diffusion right side of the domain (matrixDiffVerification only)
+xInit = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 vcp = 10 # Vertical Control Plane
@@ -42,7 +42,7 @@ k_deg = 0.05 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
 ap = 1 # Adsorption probability
 binsXinterval = 10 # Extension of the region where spatial concentration is recorded
-binsTime = num_steps # Number of temporal bins for the logarithmic plot
+binsTime = 30 # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 if matrixDiffVerification:
     reflectedLeft = 0.0 # Particles being reflected while crossing left to right the central wall
@@ -73,7 +73,7 @@ pdf_lbxOn = np.zeros(num_steps)
 if matrixDiffVerification:
     noc = 100 # Number of columns
     nor = int(num_particles/noc) # Number of rows
-    x0 = np.linspace(lbx, cbx, noc) # Particles initial positions: left
+    x0 = np.linspace(lbx-(lbx*0.01), cbx-(cbx*0.01), noc) # Particles initial positions: left
     # x0 = np.linspace(cbx, rbx, noc) # Particles initial positions: right
     y0 = np.linspace(lby-(lby*0.01), uby-(uby*0.01), nor) # Small shift is needed otherwise particles tend to escape during first/second step
     x0 = np.tile(x0, nor)
@@ -220,7 +220,7 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=-1) & (y!=1)).any())
     # Particles which in principles would cross the fractures' walls
     crossOutAbove = fracture & (y>uby)
     crossOutBelow = fracture & (y<lby)
-    crossInAbove = outsideAbove  & (y > lby) & (y < uby)
+    crossInAbove = outsideAbove  & (y>lby) & (y<uby)
     crossInBelow = outsideBelow & (y>lby) & (y<uby)
     if matrixDiffVerification:
         crossOutLeft = x<lbx
@@ -374,8 +374,8 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # Save all the variables to an .npz file
 # np.savez('infiniteDomain1e6.npz', **variablesToSave)
 # np.savez('semiInfiniteDomain1e3.npz', **variablesToSave)
-# np.savez('degradation_4.npz', **variablesToSave)
-# np.savez('totalAdsorption_4.npz', **variablesToSave)
+# np.savez('degradation_3.npz', **variablesToSave)
+# np.savez('totalAdsorption_3.npz', **variablesToSave)
 # np.savez('finalPositions1e5.npz', **variablesToSave)
 # np.savez('testSemra.npz', **variablesToSave)
 # np.savez('matrixDiffusionVerification.npz', **variablesToSave)
@@ -384,20 +384,18 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('Dl01Dr001Rl0Rr0.npz', **variablesToSave)
 # np.savez('Dl01Dr01RlPlRrPr.npz', **variablesToSave)
 # np.savez('Dl01Dr001RlPlRrPr.npz', **variablesToSave)
-
-
-
-
+np.savez('compareDegD01.npz', **variablesToSave)
+# np.savez('totalAdsorption_3.npz', **variablesToSave)
 
 # Final particles's positions
-finalPositions = plt.figure(figsize=(8, 8))
-if matrixDiffVerification:
-    plt.plot(x, y, 'b*')
-    plt.plot([lbx, rbx, rbx, lbx, lbx], [lby, lby, uby, uby, lby], color='black', linewidth=2)
-    plt.scatter(x0, y0, s=2, c='purple', alpha=1, edgecolor='none', marker='o')
-    if (reflectedLeft!=0) & (reflectedRight!=0):
-        plt.plot([cbx, cbx], [lby, uby], color='orange', linewidth=3, linestyle='--')
-    histoMatriDiff = plt.figure(figsize=(8, 8))
-    hDist, hBins = np.histogram(x, np.linspace(lbx, rbx, 100), density=True)
-    plt.bar(hBins[:-1], hDist, width=np.diff(hBins), edgecolor="black", align="edge")
-    plt.axvline(x=cbx, color='orange', linestyle='-', linewidth=2)
+# finalPositions = plt.figure(figsize=(8, 8))
+# if matrixDiffVerification:
+#     plt.plot(x, y, 'b*')
+#     plt.plot([lbx, rbx, rbx, lbx, lbx], [lby, lby, uby, uby, lby], color='black', linewidth=2)
+#     plt.scatter(x0, y0, s=2, c='purple', alpha=1, edgecolor='none', marker='o')
+#     if (reflectedLeft!=0) & (reflectedRight!=0):
+#         plt.plot([cbx, cbx], [lby, uby], color='orange', linewidth=3, linestyle='--')
+#     histoMatriDiff = plt.figure(figsize=(8, 8))
+#     hDist, hBins = np.histogram(x, np.linspace(lbx, rbx, 100), density=True)
+#     plt.bar(hBins[:-1], hDist, width=np.diff(hBins), edgecolor="black", align="edge")
+#     plt.axvline(x=cbx, color='orange', linestyle='-', linewidth=2)
