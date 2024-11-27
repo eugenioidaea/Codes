@@ -1,4 +1,4 @@
-debug = False
+debug = True
 if not debug:
     from IPython import get_ipython
     get_ipython().run_line_magic('reset', '-f')
@@ -8,8 +8,8 @@ import time
 # Features ###################################################################
 plotCharts = True # It controls graphical features (disable when run on HPC)
 recordTrajectories = False # It uses up memory
-degradation = True # Switch for the degradation of the particles
-reflection = True # If False, the particles get adsorbed
+degradation = False # Switch for the degradation of the particles
+reflection = False # If False, the particles get adsorbed
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
@@ -23,10 +23,10 @@ if plotCharts:
 
 # Parameters #################################################################
 num_particles = int(1e5) # Number of particles in the simulation
-sim_time = int(100)
+sim_time = int(8e3)
 dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-Df = 0.1  # Diffusion for particles moving in the fracture
+Df = 0.01 # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
 Dl = 0.1 # Diffusion left side of the domain (matrixDiffVerification only)
 Dr = 0.1 # Diffusion right side of the domain (matrixDiffVerification only)
@@ -42,7 +42,7 @@ k_deg = 0.05 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
 ap = 1 # Adsorption probability
 binsXinterval = 10 # Extension of the region where spatial concentration is recorded
-binsTime = 30 # Number of temporal bins for the logarithmic plot
+binsTime = int(num_steps/10) # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 if matrixDiffVerification:
     reflectedLeft = 0.0 # Particles being reflected while crossing left to right the central wall
@@ -93,7 +93,7 @@ liveParticle = np.array([True for _ in range(num_particles)])
 particleRT = []
 particleSemiInfRT = []
 timeStep = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
-# timeLinSpaced = np.linspace(dt, sim_time, binsTime) # Linearly spaced bins
+timeLinSpaced = np.linspace(dt, sim_time, binsTime) # Linearly spaced bins
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(sim_time), binsTime) # Logarithmically spaced bins
 xBins = np.linspace(-binsXinterval, binsXinterval, binsSpace) # Linearly spaced bins
 yBins = np.linspace(-binsXinterval, binsXinterval, binsSpace) # Linearly spaced bins
@@ -168,7 +168,7 @@ def analytical_inf(x, t, D):
     return y
 
 def degradation_dist(num_steps, k_deg, num_particles):
-    t_steps = np.linspace(1, sim_time, num_steps)
+    t_steps = np.linspace(dt, sim_time, num_steps)
     exp_prob = k_deg*np.exp(-k_deg*t_steps)
     exp_prob = exp_prob/exp_prob.sum()
     survivalTimeDist = np.random.choice(t_steps, size=num_particles, p=exp_prob)
@@ -349,9 +349,8 @@ if recordTrajectories and np.logical_not(reflection):
     hDist, hBins = np.histogram(xDist, np.linspace(-binsXinterval, binsXinterval, binsSpace))
 
 # Survival time distribution
-
-liveParticlesInTime = np.sum(particleSteps[:, None] > timeStep, axis=0)
-liveParticlesInTimeNorm = liveParticlesInTime/sum(liveParticlesInTime*np.diff(np.insert(timeStep, 0, 0)))
+liveParticlesInTime = np.sum(particleSteps[:, None] > timeLinSpaced, axis=0)
+liveParticlesInTimeNorm = liveParticlesInTime/sum(liveParticlesInTime*np.diff(np.insert(timeLinSpaced, 0, 0)))
 liveParticlesInLogTime = np.sum(particleSteps[:, None] > timeLogSpaced, axis=0)
 liveParticlesInLogTimeNorm = liveParticlesInLogTime/sum(liveParticlesInLogTime*np.diff(np.insert(timeLogSpaced, 0, 0)))
 
@@ -384,8 +383,9 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('Dl01Dr001Rl0Rr0.npz', **variablesToSave)
 # np.savez('Dl01Dr01RlPlRrPr.npz', **variablesToSave)
 # np.savez('Dl01Dr001RlPlRrPr.npz', **variablesToSave)
-np.savez('compareDegD01.npz', **variablesToSave)
-# np.savez('totalAdsorption_3.npz', **variablesToSave)
+# np.savez('compareAdsD1.npz', **variablesToSave)
+# np.savez('compareAdsD001.npz', **variablesToSave)
+np.savez('compareAdsD001.npz', **variablesToSave)
 
 # Final particles's positions
 # finalPositions = plt.figure(figsize=(8, 8))
@@ -399,3 +399,49 @@ np.savez('compareDegD01.npz', **variablesToSave)
 #     hDist, hBins = np.histogram(x, np.linspace(lbx, rbx, 100), density=True)
 #     plt.bar(hBins[:-1], hDist, width=np.diff(hBins), edgecolor="black", align="edge")
 #     plt.axvline(x=cbx, color='orange', linestyle='-', linewidth=2)
+
+
+
+
+# liveParticlesInTimeD1 = liveParticlesInTime.copy()
+# liveParticlesInTimeNormD1 = liveParticlesInTimeNorm.copy()
+# tauD1 = (uby-lby)**2/Df
+# liveParticlesInTimeD01 = liveParticlesInTime.copy()
+# liveParticlesInTimeNormD01 = liveParticlesInTimeNorm.copy()
+# tauD01 = (uby-lby)**2/Df
+liveParticlesInTimeD001 = liveParticlesInTime.copy()
+liveParticlesInTimeNormD001 = liveParticlesInTimeNorm.copy()
+tauD001 = (uby-lby)**2/Df
+
+
+# Distribution of live particles in time
+survTimeDistCompareDiff = plt.figure(figsize=(8, 8))
+plt.rcParams.update({'font.size': 20})
+plt.plot(timeLinSpaced, liveParticlesInTimeD1, label=r'$D_f = 1$', color='b', linestyle='-')
+plt.plot(timeLinSpaced, liveParticlesInTimeD01, label=r'$D_f = 0.1$', color='r', linestyle='-')
+plt.plot(timeLinSpaced, liveParticlesInTimeD001, label=r'$D_f = 0.01$', color='g', linestyle='-')
+plt.title("Survival times")
+plt.xscale('log')
+plt.yscale('log')
+plt.xlabel('Time')
+plt.ylabel('Number of live particles')
+plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+plt.legend(loc='best')
+plt.tight_layout()
+
+# Distribution of live particles in time
+survTimeDistCompareDiffNorm = plt.figure(figsize=(8, 8))
+plt.rcParams.update({'font.size': 20})
+plt.plot(timeLinSpaced/tauD1, liveParticlesInTimeNormD1, label=r'$D_f = 1$', color='b', linestyle='-')
+plt.plot(timeLinSpaced/tauD01, liveParticlesInTimeNormD01, label=r'$D_f = 0.1$', color='r', linestyle='-')
+plt.plot(timeLinSpaced/tauD001, liveParticlesInTimeNormD001, label=r'$D_f = 0.01$', color='g', linestyle='-')
+plt.title("Survival time PDFs")
+plt.xscale('log')
+plt.yscale('log')
+plt.xlabel(r'$Time/tau_i$')
+plt.ylabel('Normalised number of live particles')
+plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+plt.legend(loc='best')
+plt.tight_layout()
