@@ -324,6 +324,28 @@ if compareAdsDiff:
     plt.legend(loc='best')
     plt.tight_layout()
 
+    # Rates of particles decay
+    compareAdsRatesDiff = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    tDiff = np.diff(timeLinSpaced)
+    dLivePartD1 = np.diff(np.log(liveParticlesInTimeD1))
+    dLivePartD01 = np.diff(np.log(liveParticlesInTimeD01))
+    dLivePartD001 = np.diff(np.log(liveParticlesInTimeD001))
+    dLivedtD1 = dLivePartD1/tDiff
+    dLivedtD01 = dLivePartD01/tDiff
+    dLivedtD001 = dLivePartD001/tDiff
+    midTimes = ((timeLinSpaced)[:-1] + (timeLinSpaced)[1:]) / 2
+    plt.plot(midTimes, dLivedtD1, label='D=1', color='b') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes, dLivedtD01, label='D=0.1', color='r') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes, dLivedtD001, label='D=0.01', color='g') # , marker='+', linestyle='none', markersize='5')
+    plt.title("Effective reaction rate")
+    plt.xlabel('Time')
+    plt.ylabel('k(t)')
+    plt.xscale('log')
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
+    plt.legend(loc='best')
+    plt.tight_layout()
+
 if compareAdsApertures:
     # Distribution of live particles in time
     survTimeDistCompareApe = plt.figure(figsize=(8, 8))
@@ -354,6 +376,28 @@ if compareAdsApertures:
     plt.ylabel('Normalised number of live particles')
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
     plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+    plt.legend(loc='best')
+    plt.tight_layout()
+
+    # Rates of particles decay
+    compareAdsRatesApe = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    tDiff = np.diff(timeLinSpaced)
+    dLivePartAp2 = np.diff(np.log(liveParticlesInTimeAp2))
+    dLivePartAp4 = np.diff(np.log(liveParticlesInTimeAp4))
+    dLivePartAp6 = np.diff(np.log(liveParticlesInTimeAp6))
+    dLivedtAp2 = dLivePartAp2/tDiff
+    dLivedtAp4 = dLivePartAp4/tDiff
+    dLivedtAp6 = dLivePartAp6/tDiff
+    midTimes = ((timeLinSpaced)[:-1] + (timeLinSpaced)[1:]) / 2
+    plt.plot(midTimes, dLivedtAp2, label='Aperture=2', color='b') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes, dLivedtAp4, label='Aperture=4', color='r') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes, dLivedtAp6, label='Aperture=6', color='g') # , marker='+', linestyle='none', markersize='5')
+    plt.title("Effective reaction rate")
+    plt.xlabel('Time')
+    plt.ylabel('k(t)')
+    plt.xscale('log')
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
     plt.legend(loc='best')
     plt.tight_layout()
 
