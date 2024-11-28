@@ -29,7 +29,7 @@ num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1 # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
 Dl = 0.1 # Diffusion left side of the domain (matrixDiffVerification only)
-Dr = 0.1 # Diffusion right side of the domain (matrixDiffVerification only)
+Dr = 0.001 # Diffusion right side of the domain (matrixDiffVerification only)
 xInit = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
@@ -45,10 +45,10 @@ binsXinterval = 10 # Extension of the region where spatial concentration is reco
 binsTime = int(num_steps/10) # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 if matrixDiffVerification:
-    reflectedLeft = 0.0 # Particles being reflected while crossing left to right the central wall
-    # reflectedLeft = np.sqrt(Dl)/(np.sqrt(Dl)+np.sqrt(Dr))
-    reflectedRight = 0.0 # Particles being reflected while crossing right to left the central wall
-    # reflectedRight = np.sqrt(Dr)/(np.sqrt(Dl)+np.sqrt(Dr))
+    # reflectedLeft = 0.0 # Particles being reflected while crossing left to right the central wall
+    reflectedLeft = np.sqrt(Dl)/(np.sqrt(Dl)+np.sqrt(Dr))
+    # reflectedRight = 0.0 # Particles being reflected while crossing right to left the central wall
+    reflectedRight = np.sqrt(Dr)/(np.sqrt(Dl)+np.sqrt(Dr))
 reflectedInward = 1.0 # Probability of impacts from the fracture reflected again into the fracture
 # reflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
 reflectedOutward = 1.0 # Probability of impacts from the porous matrix reflected again into the porous matrix
@@ -73,9 +73,9 @@ pdf_lbxOn = np.zeros(num_steps)
 if matrixDiffVerification:
     noc = 100 # Number of columns
     nor = int(num_particles/noc) # Number of rows
-    x0 = np.linspace(lbx-(lbx*0.01), cbx-(cbx*0.01), noc) # Particles initial positions: left
+    x0 = np.linspace(lbx+((uby-lby)*0.01), cbx-((uby-lby)*0.01), noc) # Particles initial positions: left
     # x0 = np.linspace(cbx, rbx, noc) # Particles initial positions: right
-    y0 = np.linspace(lby-(lby*0.01), uby-(uby*0.01), nor) # Small shift is needed otherwise particles tend to escape during first/second step
+    y0 = np.linspace(lby+((uby-lby)*0.01), uby-((uby-lby)*0.01), nor) # Small shift is needed otherwise particles tend to escape during first/second step
     x0 = np.tile(x0, nor)
     y0 = np.repeat(y0, noc)
 else:
@@ -109,10 +109,10 @@ impacts = 0
 # Functions ##########################################################################
 def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
     if matrixDiffVerification:
-        x[x<cbx] += np.sqrt(2*Dl*dt)*np.random.normal(meanEta, stdEta, np.sum(x<cbx))
-        y[x<cbx] += np.sqrt(2*Dl*dt)*np.random.normal(meanEta, stdEta, np.sum(x<cbx))
-        x[x>cbx] += np.sqrt(2*Dr*dt)*np.random.normal(meanEta, stdEta, np.sum(x>cbx))
-        y[x>cbx] += np.sqrt(2*Dr*dt)*np.random.normal(meanEta, stdEta, np.sum(x>cbx))
+        x[left] += np.sqrt(2*Dl*dt)*np.random.normal(meanEta, stdEta, np.sum(left))
+        y[left] += np.sqrt(2*Dl*dt)*np.random.normal(meanEta, stdEta, np.sum(left))
+        x[right] += np.sqrt(2*Dr*dt)*np.random.normal(meanEta, stdEta, np.sum(right))
+        y[right] += np.sqrt(2*Dr*dt)*np.random.normal(meanEta, stdEta, np.sum(right))
     else:
         x[fracture] += np.sqrt(2*Df*dt)*np.random.normal(meanEta, stdEta, np.sum(fracture))
         y[fracture] += np.sqrt(2*Df*dt)*np.random.normal(meanEta, stdEta, np.sum(fracture))

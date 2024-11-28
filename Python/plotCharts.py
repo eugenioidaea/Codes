@@ -20,7 +20,7 @@ FinalPositionVert = False
 FinalPositionHor = False
 plotSruvivalTimeDistOfNonAdsorbed = False
 plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption = False
-compareAdsDiff = False
+compareAdsDiff = True
 compareAdsApertures = True
 
 compare = False
