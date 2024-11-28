@@ -23,13 +23,11 @@ if plotCharts:
 
 # Parameters #################################################################
 num_particles = int(1e4) # Number of particles in the simulation
-sim_time = int(1e4)
+sim_time = int(1e5)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1 # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
-Dl = 0.1 # Diffusion left side of the domain (matrixDiffVerification only)
-Dr = 0.001 # Diffusion right side of the domain (matrixDiffVerification only)
 xInit = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
@@ -45,6 +43,8 @@ binsXinterval = 10 # Extension of the region where spatial concentration is reco
 binsTime = int(num_steps/10) # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 if matrixDiffVerification:
+    Dl = 0.1 # Diffusion left side of the domain (matrixDiffVerification only)
+    Dr = 0.01 # Diffusion right side of the domain (matrixDiffVerification only)
     # reflectedLeft = 0.0 # Particles being reflected while crossing left to right the central wall
     reflectedLeft = np.sqrt(Dl)/(np.sqrt(Dl)+np.sqrt(Dr))
     # reflectedRight = 0.0 # Particles being reflected while crossing right to left the central wall
@@ -379,10 +379,11 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('testSemra.npz', **variablesToSave)
 # np.savez('matrixDiffusionVerification.npz', **variablesToSave)
 # np.savez('partialAdsorption.npz', **variablesToSave)
-# np.savez('Dl01Dr01Rl0Rr0.npz', **variablesToSave)
-# np.savez('Dl01Dr001Rl0Rr0.npz', **variablesToSave)
-# np.savez('Dl01Dr01RlPlRrPr.npz', **variablesToSave)
-# np.savez('Dl01Dr001RlPlRrPr.npz', **variablesToSave)
+# if matrixDiffVerification:
+    # np.savez('Dl01Dr01Rl0Rr0.npz', **variablesToSave)
+    # np.savez('Dl01Dr001Rl0Rr0.npz', **variablesToSave)
+    # np.savez('Dl01Dr01RlPlRrPr.npz', **variablesToSave)
+    # np.savez('Dl01Dr001RlPlRrPr1e5ts.npz', **variablesToSave)
 # np.savez('compareAdsD1.npz', **variablesToSave)
 # np.savez('compareAdsD01.npz', **variablesToSave)
 # np.savez('compareAdsD001.npz', **variablesToSave)
@@ -391,14 +392,14 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('compareAp6.npz', **variablesToSave)
 
 # Final particles's positions
-finalPositions = plt.figure(figsize=(8, 8))
-if matrixDiffVerification:
-    plt.plot(x, y, 'b*')
-    plt.plot([lbx, rbx, rbx, lbx, lbx], [lby, lby, uby, uby, lby], color='black', linewidth=2)
-    plt.scatter(x0, y0, s=2, c='purple', alpha=1, edgecolor='none', marker='o')
-    if (reflectedLeft!=0) & (reflectedRight!=0):
-        plt.plot([cbx, cbx], [lby, uby], color='orange', linewidth=3, linestyle='--')
-    histoMatriDiff = plt.figure(figsize=(8, 8))
-    hDist, hBins = np.histogram(x, np.linspace(lbx, rbx, 100), density=True)
-    plt.bar(hBins[:-1], hDist, width=np.diff(hBins), edgecolor="black", align="edge")
-    plt.axvline(x=cbx, color='orange', linestyle='-', linewidth=2)
+# finalPositions = plt.figure(figsize=(8, 8))
+# if matrixDiffVerification:
+#     plt.plot(x, y, 'b*')
+#     plt.plot([lbx, rbx, rbx, lbx, lbx], [lby, lby, uby, uby, lby], color='black', linewidth=2)
+#     plt.scatter(x0, y0, s=2, c='purple', alpha=1, edgecolor='none', marker='o')
+#     if (reflectedLeft!=0) & (reflectedRight!=0):
+#         plt.plot([cbx, cbx], [lby, uby], color='orange', linewidth=3, linestyle='--')
+#     histoMatriDiff = plt.figure(figsize=(8, 8))
+#     hDist, hBins = np.histogram(x, np.linspace(lbx, rbx, 100), density=True)
+#     plt.bar(hBins[:-1], hDist, width=np.diff(hBins), edgecolor="black", align="edge")
+#     plt.axvline(x=cbx, color='orange', linestyle='-', linewidth=2)

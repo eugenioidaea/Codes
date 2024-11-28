@@ -21,9 +21,7 @@ FinalPositionHor = False
 plotSruvivalTimeDistOfNonAdsorbed = False
 plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption = False
 compareAdsDiff = True
-compareAdsApertures = True
-
-compare = False
+compareAdsApertures = False
 
 # Load simulation results from .npz files ###################################################
 # loadAdsorption = np.load('totalAdsorption_3.npz')
@@ -58,21 +56,26 @@ compare = False
 # for name, value in (loadFinalPositions.items()):
 #     globals()[name] = value
 
-# loadFinalPositions = np.load('Dl01Dr01Rl0Rr0.npz')
-# for name, value in (loadFinalPositions.items()):
-#     globals()[name] = value
+if FinalPositions:
+#    loadFinalPositions = np.load('Dl01Dr01Rl0Rr0.npz')
+#    for name, value in (loadFinalPositions.items()):
+#        globals()[name] = value
 
-# loadFinalPositions = np.load('Dl01Dr001Rl0Rr0.npz')
-# for name, value in (loadFinalPositions.items()):
-#     globals()[name] = value
+#    loadFinalPositions = np.load('Dl01Dr001Rl0Rr0.npz')
+#    for name, value in (loadFinalPositions.items()):
+#        globals()[name] = value
+#
+#    loadFinalPositions = np.load('Dl01Dr01RlPlRrPr.npz')
+#    for name, value in (loadFinalPositions.items()):
+#        globals()[name] = value
+#
+#    loadFinalPositions = np.load('Dl01Dr001RlPlRrPr.npz')
+#    for name, value in (loadFinalPositions.items()):
+#        globals()[name] = value
 
-# loadFinalPositions = np.load('Dl01Dr01RlPlRrPr.npz')
-# for name, value in (loadFinalPositions.items()):
-#     globals()[name] = value
-
-# loadFinalPositions = np.load('Dl01Dr001RlPlRrPr.npz')
-# for name, value in (loadFinalPositions.items()):
-#     globals()[name] = value
+    loadFinalPositions = np.load('Dl01Dr001RlPlRrPr1e5ts.npz')
+    for name, value in (loadFinalPositions.items()):
+        globals()[name] = value
 
 if compareAdsDiff:
     loadCompareAdsD1 = np.load('compareAdsD1.npz')
@@ -342,9 +345,33 @@ if compareAdsDiff:
     plt.xlabel('Time')
     plt.ylabel('k(t)')
     plt.xscale('log')
+    plt.ylim(-0.2, 0.01)
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
     plt.legend(loc='best')
     plt.tight_layout()
+
+    # Rates of normalised particles decay
+#    compareAdsRatesDiff = plt.figure(figsize=(8, 8))
+#    plt.rcParams.update({'font.size': 20})
+#    tDiff = np.diff(timeLinSpaced)
+#    dLivePartD1 = np.diff(np.log(liveParticlesInTimeNormD1))
+#    dLivePartD01 = np.diff(np.log(liveParticlesInTimeNormD01))
+#    dLivePartD001 = np.diff(np.log(liveParticlesInTimeNormD001))
+#    dLivedtD1 = dLivePartD1/tDiff
+#    dLivedtD01 = dLivePartD01/tDiff
+#    dLivedtD001 = dLivePartD001/tDiff
+#    midTimes = ((timeLinSpaced)[:-1] + (timeLinSpaced)[1:]) / 2
+#    plt.plot(midTimes, dLivedtD1, label='D=1', color='b') # , marker='+', linestyle='none', markersize='5')
+#    plt.plot(midTimes, dLivedtD01, label='D=0.1', color='r') # , marker='+', linestyle='none', markersize='5')
+#    plt.plot(midTimes, dLivedtD001, label='D=0.01', color='g') # , marker='+', linestyle='none', markersize='5')
+#    plt.title("Effective reaction rate")
+#    plt.xlabel('Time')
+#    plt.ylabel('k(t)')
+#    plt.xscale('log')
+#    plt.ylim(-0.2, 0.01)
+#    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
+#    plt.legend(loc='best')
+#    plt.tight_layout()
 
 if compareAdsApertures:
     # Distribution of live particles in time
@@ -397,6 +424,7 @@ if compareAdsApertures:
     plt.xlabel('Time')
     plt.ylabel('k(t)')
     plt.xscale('log')
+    plt.ylim(-0.2, 0.01)
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
     plt.legend(loc='best')
     plt.tight_layout()
@@ -494,23 +522,27 @@ if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
 
 # compareDecayDegradationRatesLog.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDecayDegradationRatesLog.png", format="png", bbox_inches="tight")
 
-# finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
-# histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
+# if FinalPositions:
+#    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
+#    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
+#
+#    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
+#    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
+#
+#    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
+#    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
+#
+#    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
+#    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
+#
+#    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
+#    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
 
-# finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
-# histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
- 
-# finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
-# histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
- 
-# finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
-# histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
-
-if compareAdsDiff:
-    survTimeDistCompareDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiff.png", format="png", bbox_inches="tight")
-    survTimeDistCompareDiffNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiffNorm.png", format="png", bbox_inches="tight")
-    compareAdsRatesDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesDiff.png", format="png", bbox_inches="tight")
-if compareAdsApertures:
-    survTimeDistCompareApe.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareApe.png", format="png", bbox_inches="tight")
-    survTimeDistCompareApeNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareApeNorm.png", format="png", bbox_inches="tight")
-    compareAdsRatesApe.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesApe.png", format="png", bbox_inches="tight")
+# if compareAdsDiff:
+#     survTimeDistCompareDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiff.png", format="png", bbox_inches="tight")
+#     survTimeDistCompareDiffNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiffNorm.png", format="png", bbox_inches="tight")
+#     compareAdsRatesDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesDiff.png", format="png", bbox_inches="tight")
+# if compareAdsApertures:
+#     survTimeDistCompareApe.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareApe.png", format="png", bbox_inches="tight")
+#     survTimeDistCompareApeNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareApeNorm.png", format="png", bbox_inches="tight")
+#     compareAdsRatesApe.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesApe.png", format="png", bbox_inches="tight")
