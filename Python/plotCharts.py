@@ -21,7 +21,7 @@ FinalPositionHor = False
 plotSruvivalTimeDistOfNonAdsorbed = False
 plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption = False
 compareAdsDiff = True
-compareAdsApertures = False
+compareAdsApertures = True
 
 # Load simulation results from .npz files ###################################################
 # loadAdsorption = np.load('totalAdsorption_3.npz')
@@ -351,27 +351,23 @@ if compareAdsDiff:
     plt.tight_layout()
 
     # Rates of normalised particles decay
-#    compareAdsRatesDiff = plt.figure(figsize=(8, 8))
-#    plt.rcParams.update({'font.size': 20})
-#    tDiff = np.diff(timeLinSpaced)
-#    dLivePartD1 = np.diff(np.log(liveParticlesInTimeNormD1))
-#    dLivePartD01 = np.diff(np.log(liveParticlesInTimeNormD01))
-#    dLivePartD001 = np.diff(np.log(liveParticlesInTimeNormD001))
-#    dLivedtD1 = dLivePartD1/tDiff
-#    dLivedtD01 = dLivePartD01/tDiff
-#    dLivedtD001 = dLivePartD001/tDiff
-#    midTimes = ((timeLinSpaced)[:-1] + (timeLinSpaced)[1:]) / 2
-#    plt.plot(midTimes, dLivedtD1, label='D=1', color='b') # , marker='+', linestyle='none', markersize='5')
-#    plt.plot(midTimes, dLivedtD01, label='D=0.1', color='r') # , marker='+', linestyle='none', markersize='5')
-#    plt.plot(midTimes, dLivedtD001, label='D=0.01', color='g') # , marker='+', linestyle='none', markersize='5')
-#    plt.title("Effective reaction rate")
-#    plt.xlabel('Time')
-#    plt.ylabel('k(t)')
-#    plt.xscale('log')
-#    plt.ylim(-0.2, 0.01)
-#    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
-#    plt.legend(loc='best')
-#    plt.tight_layout()
+    compareDiffNormAdsRates = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    dLivedtD1 = np.diff(np.log(liveParticlesInTimeNormD1))/np.diff(timeLinSpaced/tauD1)
+    dLivedtD01 = np.diff(np.log(liveParticlesInTimeNormD01))/np.diff(timeLinSpaced/tauD01)
+    dLivedtD001 = np.diff(np.log(liveParticlesInTimeNormD001))/np.diff(timeLinSpaced/tauD001)
+    midTimes = ((timeLinSpaced)[:-1] + (timeLinSpaced)[1:]) / 2
+    plt.plot(midTimes, dLivedtD1, label='D=1', color='b') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes, dLivedtD01, label='D=0.1', color='r') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes, dLivedtD001, label='D=0.01', color='g') # , marker='+', linestyle='none', markersize='5')
+    plt.title("Effective normalised reaction rate")
+    plt.xlabel('Time')
+    plt.ylabel('k(t)')
+    plt.xscale('log')
+    plt.ylim(-8, 0.01)
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
+    plt.legend(loc='best')
+    plt.tight_layout()
 
 if compareAdsApertures:
     # Distribution of live particles in time
@@ -420,11 +416,29 @@ if compareAdsApertures:
     plt.plot(midTimes, dLivedtAp2, label='Aperture=2', color='b') # , marker='+', linestyle='none', markersize='5')
     plt.plot(midTimes, dLivedtAp4, label='Aperture=4', color='r') # , marker='+', linestyle='none', markersize='5')
     plt.plot(midTimes, dLivedtAp6, label='Aperture=6', color='g') # , marker='+', linestyle='none', markersize='5')
-    plt.title("Effective reaction rate")
+    plt.title("Effective normalised reaction rate")
     plt.xlabel('Time')
     plt.ylabel('k(t)')
     plt.xscale('log')
     plt.ylim(-0.2, 0.01)
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
+    plt.legend(loc='best')
+    plt.tight_layout()
+
+    compareApeNormAdsRates = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    dLivedtD1 = np.diff(np.log(liveParticlesInTimeNormAp2))/np.diff(timeLinSpaced/tauAp2)
+    dLivedtD01 = np.diff(np.log(liveParticlesInTimeNormAp4))/np.diff(timeLinSpaced/tauAp4)
+    dLivedtD001 = np.diff(np.log(liveParticlesInTimeNormAp6))/np.diff(timeLinSpaced/tauAp6)
+    midTimes = ((timeLinSpaced)[:-1] + (timeLinSpaced)[1:]) / 2
+    plt.plot(midTimes, dLivedtD1, label='Aperture=2', color='b') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes, dLivedtD01, label='Aperture=4', color='r') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes, dLivedtD001, label='Aperture=6', color='g') # , marker='+', linestyle='none', markersize='5')
+    plt.title("Effective reaction rate")
+    plt.xlabel('Time')
+    plt.ylabel('k(t)')
+    plt.xscale('log')
+    plt.ylim(-8, 0.01)
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
     plt.legend(loc='best')
     plt.tight_layout()
@@ -538,11 +552,14 @@ if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
 #    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
 #    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
 
-# if compareAdsDiff:
+if compareAdsDiff:
 #     survTimeDistCompareDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiff.png", format="png", bbox_inches="tight")
 #     survTimeDistCompareDiffNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiffNorm.png", format="png", bbox_inches="tight")
 #     compareAdsRatesDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesDiff.png", format="png", bbox_inches="tight")
-# if compareAdsApertures:
+    compareDiffNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDiffNormAdsRates.png", format="png", bbox_inches="tight")
+
+if compareAdsApertures:
 #     survTimeDistCompareApe.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareApe.png", format="png", bbox_inches="tight")
 #     survTimeDistCompareApeNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareApeNorm.png", format="png", bbox_inches="tight")
 #     compareAdsRatesApe.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesApe.png", format="png", bbox_inches="tight")
+    compareApeNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareApeNormAdsRates.png", format="png", bbox_inches="tight")
