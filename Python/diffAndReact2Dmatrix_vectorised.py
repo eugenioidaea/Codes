@@ -24,9 +24,9 @@ if plotCharts:
 # Parameters #################################################################
 num_particles = int(1e6) # Number of particles in the simulation
 sim_time = int(8e3)
-dt = 1 # Time step
+dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-Df = 0.1 # Diffusion for particles moving in the fracture
+Df = 1.0 # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
 xInit = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
@@ -38,9 +38,9 @@ recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.05 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
-ap = 0.4 # Adsorption probability
+ap = 1 # Adsorption probability
 binsXinterval = 10 # Extension of the region where spatial concentration is recorded
-binsTime = int(num_steps) # Number of temporal bins for the logarithmic plot
+binsTime = int(num_steps/10) # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 if matrixDiffVerification:
     Dl = 0.1 # Diffusion left side of the domain (matrixDiffVerification only)
@@ -354,11 +354,14 @@ if recordTrajectories and np.logical_not(reflection):
 
 # Survival time distribution
 liveParticlesInTime = np.sum(particleSteps[:, None] > timeLinSpaced, axis=0)
-liveParticlesInTimeNorm = liveParticlesInTime/sum(liveParticlesInTime*np.diff(np.insert(timeLinSpaced, 0, 0)))
+liveParticlesInTimeNorm = liveParticlesInTime/num_particles
+liveParticlesInTimePDF = liveParticlesInTime/sum(liveParticlesInTime*np.diff(np.insert(timeLinSpaced, 0, 0)))
 liveParticlesInLogTime = np.sum(particleSteps[:, None] > timeLogSpaced, axis=0)
-liveParticlesInLogTimeNorm = liveParticlesInLogTime/sum(liveParticlesInLogTime*np.diff(np.insert(timeLogSpaced, 0, 0)))
+liveParticlesInLogTimeNorm = liveParticlesInLogTime/num_particles
+liveParticlesInLogTimePDF = liveParticlesInLogTime/sum(liveParticlesInLogTime*np.diff(np.insert(timeLogSpaced, 0, 0)))
 liveParticlesInTwoLogTime = np.sum(particleSteps[:, None] > timeTwoLogSpaced, axis=0)
-liveParticlesInTwoLogTimeNorm = liveParticlesInTwoLogTime/sum(liveParticlesInTwoLogTime*np.diff(np.insert(timeTwoLogSpaced, 0, 0)))
+liveParticlesInTwoLogTime = liveParticlesInTwoLogTime/num_particles
+liveParticlesInTwoLogTimePDF = liveParticlesInTwoLogTime/sum(liveParticlesInTwoLogTime*np.diff(np.insert(timeTwoLogSpaced, 0, 0)))
 
 # Statistichs ########################################################################
 print(f"Execution time: {execution_time:.6f} seconds")
@@ -398,4 +401,4 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('compareAp6.npz', **variablesToSave)
 # np.savez('compareAdsP80.npz', **variablesToSave)
 # np.savez('compareAdsP60.npz', **variablesToSave)
-np.savez('compareAdsP40.npz', **variablesToSave)
+# np.savez('compareAdsP40.npz', **variablesToSave)
