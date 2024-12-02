@@ -9,12 +9,12 @@ import time
 plotCharts = True # It controls graphical features (disable when run on HPC)
 recordTrajectories = False # It uses up memory
 degradation = False # Switch for the degradation of the particles
-reflection = True # If False, the particles get adsorbed
+reflection = False # If False, the particles get adsorbed
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
 vcpOn = False # It regulates the visualisation of the vertical control plane
-matrixDiffVerification = True # It activates the matrix-diffusion verification testcase
+matrixDiffVerification = False # It activates the matrix-diffusion verification testcase
 # recordVideo = False # It slows down the script
 
 if plotCharts:
@@ -22,8 +22,8 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_particles = int(1e4) # Number of particles in the simulation
-sim_time = int(1e5)
+num_particles = int(1e6) # Number of particles in the simulation
+sim_time = int(8e3)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1 # Diffusion for particles moving in the fracture
@@ -38,9 +38,9 @@ recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.05 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
-ap = 1 # Adsorption probability
+ap = 0.4 # Adsorption probability
 binsXinterval = 10 # Extension of the region where spatial concentration is recorded
-binsTime = int(num_steps/10) # Number of temporal bins for the logarithmic plot
+binsTime = int(num_steps) # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 if matrixDiffVerification:
     Dl = 0.1 # Diffusion left side of the domain (matrixDiffVerification only)
@@ -95,6 +95,8 @@ particleSemiInfRT = []
 timeStep = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
 timeLinSpaced = np.linspace(dt, sim_time, binsTime) # Linearly spaced bins
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(sim_time), binsTime) # Logarithmically spaced bins
+variableWidth = abs(timeLogSpaced-timeLogSpaced[::-1])/max(abs(timeLogSpaced-timeLogSpaced[::-1]))
+timeTwoLogSpaced = np.cumsum(sim_time/sum(variableWidth)*variableWidth)
 xBins = np.linspace(-binsXinterval, binsXinterval, binsSpace) # Linearly spaced bins
 yBins = np.linspace(-binsXinterval, binsXinterval, binsSpace) # Linearly spaced bins
 probCrossOutAbove = np.full(num_particles, False) # Probability of crossing the fracture's walls
@@ -291,6 +293,8 @@ end_time = time.time() # Stop timing the while loop
 execution_time = end_time - start_time
 
 # Post processing ######################################################################
+tau = (uby-lby)**2/Df
+
 iPart = 0
 iLbxOn = 0
 # Retrieve the number of steps for each particle from the pdf of the breakthrough curve
@@ -353,6 +357,8 @@ liveParticlesInTime = np.sum(particleSteps[:, None] > timeLinSpaced, axis=0)
 liveParticlesInTimeNorm = liveParticlesInTime/sum(liveParticlesInTime*np.diff(np.insert(timeLinSpaced, 0, 0)))
 liveParticlesInLogTime = np.sum(particleSteps[:, None] > timeLogSpaced, axis=0)
 liveParticlesInLogTimeNorm = liveParticlesInLogTime/sum(liveParticlesInLogTime*np.diff(np.insert(timeLogSpaced, 0, 0)))
+liveParticlesInTwoLogTime = np.sum(particleSteps[:, None] > timeTwoLogSpaced, axis=0)
+liveParticlesInTwoLogTimeNorm = liveParticlesInTwoLogTime/sum(liveParticlesInTwoLogTime*np.diff(np.insert(timeTwoLogSpaced, 0, 0)))
 
 # Statistichs ########################################################################
 print(f"Execution time: {execution_time:.6f} seconds")
@@ -390,16 +396,6 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('compareAp2.npz', **variablesToSave)
 # np.savez('compareAp4.npz', **variablesToSave)
 # np.savez('compareAp6.npz', **variablesToSave)
-
-# Final particles's positions
-# finalPositions = plt.figure(figsize=(8, 8))
-# if matrixDiffVerification:
-#     plt.plot(x, y, 'b*')
-#     plt.plot([lbx, rbx, rbx, lbx, lbx], [lby, lby, uby, uby, lby], color='black', linewidth=2)
-#     plt.scatter(x0, y0, s=2, c='purple', alpha=1, edgecolor='none', marker='o')
-#     if (reflectedLeft!=0) & (reflectedRight!=0):
-#         plt.plot([cbx, cbx], [lby, uby], color='orange', linewidth=3, linestyle='--')
-#     histoMatriDiff = plt.figure(figsize=(8, 8))
-#     hDist, hBins = np.histogram(x, np.linspace(lbx, rbx, 100), density=True)
-#     plt.bar(hBins[:-1], hDist, width=np.diff(hBins), edgecolor="black", align="edge")
-#     plt.axvline(x=cbx, color='orange', linestyle='-', linewidth=2)
+# np.savez('compareAdsP80.npz', **variablesToSave)
+# np.savez('compareAdsP60.npz', **variablesToSave)
+np.savez('compareAdsP40.npz', **variablesToSave)

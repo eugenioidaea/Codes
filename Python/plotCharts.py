@@ -20,21 +20,27 @@ FinalPositionVert = False
 FinalPositionHor = False
 plotSruvivalTimeDistOfNonAdsorbed = False
 plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption = False
-compareAdsDiff = True
-compareAdsApertures = True
+compareAdsDiff = False
+compareAdsApertures = False
+compareAdsProb = True
 
 # Load simulation results from .npz files ###################################################
-# loadAdsorption = np.load('totalAdsorption_3.npz')
-# for name, value in (loadAdsorption.items()):
-#     globals()[name] = value
-# liveParticlesInTimeNormAds = liveParticlesInTimeNorm.copy()
-# liveParticlesInLogTimeNormAds = liveParticlesInLogTimeNorm.copy()
+if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
+    loadAdsorption = np.load('totalAdsorption_3.npz')
+    for name, value in (loadAdsorption.items()):
+        globals()[name] = value
+    liveParticlesInTimeAds = liveParticlesInTime.copy()
+    liveParticlesInLogTimeAds = liveParticlesInLogTime.copy()
+    liveParticlesInTimeNormAds = liveParticlesInTimeNorm.copy()
+    liveParticlesInLogTimeNormAds = liveParticlesInLogTimeNorm.copy()
 
-# loadDegradation = np.load('degradation_3.npz')
-# for name, value in (loadDegradation.items()):
-#     globals()[name] = value
-# liveParticlesInTimeNormDeg = liveParticlesInTimeNorm.copy()
-# liveParticlesInLogTimeNormDeg = liveParticlesInLogTimeNorm.copy()
+    loadDegradation = np.load('degradation_3.npz')
+    for name, value in (loadDegradation.items()):
+        globals()[name] = value
+    liveParticlesInTimeDeg = liveParticlesInTime.copy()
+    liveParticlesInLogTimeDeg = liveParticlesInLogTime.copy()
+    liveParticlesInTimeNormDeg = liveParticlesInTimeNorm.copy()
+    liveParticlesInLogTimeNormDeg = liveParticlesInLogTimeNorm.copy()
 
 # loadInfiniteDomain = np.load('infiniteDomain1e6.npz')
 # for name, value in (loadInfiniteDomain.items()):
@@ -81,6 +87,12 @@ if compareAdsDiff:
     loadCompareAdsD1 = np.load('compareAdsD1.npz')
     for name, value in (loadCompareAdsD1.items()):
         globals()[name] = value
+    variableWidth = abs(timeLogSpaced-timeLogSpaced[::-1])/max(abs(timeLogSpaced-timeLogSpaced[::-1]))
+    timeTwoLogSpaced = np.cumsum(sim_time/sum(variableWidth)*variableWidth)
+    liveParticlesInTwoLogTime = np.sum(particleSteps[:, None] > timeTwoLogSpaced, axis=0)
+    liveParticlesInTwoLogTimeNorm = liveParticlesInTwoLogTime/sum(liveParticlesInTwoLogTime*np.diff(np.insert(timeTwoLogSpaced, 0, 0)))
+    # liveParticlesInTimeD1 = liveParticlesInTwoLogTime.copy()
+    # liveParticlesInTimeNormD1 = liveParticlesInTwoLogTimeNorm.copy()
     liveParticlesInTimeD1 = liveParticlesInTime.copy()
     liveParticlesInTimeNormD1 = liveParticlesInTimeNorm.copy()
     tauD1 = (uby-lby)**2/Df
@@ -88,6 +100,12 @@ if compareAdsDiff:
     loadCompareAdsD01 = np.load('compareAdsD01.npz')
     for name, value in (loadCompareAdsD01.items()):
         globals()[name] = value
+    variableWidth = abs(timeLogSpaced-timeLogSpaced[::-1])/max(abs(timeLogSpaced-timeLogSpaced[::-1]))
+    timeTwoLogSpaced = np.cumsum(sim_time/sum(variableWidth)*variableWidth)
+    liveParticlesInTwoLogTime = np.sum(particleSteps[:, None] > timeTwoLogSpaced, axis=0)
+    liveParticlesInTwoLogTimeNorm = liveParticlesInTwoLogTime/sum(liveParticlesInTwoLogTime*np.diff(np.insert(timeTwoLogSpaced, 0, 0)))
+    # liveParticlesInTimeD01 = liveParticlesInTwoLogTime.copy()
+    # liveParticlesInTimeNormD01 = liveParticlesInTwoLogTimeNorm.copy()
     liveParticlesInTimeD01 = liveParticlesInTime.copy()
     liveParticlesInTimeNormD01 = liveParticlesInTimeNorm.copy()
     tauD01 = (uby-lby)**2/Df
@@ -95,6 +113,12 @@ if compareAdsDiff:
     loadCompareAdsD001 = np.load('compareAdsD001.npz')
     for name, value in (loadCompareAdsD001.items()):
         globals()[name] = value
+    variableWidth = abs(timeLogSpaced-timeLogSpaced[::-1])/max(abs(timeLogSpaced-timeLogSpaced[::-1]))
+    timeTwoLogSpaced = np.cumsum(sim_time/sum(variableWidth)*variableWidth)
+    liveParticlesInTwoLogTime = np.sum(particleSteps[:, None] > timeTwoLogSpaced, axis=0)
+    liveParticlesInTwoLogTimeNorm = liveParticlesInTwoLogTime/sum(liveParticlesInTwoLogTime*np.diff(np.insert(timeTwoLogSpaced, 0, 0)))
+    # liveParticlesInTimeD001 = liveParticlesInTwoLogTime.copy()
+    # liveParticlesInTimeNormD001 = liveParticlesInTwoLogTimeNorm.copy()
     liveParticlesInTimeD001 = liveParticlesInTime.copy()
     liveParticlesInTimeNormD001 = liveParticlesInTimeNorm.copy()
     tauD001 = (uby-lby)**2/Df
@@ -120,6 +144,28 @@ if compareAdsApertures:
     liveParticlesInTimeAp6 = liveParticlesInTime.copy()
     liveParticlesInTimeNormAp6 = liveParticlesInTimeNorm.copy()
     tauAp6 = (uby-lby)**2/Df
+
+if compareAdsProb:
+    loadCompareAdsP80 = np.load('compareAdsP80.npz')
+    for name, value in (loadCompareAdsP80.items()):
+        globals()[name] = value
+    liveParticlesInTimeP80 = liveParticlesInTime.copy()
+    liveParticlesInTimeNormP80 = liveParticlesInTimeNorm.copy()
+    tauP = (uby-lby)**2/Df
+
+    loadCompareAdsP60 = np.load('compareAdsP60.npz')
+    for name, value in (loadCompareAdsP60.items()):
+        globals()[name] = value
+    liveParticlesInTimeP60 = liveParticlesInTime.copy()
+    liveParticlesInTimeNormP60 = liveParticlesInTimeNorm.copy()
+    tauP = (uby-lby)**2/Df
+
+    loadCompareAdsP40 = np.load('compareAdsP40.npz')
+    for name, value in (loadCompareAdsP40.items()):
+        globals()[name] = value
+    liveParticlesInTimeP40 = liveParticlesInTime.copy()
+    liveParticlesInTimeNormP40 = liveParticlesInTimeNorm.copy()
+    tauP = (uby-lby)**2/Df
 
 # Plot section #########################################################################
 if plotTrajectories:
@@ -357,11 +403,11 @@ if compareAdsDiff:
     dLivedtD01 = np.diff(np.log(liveParticlesInTimeNormD01))/np.diff(timeLinSpaced/tauD01)
     dLivedtD001 = np.diff(np.log(liveParticlesInTimeNormD001))/np.diff(timeLinSpaced/tauD001)
     midTimes = ((timeLinSpaced)[:-1] + (timeLinSpaced)[1:]) / 2
-    plt.plot(midTimes, dLivedtD1, label='D=1', color='b') # , marker='+', linestyle='none', markersize='5')
-    plt.plot(midTimes, dLivedtD01, label='D=0.1', color='r') # , marker='+', linestyle='none', markersize='5')
-    plt.plot(midTimes, dLivedtD001, label='D=0.01', color='g') # , marker='+', linestyle='none', markersize='5')
-    plt.title("Effective normalised reaction rate")
-    plt.xlabel('Time')
+    plt.plot(midTimes/tauD1, dLivedtD1, label='D=1', color='b') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes/tauD01, dLivedtD01, label='D=0.1', color='r') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes/tauD001, dLivedtD001, label='D=0.01', color='g') # , marker='+', linestyle='none', markersize='5')
+    plt.title("Reaction rates from normalised surv time dist")
+    plt.xlabel(r'$Time/tau_i$')
     plt.ylabel('k(t)')
     plt.xscale('log')
     plt.ylim(-8, 0.01)
@@ -416,7 +462,7 @@ if compareAdsApertures:
     plt.plot(midTimes, dLivedtAp2, label='Aperture=2', color='b') # , marker='+', linestyle='none', markersize='5')
     plt.plot(midTimes, dLivedtAp4, label='Aperture=4', color='r') # , marker='+', linestyle='none', markersize='5')
     plt.plot(midTimes, dLivedtAp6, label='Aperture=6', color='g') # , marker='+', linestyle='none', markersize='5')
-    plt.title("Effective normalised reaction rate")
+    plt.title("Effective reaction rate")
     plt.xlabel('Time')
     plt.ylabel('k(t)')
     plt.xscale('log')
@@ -431,11 +477,82 @@ if compareAdsApertures:
     dLivedtD01 = np.diff(np.log(liveParticlesInTimeNormAp4))/np.diff(timeLinSpaced/tauAp4)
     dLivedtD001 = np.diff(np.log(liveParticlesInTimeNormAp6))/np.diff(timeLinSpaced/tauAp6)
     midTimes = ((timeLinSpaced)[:-1] + (timeLinSpaced)[1:]) / 2
-    plt.plot(midTimes, dLivedtD1, label='Aperture=2', color='b') # , marker='+', linestyle='none', markersize='5')
-    plt.plot(midTimes, dLivedtD01, label='Aperture=4', color='r') # , marker='+', linestyle='none', markersize='5')
-    plt.plot(midTimes, dLivedtD001, label='Aperture=6', color='g') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes/tauAp2, dLivedtD1, label='Aperture=2', color='b') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes/tauAp4, dLivedtD01, label='Aperture=4', color='r') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes/tauAp6, dLivedtD001, label='Aperture=6', color='g') # , marker='+', linestyle='none', markersize='5')
+    plt.title("Reaction rates from normalised surv time dist")
+    plt.xlabel(r'$Time/tau_i$')
+    plt.ylabel('k(t)')
+    plt.xscale('log')
+    plt.ylim(-8, 0.01)
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
+    plt.legend(loc='best')
+    plt.tight_layout()
+
+if compareAdsProb:
+    # Distribution of live particles in time
+    survTimeDistCompareProb = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    plt.plot(timeLinSpaced, liveParticlesInTimeP80, label=r'$p=80$', color='b', linestyle='-')
+    plt.plot(timeLinSpaced, liveParticlesInTimeP60, label=r'$p=60$', color='r', linestyle='-')
+    plt.plot(timeLinSpaced, liveParticlesInTimeP40, label=r'$p=40$', color='g', linestyle='-')
+    plt.title("Survival times")
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('Time')
+    plt.ylabel('Number of live particles')
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+    plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+    plt.legend(loc='best')
+    plt.tight_layout()
+
+    # Normalised distribution of live particles in time
+    survTimeDistCompareProbNorm = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    plt.plot(timeLinSpaced/tauP, liveParticlesInTimeNormP80, label=r'$p=80$', color='b', linestyle='-')
+    plt.plot(timeLinSpaced/tauP, liveParticlesInTimeNormP60, label=r'$p=60$', color='r', linestyle='-')
+    plt.plot(timeLinSpaced/tauP, liveParticlesInTimeNormP40, label=r'$p=40$', color='g', linestyle='-')
+    plt.title("Survival time PDFs")
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel(r'$Time/tau_i$')
+    plt.ylabel('Normalised number of live particles')
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+    plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+    plt.legend(loc='best')
+    plt.tight_layout()
+
+    # Rates of particles decay
+    compareAdsRatesProb = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    tDiff = np.diff(timeLinSpaced)
+    dLivedtP80 = np.diff(np.log(liveParticlesInTimeP80))/tDiff
+    dLivedtP60 = np.diff(np.log(liveParticlesInTimeP60))/tDiff
+    dLivedtP40 = np.diff(np.log(liveParticlesInTimeP40))/tDiff
+    midTimes = ((timeLinSpaced)[:-1] + (timeLinSpaced)[1:]) / 2
+    plt.plot(midTimes, dLivedtP80, label='p=80', color='b') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes, dLivedtP60, label='p=60', color='r') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes, dLivedtP40, label='p=40', color='g') # , marker='+', linestyle='none', markersize='5')
     plt.title("Effective reaction rate")
     plt.xlabel('Time')
+    plt.ylabel('k(t)')
+    plt.xscale('log')
+    plt.ylim(-0.2, 0.01)
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
+    plt.legend(loc='best')
+    plt.tight_layout()
+
+    compareProbNormAdsRates = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    dLivedtP80 = np.diff(np.log(liveParticlesInTimeNormP80))/np.diff(timeLinSpaced/tauP)
+    dLivedtP60 = np.diff(np.log(liveParticlesInTimeNormP60))/np.diff(timeLinSpaced/tauP)
+    dLivedtP40 = np.diff(np.log(liveParticlesInTimeNormP40))/np.diff(timeLinSpaced/tauP)
+    midTimes = ((timeLinSpaced)[:-1] + (timeLinSpaced)[1:]) / 2
+    plt.plot(midTimes/tauP, dLivedtP80, label='p=80', color='b') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes/tauP, dLivedtP60, label='p=60', color='r') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes/tauP, dLivedtP40, label='p=40', color='g') # , marker='+', linestyle='none', markersize='5')
+    plt.title("Reaction rates from normalised surv time dist")
+    plt.xlabel(r'$Time/tau_i$')
     plt.ylabel('k(t)')
     plt.xscale('log')
     plt.ylim(-8, 0.01)
@@ -447,6 +564,50 @@ if compareAdsApertures:
 if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
     # Distribution of live particles in time
     survTimeDistCompare = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})    
+    plt.plot(timeStep, liveParticlesInTimeDeg, label=r'$p_s(t)=ke^{-kt} \, lin \, bins$', color='blue')
+    plt.plot(timeStep, liveParticlesInTimeAds, label=r'$p_s(t)=ads \, bc \, lin \, bins$', color='green')
+    plt.plot(timeLogSpaced, liveParticlesInLogTimeDeg, label=r'$p_s(t)=ke^{-kt} \, log \, bins$', color='b', linestyle='--')
+    plt.plot(timeLogSpaced, liveParticlesInLogTimeAds, label=r'$p_s(t)=ads \, bc \, log \, bins$', color='g', linestyle='--')
+    plt.title("Survival time distributions")
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('Time')
+    plt.ylabel('Number of live particles')
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+    plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+    plt.legend(loc='best')
+    plt.tight_layout()
+
+    # Rates of particles decay from linspaced surv time dist
+    compareDecayDegradationRates = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    tDiff = np.diff(timeStep)
+    dSurvPart = np.diff(np.log(liveParticlesInTimeDeg))
+    dNonAdsPart = np.diff(np.log(liveParticlesInTimeAds))
+    dSurvdt = dSurvPart/tDiff
+    dNonAdsdt = dNonAdsPart/tDiff
+    midTimes = ((timeStep)[:-1] + (timeStep)[1:]) / 2
+    plt.plot(midTimes, dSurvdt, label='Well mixed lin bins', color='b') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes, dNonAdsdt, label='Diff limited lin bins', color='g') # , marker='x', linestyle='none', markersize='5')
+    tLogDiff = np.diff(timeLogSpaced)
+    dSurvPartLog = np.diff(np.log(liveParticlesInLogTimeDeg))
+    dNonAdsPartLog = np.diff(np.log(liveParticlesInLogTimeAds))
+    dSurvLogdt = dSurvPartLog/tLogDiff
+    dNonAdsLogdt = dNonAdsPartLog/tLogDiff
+    midTimesLog = (timeLogSpaced[:-1] + timeLogSpaced[1:]) / 2
+    plt.plot(midTimesLog, dSurvLogdt, label='Well mixed log bins', color='b', linestyle='--') # marker='p', linestyle='none', markersize='5')
+    plt.plot(midTimesLog, dNonAdsLogdt, label='Diff limited log bins', color='g', linestyle='--') # marker='*', linestyle='none', markersize='5')
+    plt.title("Effective reaction rate")
+    plt.xlabel('Time')
+    plt.ylabel('k(t)')
+    plt.xscale('log')
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
+    plt.legend(loc='best')
+    plt.tight_layout()
+
+    # Normalised distribution of live particles in time
+    survTimeDistCompareNorm = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})    
     tau = (uby-lby)**2/Df
     # exp_decay = np.exp(-Time/tau)
@@ -466,10 +627,10 @@ if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
     plt.legend(loc='best')
     plt.tight_layout()
 
-    # Rates of particles decay
-    compareDecayDegradationRatesLin = plt.figure(figsize=(8, 8))
+    # Rates of particles decay from linspaced surv time dist
+    compareDecayDegradationRatesNorm = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
-    tDiff = np.diff(timeStep)
+    tDiff = np.diff(timeStep/tau)
     dSurvPart = np.diff(np.log(liveParticlesInTimeNormDeg))
     dNonAdsPart = np.diff(np.log(liveParticlesInTimeNormAds))
     dSurvdt = dSurvPart/tDiff
@@ -477,16 +638,7 @@ if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
     midTimes = ((timeStep)[:-1] + (timeStep)[1:]) / 2
     plt.plot(midTimes/tau, dSurvdt, label='Well mixed lin bins', color='b') # , marker='+', linestyle='none', markersize='5')
     plt.plot(midTimes/tau, dNonAdsdt, label='Diff limited lin bins', color='g') # , marker='x', linestyle='none', markersize='5')
-    plt.title("Effective reaction rate")
-    plt.xlabel('Time/tau')
-    plt.ylabel('k(t)')
-    plt.xscale('log')
-    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
-    plt.legend(loc='best')
-    plt.tight_layout()
-    compareDecayDegradationRatesLog = plt.figure(figsize=(8, 8))
-    plt.rcParams.update({'font.size': 20})
-    tLogDiff = np.diff(timeLogSpaced)
+    tLogDiff = np.diff(timeLogSpaced/tau)
     dSurvPartLog = np.diff(np.log(liveParticlesInLogTimeNormDeg))
     dNonAdsPartLog = np.diff(np.log(liveParticlesInLogTimeNormAds))
     dSurvLogdt = dSurvPartLog/tLogDiff
@@ -497,7 +649,6 @@ if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
     plt.title("Effective reaction rate")
     plt.xlabel('Time/tau')
     plt.ylabel('k(t)')
-    plt.ylim(-0.7, 0.01)
     plt.xscale('log')
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
     plt.legend(loc='best')
@@ -530,36 +681,40 @@ if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
 
 # diffusionLimitedSurvTimeDistNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/nonAbsParticlesNorm.png", format="png", bbox_inches="tight")
 
-# survTimeDistCompare.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompare.png", format="png", bbox_inches="tight")
+# survTimeDistCompareNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareNorm.png", format="png", bbox_inches="tight")
 
-# compareDecayDegradationRatesLin.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDecayDegradationRatesLin.png", format="png", bbox_inches="tight")
+if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
+    survTimeDistCompare.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompare.png", format="png", bbox_inches="tight")
+    compareDecayDegradationRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDecayDegradationRates.png", format="png", bbox_inches="tight")
+    survTimeDistCompareNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareNorm.png", format="png", bbox_inches="tight")
+    compareDecayDegradationRatesNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDecayDegradationRatesNorm.png", format="png", bbox_inches="tight")
 
-# compareDecayDegradationRatesLog.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDecayDegradationRatesLog.png", format="png", bbox_inches="tight")
-
-# if FinalPositions:
-#    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
-#    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
-#
-#    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
-#    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
-#
-#    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
-#    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
-#
-#    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
-#    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
-#
-#    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
-#    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
+if FinalPositions:
+    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
+    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
+    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
+    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
+    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
+    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
+    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
+    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
+    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
+    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
 
 if compareAdsDiff:
-#     survTimeDistCompareDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiff.png", format="png", bbox_inches="tight")
-#     survTimeDistCompareDiffNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiffNorm.png", format="png", bbox_inches="tight")
-#     compareAdsRatesDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesDiff.png", format="png", bbox_inches="tight")
+    survTimeDistCompareDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiff.png", format="png", bbox_inches="tight")
+    survTimeDistCompareDiffNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiffNorm.png", format="png", bbox_inches="tight")
+    compareAdsRatesDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesDiff.png", format="png", bbox_inches="tight")
     compareDiffNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDiffNormAdsRates.png", format="png", bbox_inches="tight")
 
 if compareAdsApertures:
-#     survTimeDistCompareApe.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareApe.png", format="png", bbox_inches="tight")
-#     survTimeDistCompareApeNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareApeNorm.png", format="png", bbox_inches="tight")
-#     compareAdsRatesApe.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesApe.png", format="png", bbox_inches="tight")
+    survTimeDistCompareApe.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareApe.png", format="png", bbox_inches="tight")
+    survTimeDistCompareApeNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareApeNorm.png", format="png", bbox_inches="tight")
+    compareAdsRatesApe.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesApe.png", format="png", bbox_inches="tight")
     compareApeNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareApeNormAdsRates.png", format="png", bbox_inches="tight")
+
+if compareAdsProb:
+    survTimeDistCompareProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareProb.png", format="png", bbox_inches="tight")
+    survTimeDistCompareProbNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareProbNorm.png", format="png", bbox_inches="tight")
+    compareAdsRatesProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesProb.png", format="png", bbox_inches="tight")
+    compareProbNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareProbNormAdsRates.png", format="png", bbox_inches="tight")
