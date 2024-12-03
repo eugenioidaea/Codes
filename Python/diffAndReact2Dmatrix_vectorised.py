@@ -289,8 +289,8 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
         xPath[:, int(t/dt)] = np.where(liveParticle, x, 0)  # Store x positions for the current time step
         yPath[:, int(t/dt)] = np.where(liveParticle, y, 0)  # Store y positions for the current time step
 
-    if t%1000==0:
-        print(f"Sim time is {t}")
+    # if t%1000==0:
+    #     print(f"Sim time is {t}")
 
 end_time = time.time() # Stop timing the while loop
 execution_time = end_time - start_time
