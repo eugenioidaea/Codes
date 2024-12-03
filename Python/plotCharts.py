@@ -1,4 +1,4 @@
-debug = True
+debug = False
 if not debug:
     from IPython import get_ipython
     get_ipython().run_line_magic('reset', '-f')
@@ -130,6 +130,21 @@ if compareAdsDiff:
     # liveParticlesInTimeNormD001 = liveParticlesInTimeNorm.copy()
     tauD001 = (uby-lby)**2/Df
 
+    loadCompareAdsD0001 = np.load('compareAdsD0001.npz')
+    for name, value in (loadCompareAdsD0001.items()):
+        globals()[name] = value
+    variableWidth = abs(timeLogSpaced-timeLogSpaced[::-1])/max(abs(timeLogSpaced-timeLogSpaced[::-1]))
+    timeTwoLogSpaced = np.cumsum(sim_time/sum(variableWidth)*variableWidth)
+    liveParticlesInTwoLogTime = np.sum(particleSteps[:, None] > timeTwoLogSpaced, axis=0)
+    liveParticlesInTwoLogTimeNorm = liveParticlesInTwoLogTime/sum(liveParticlesInTwoLogTime*np.diff(np.insert(timeTwoLogSpaced, 0, 0)))
+    # liveParticlesInTimeD0001 = liveParticlesInTwoLogTime.copy()
+    # liveParticlesInTimeNormD0001 = liveParticlesInTwoLogTimeNorm.copy()
+    liveParticlesInTimeD0001 = liveParticlesInLogTime.copy()
+    liveParticlesInTimeNormD0001 = liveParticlesInLogTimeNorm.copy()
+    # liveParticlesInTimeD0001 = liveParticlesInTime.copy()
+    # liveParticlesInTimeNormD0001 = liveParticlesInTimeNorm.copy()
+    tauD0001 = (uby-lby)**2/Df
+
 if compareAdsApertures:
     loadCompareAdsAp2 = np.load('compareAp2.npz')
     for name, value in (loadCompareAdsAp2.items()):
@@ -156,22 +171,22 @@ if compareAdsProb:
     loadCompareAdsP80 = np.load('compareAdsP80.npz')
     for name, value in (loadCompareAdsP80.items()):
         globals()[name] = value
-    liveParticlesInTimeP80 = liveParticlesInTime.copy()
-    liveParticlesInTimeNormP80 = liveParticlesInTimeNorm.copy()
+    liveParticlesInTimeP80 = liveParticlesInLogTime.copy()
+    liveParticlesInTimeNormP80 = liveParticlesInLogTimeNorm.copy()
     tauP = (uby-lby)**2/Df
 
     loadCompareAdsP60 = np.load('compareAdsP60.npz')
     for name, value in (loadCompareAdsP60.items()):
         globals()[name] = value
-    liveParticlesInTimeP60 = liveParticlesInTime.copy()
-    liveParticlesInTimeNormP60 = liveParticlesInTimeNorm.copy()
+    liveParticlesInTimeP60 = liveParticlesInLogTime.copy()
+    liveParticlesInTimeNormP60 = liveParticlesInLogTimeNorm.copy()
     tauP = (uby-lby)**2/Df
 
     loadCompareAdsP40 = np.load('compareAdsP40.npz')
     for name, value in (loadCompareAdsP40.items()):
         globals()[name] = value
-    liveParticlesInTimeP40 = liveParticlesInTime.copy()
-    liveParticlesInTimeNormP40 = liveParticlesInTimeNorm.copy()
+    liveParticlesInTimeP40 = liveParticlesInLogTime.copy()
+    liveParticlesInTimeNormP40 = liveParticlesInLogTimeNorm.copy()
     tauP = (uby-lby)**2/Df
 
 # Plot section #########################################################################
@@ -354,6 +369,7 @@ if compareAdsDiff:
     plt.plot(timeLogSpaced, liveParticlesInTimeD1, label=r'$D_f = 1$', color='b', linestyle='-')
     plt.plot(timeLogSpaced, liveParticlesInTimeD01, label=r'$D_f = 0.1$', color='r', linestyle='-')
     plt.plot(timeLogSpaced, liveParticlesInTimeD001, label=r'$D_f = 0.01$', color='g', linestyle='-')
+    plt.plot(timeLogSpaced, liveParticlesInTimeD0001, label=r'$D_f = 0.001$', color='purple', linestyle='-')
     plt.title("Survival times")
     plt.xscale('log')
     plt.yscale('log')
@@ -367,16 +383,25 @@ if compareAdsDiff:
     # Normalised distribution of live particles in time
     survTimeDistCompareDiffNorm = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
-    plt.plot(timeLogSpaced/tauD1, liveParticlesInTimeNormD1, label=r'$D_f = 1$', color='b', linestyle='-')
-    plt.plot(timeLogSpaced/tauD01, liveParticlesInTimeNormD01, label=r'$D_f = 0.1$', color='r', linestyle='-')
-    plt.plot(timeLogSpaced/tauD001, liveParticlesInTimeNormD001, label=r'$D_f = 0.01$', color='g', linestyle='-')
+    plt.plot(timeLogSpaced[::30]/tauD1, liveParticlesInTimeNormD1[::30], 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$\tau_d = 4$')
+    plt.plot(timeLogSpaced[::30]/tauD01, liveParticlesInTimeNormD01[::30], 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$\tau_d = 40$')
+    plt.plot(timeLogSpaced[::30]/tauD001, liveParticlesInTimeNormD001[::30], 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$\tau_d = 400$')
+    plt.plot(timeLogSpaced[::30]/tauD0001, liveParticlesInTimeNormD0001[::30], 'o', markerfacecolor='none', markeredgecolor='purple', markersize='5', label=r'$\tau_d = 4000$')
     # plt.plot(np.log(timeLinSpaced/tauD1), np.log(liveParticlesInTimeNormD1), label=r'$D_f = 1$', color='b', linestyle='-')
     # plt.plot(np.log(timeLinSpaced/tauD01), np.log(liveParticlesInTimeNormD01), label=r'$D_f = 0.1$', color='r', linestyle='-')
     # plt.plot(np.log(timeLinSpaced/tauD001), np.log(liveParticlesInTimeNormD001), label=r'$D_f = 0.01$', color='g', linestyle='-')
-    plt.title("Survival time distribution")
+    yD01 = np.exp(-0.5*(timeLogSpaced/tauD01))
+    plt.plot(timeLogSpaced/tauD01, yD01, color='black')
+    plt.text((timeLogSpaced/tauD01)[5000], yD01[5000], "k(t)=-0.5", fontsize=12) 
+    yD001 = np.exp(-1.2*(timeLogSpaced/tauD001))
+    plt.plot(timeLogSpaced/tauD001, yD001, color='black')
+    plt.text((timeLogSpaced/tauD001)[7000]*0.3, yD001[7000], "k(t)=-1.2", fontsize=12)
+    plt.title("Normalised survival time distribution")
     plt.xscale('log')
     plt.yscale('log')
-    plt.xlabel(r'$Time/tau_i$')
+    plt.xlim(0.01, 30)
+    plt.ylim(1e-6, 1)
+    plt.xlabel(r'$Time/\tau_i$')
     plt.ylabel('Normalised number of live particles')
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
     plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
@@ -389,22 +414,26 @@ if compareAdsDiff:
     tDiff = np.diff(timeLogSpaced)
     dLivePartD1 = np.diff(np.log(liveParticlesInTimeD1))
     dLivePartD01 = np.diff(np.log(liveParticlesInTimeD01))
-    dLivePartD001 = np.diff(np.log(liveParticlesInTimeD001)) 
+    dLivePartD001 = np.diff(np.log(liveParticlesInTimeD001))
+    dLivePartD0001 = np.diff(np.log(liveParticlesInTimeD0001))
     dLivedtD1 = dLivePartD1/tDiff
     dLivedtD01 = dLivePartD01/tDiff
     dLivedtD001 = dLivePartD001/tDiff
+    dLivedtD0001 = dLivePartD0001/tDiff
     midTimes = ((timeLogSpaced)[:-1] + (timeLogSpaced)[1:]) / 2
     maskD1 = dLivedtD1!=0
     maskD01 = dLivedtD01!=0
     maskD001 = dLivedtD001!=0
+    maskD0001 = dLivedtD0001!=0
     plt.plot(midTimes[maskD1], dLivedtD1[maskD1], label='D=1', color='b') # , marker='+', linestyle='none', markersize='5')
     plt.plot(midTimes[maskD01], dLivedtD01[maskD01], label='D=0.1', color='r') # , marker='+', linestyle='none', markersize='5')
     plt.plot(midTimes[maskD001], dLivedtD001[maskD001], label='D=0.01', color='g') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes[maskD0001], dLivedtD0001[maskD0001], label='D=0.001', color='g') # , marker='+', linestyle='none', markersize='5')
     plt.title("Effective reaction rate")
     plt.xlabel('Time')
     plt.ylabel('k(t)')
     plt.xscale('log')
-    # plt.ylim(-40, 0.1)
+    plt.ylim(-1, 0.1)
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
     plt.legend(loc='best')
     plt.tight_layout()
@@ -415,25 +444,32 @@ if compareAdsDiff:
     # dLivedtD1 = np.diff(liveParticlesInTimeNormD1)/np.diff(timeLinSpaced/tauD1)
     # dLivedtD01 = np.diff(liveParticlesInTimeNormD01)/np.diff(timeLinSpaced/tauD01)
     # dLivedtD001 = np.diff(liveParticlesInTimeNormD001)/np.diff(timeLinSpaced/tauD001)
-    dLivedtD1 = np.diff(np.log(liveParticlesInTimeNormD1))/np.diff(timeLogSpaced/tauD1)
-    dLivedtD01 = np.diff(np.log(liveParticlesInTimeNormD01))/np.diff(timeLogSpaced/tauD01)
-    dLivedtD001 = np.diff(np.log(liveParticlesInTimeNormD001))/np.diff(timeLogSpaced/tauD001)
+    dLivedtD1 = -np.diff(np.log(liveParticlesInTimeNormD1))/np.diff(timeLogSpaced/tauD1)
+    dLivedtD01 = -np.diff(np.log(liveParticlesInTimeNormD01))/np.diff(timeLogSpaced/tauD01)
+    dLivedtD001 = -np.diff(np.log(liveParticlesInTimeNormD001))/np.diff(timeLogSpaced/tauD001)
+    dLivedtD0001 = -np.diff(np.log(liveParticlesInTimeNormD0001))/np.diff(timeLogSpaced/tauD0001)
     midTimes = ((timeLogSpaced)[:-1] + (timeLogSpaced)[1:]) / 2
     maskD1 = dLivedtD1!=0
     maskD01 = dLivedtD01!=0
     maskD001 = dLivedtD001!=0
+    maskD0001 = dLivedtD0001!=0
     # validMask = np.isfinite(dLivedtD001)
     # splineD001 = make_interp_spline(midTimes[validMask], dLivedtD001[validMask], k=3)
     # dLivedtD001spline = splineD001(midTimes[::100])
-    plt.plot(midTimes[maskD1]/tauD1, dLivedtD1[maskD1], label='D=1', color='b') # , marker='+', linestyle='none', markersize='5')
-    plt.plot(midTimes[maskD01]/tauD01, dLivedtD01[maskD01], label='D=0.1', color='r') # , marker='+', linestyle='none', markersize='5')
-    plt.plot(midTimes[maskD001]/tauD001, dLivedtD001[maskD001], label='D=0.01', color='g') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes[maskD1]/tauD1, dLivedtD1[maskD1], 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$\tau_d = 4$')
+    plt.plot(midTimes[maskD01]/tauD01, dLivedtD01[maskD01], 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$\tau_d = 4$')
+    plt.plot(midTimes[maskD001]/tauD001, dLivedtD001[maskD001], 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$\tau_d = 4$')
+    plt.plot(midTimes[maskD0001]/tauD0001, dLivedtD0001[maskD0001], label=r'$\tau_d = 4000$', color='purple') # , marker='+', linestyle='none', markersize='5')
     # plt.plot(midTimes[::100]/tauD001, dLivedtD001spline, color='k')
+    plt.axhline(y=0.5, color='black', linestyle='-')
+    plt.axhline(y=1.2, color='black', linestyle='-')
     plt.title("Reaction rates from normalised surv time dist")
-    plt.xlabel(r'$Time/tau_i$')
+    plt.xlabel(r'$Time/\tau_i$')
     plt.ylabel('k(t)')
     plt.xscale('log')
-    # plt.ylim(-8, 0.01)
+    # plt.yscale('log')
+    plt.xlim(0.01, 10)
+    plt.ylim(0.01, 30)
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
     plt.legend(loc='best')
     plt.tight_layout()
@@ -530,15 +566,43 @@ if compareAdsProb:
     plt.tight_layout()
 
     # Normalised distribution of live particles in time
+#    survTimeDistCompareProbNorm = plt.figure(figsize=(8, 8))
+#    plt.rcParams.update({'font.size': 20})
+#    plt.plot(timeLinSpaced/tauP, liveParticlesInTimeNormP80, label=r'$p=80$', color='b', linestyle='-')
+#    plt.plot(timeLinSpaced/tauP, liveParticlesInTimeNormP60, label=r'$p=60$', color='r', linestyle='-')
+#    plt.plot(timeLinSpaced/tauP, liveParticlesInTimeNormP40, label=r'$p=40$', color='g', linestyle='-')
+#    plt.title("Survival time distribution")
+#    plt.xscale('log')
+#    plt.yscale('log')
+#    plt.xlabel(r'$Time/tau_i$')
+#    plt.ylabel('Normalised number of live particles')
+#    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+#    plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+#    plt.legend(loc='best')
+#    plt.tight_layout()
+
+    # Normalised distribution of live particles in time
     survTimeDistCompareProbNorm = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
-    plt.plot(timeLinSpaced/tauP, liveParticlesInTimeNormP80, label=r'$p=80$', color='b', linestyle='-')
-    plt.plot(timeLinSpaced/tauP, liveParticlesInTimeNormP60, label=r'$p=60$', color='r', linestyle='-')
-    plt.plot(timeLinSpaced/tauP, liveParticlesInTimeNormP40, label=r'$p=40$', color='g', linestyle='-')
-    plt.title("Survival time distribution")
+    plt.plot(timeLogSpaced[::30]/tauP, liveParticlesInTimeNormP80[::30], 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$p = 0.8$')
+    plt.plot(timeLogSpaced[::30]/tauP, liveParticlesInTimeNormP60[::30], 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$p = 0.6$')
+    plt.plot(timeLogSpaced[::30]/tauP, liveParticlesInTimeNormP40[::30], 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$p = 0.4$')
+    # plt.plot(timeLogSpaced[::30]/tauD0001, liveParticlesInTimeNormD0001[::30], 'o', markerfacecolor='none', markeredgecolor='purple', markersize='5', label=r'$\tau_d = 4000$')
+    # plt.plot(np.log(timeLinSpaced/tauD1), np.log(liveParticlesInTimeNormD1), label=r'$D_f = 1$', color='b', linestyle='-')
+    # plt.plot(np.log(timeLinSpaced/tauD01), np.log(liveParticlesInTimeNormD01), label=r'$D_f = 0.1$', color='r', linestyle='-')
+    # plt.plot(np.log(timeLinSpaced/tauD001), np.log(liveParticlesInTimeNormD001), label=r'$D_f = 0.01$', color='g', linestyle='-')
+    yP08 = np.exp(-0.5*(timeLogSpaced/tauP))
+    plt.plot(timeLogSpaced/tauP, yP08, color='black')
+    plt.text((timeLogSpaced/tauP)[5000], yP08[5000], "k(t)=-0.5", fontsize=12) 
+    yP04 = np.exp(-0.9*(timeLogSpaced/tauP))
+    plt.plot(timeLogSpaced/tauP, yP04, color='black')
+    plt.text((timeLogSpaced/tauP)[5000]*0.3, yP04[5000], "k(t)=-0.9", fontsize=12)
+    plt.title("Normalised survival time distribution")
     plt.xscale('log')
     plt.yscale('log')
-    plt.xlabel(r'$Time/tau_i$')
+    plt.xlim(0.01, 30)
+    plt.ylim(1e-6, 1)
+    plt.xlabel(r'$Time/\tau_i$')
     plt.ylabel('Normalised number of live particles')
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
     plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
@@ -565,20 +629,53 @@ if compareAdsProb:
     plt.legend(loc='best')
     plt.tight_layout()
 
-    compareProbNormAdsRates = plt.figure(figsize=(8, 8))
+#    compareProbNormAdsRates = plt.figure(figsize=(8, 8))
+#    plt.rcParams.update({'font.size': 20})
+#    dLivedtP80 = np.diff(np.log(liveParticlesInTimeNormP80))/np.diff(timeLinSpaced/tauP)
+#    dLivedtP60 = np.diff(np.log(liveParticlesInTimeNormP60))/np.diff(timeLinSpaced/tauP)
+#    dLivedtP40 = np.diff(np.log(liveParticlesInTimeNormP40))/np.diff(timeLinSpaced/tauP)
+#    midTimes = ((timeLinSpaced)[:-1] + (timeLinSpaced)[1:]) / 2
+#    plt.plot(midTimes/tauP, dLivedtP80, label='p=80', color='b') # , marker='+', linestyle='none', markersize='5')
+#    plt.plot(midTimes/tauP, dLivedtP60, label='p=60', color='r') # , marker='+', linestyle='none', markersize='5')
+#    plt.plot(midTimes/tauP, dLivedtP40, label='p=40', color='g') # , marker='+', linestyle='none', markersize='5')
+#    plt.title("Reaction rates from normalised surv time dist")
+#    plt.xlabel(r'$Time/tau_i$')
+#    plt.ylabel('k(t)')
+#    plt.xscale('log')
+#    plt.ylim(-8, 0.01)
+#    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
+#    plt.legend(loc='best')
+#    plt.tight_layout()
+
+    # Rates of normalised particles decay
+    compareDiffNormAdsRates = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
-    dLivedtP80 = np.diff(np.log(liveParticlesInTimeNormP80))/np.diff(timeLinSpaced/tauP)
-    dLivedtP60 = np.diff(np.log(liveParticlesInTimeNormP60))/np.diff(timeLinSpaced/tauP)
-    dLivedtP40 = np.diff(np.log(liveParticlesInTimeNormP40))/np.diff(timeLinSpaced/tauP)
-    midTimes = ((timeLinSpaced)[:-1] + (timeLinSpaced)[1:]) / 2
-    plt.plot(midTimes/tauP, dLivedtP80, label='p=80', color='b') # , marker='+', linestyle='none', markersize='5')
-    plt.plot(midTimes/tauP, dLivedtP60, label='p=60', color='r') # , marker='+', linestyle='none', markersize='5')
-    plt.plot(midTimes/tauP, dLivedtP40, label='p=40', color='g') # , marker='+', linestyle='none', markersize='5')
+    dLivedtP80 = -np.diff(np.log(liveParticlesInTimeNormP80))/np.diff(timeLogSpaced/tauP)
+    dLivedtP60 = -np.diff(np.log(liveParticlesInTimeNormP60))/np.diff(timeLogSpaced/tauP)
+    dLivedtP40 = -np.diff(np.log(liveParticlesInTimeNormP40))/np.diff(timeLogSpaced/tauP)
+    # dLivedtD0001 = np.diff(np.log(liveParticlesInTimeNormD0001))/np.diff(timeLogSpaced/tauP)
+    midTimes = ((timeLogSpaced)[:-1] + (timeLogSpaced)[1:]) / 2
+    maskP80 = dLivedtP80!=0
+    maskP60 = dLivedtP60!=0
+    maskP40 = dLivedtP40!=0
+    # maskD0001 = dLivedtD0001!=0
+    # validMask = np.isfinite(dLivedtD001)
+    # splineD001 = make_interp_spline(midTimes[validMask], dLivedtD001[validMask], k=3)
+    # dLivedtD001spline = splineD001(midTimes[::100])
+    plt.plot(midTimes[maskP80]/tauP, dLivedtP80[maskP80], 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$p = 0.8$')
+    plt.plot(midTimes[maskP60]/tauP, dLivedtP60[maskP60], 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$p = 0.6$')
+    plt.plot(midTimes[maskP40]/tauP, dLivedtP40[maskP40], 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$p = 0.4$')
+    # plt.plot(midTimes[maskD0001]/tauD0001, dLivedtD0001[maskD0001], label=r'$\tau_d = 4000$', color='purple') # , marker='+', linestyle='none', markersize='5')
+    # plt.plot(midTimes[::100]/tauD001, dLivedtD001spline, color='k')
+    plt.axhline(y=0.5, color='black', linestyle='-')
+    plt.axhline(y=0.9, color='black', linestyle='-')
     plt.title("Reaction rates from normalised surv time dist")
-    plt.xlabel(r'$Time/tau_i$')
+    plt.xlabel(r'$Time/\tau_i$')
     plt.ylabel('k(t)')
     plt.xscale('log')
-    plt.ylim(-8, 0.01)
+    # plt.yscale('log')
+    plt.xlim(0.01, 10)
+    plt.ylim(0.01, 30)
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
     plt.legend(loc='best')
     plt.tight_layout()
@@ -724,11 +821,11 @@ if FinalPositions:
     finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
     histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
 
-#if compareAdsDiff:
-#    survTimeDistCompareDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiff.png", format="png", bbox_inches="tight")
-#    survTimeDistCompareDiffNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiffNorm.png", format="png", bbox_inches="tight")
-#    compareAdsRatesDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesDiff.png", format="png", bbox_inches="tight")
-#    compareDiffNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDiffNormAdsRates.png", format="png", bbox_inches="tight")
+# if compareAdsDiff:
+#     survTimeDistCompareDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiff.png", format="png", bbox_inches="tight")
+#     survTimeDistCompareDiffNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiffNorm.png", format="png", bbox_inches="tight")
+#     compareAdsRatesDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesDiff.png", format="png", bbox_inches="tight")
+#     compareDiffNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDiffNormAdsRates.png", format="png", bbox_inches="tight")
 
 if compareAdsApertures:
     survTimeDistCompareApe.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareApe.png", format="png", bbox_inches="tight")
@@ -736,8 +833,8 @@ if compareAdsApertures:
     compareAdsRatesApe.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesApe.png", format="png", bbox_inches="tight")
     compareApeNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareApeNormAdsRates.png", format="png", bbox_inches="tight")
 
-if compareAdsProb:
-    survTimeDistCompareProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareProb.png", format="png", bbox_inches="tight")
-    survTimeDistCompareProbNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareProbNorm.png", format="png", bbox_inches="tight")
-    compareAdsRatesProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesProb.png", format="png", bbox_inches="tight")
-    compareProbNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareProbNormAdsRates.png", format="png", bbox_inches="tight")
+# if compareAdsProb:
+#     survTimeDistCompareProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareProb.png", format="png", bbox_inches="tight")
+#     survTimeDistCompareProbNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareProbNorm.png", format="png", bbox_inches="tight")
+#     compareAdsRatesProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesProb.png", format="png", bbox_inches="tight")
+#     compareProbNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareProbNormAdsRates.png", format="png", bbox_inches="tight")

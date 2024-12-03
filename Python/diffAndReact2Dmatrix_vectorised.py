@@ -26,7 +26,7 @@ num_particles = int(1e6) # Number of particles in the simulation
 sim_time = int(8e3)
 dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-Df = 1.0 # Diffusion for particles moving in the fracture
+Df = 0.1 # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
 xInit = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
@@ -38,7 +38,7 @@ recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.05 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
-ap = 1 # Adsorption probability
+ap = 0.4 # Adsorption probability
 binsXinterval = 10 # Extension of the region where spatial concentration is recorded
 binsTime = int(num_steps/10) # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
@@ -289,6 +289,9 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
         xPath[:, int(t/dt)] = np.where(liveParticle, x, 0)  # Store x positions for the current time step
         yPath[:, int(t/dt)] = np.where(liveParticle, y, 0)  # Store y positions for the current time step
 
+    if t%1000==0:
+        print(f"Sim time is {t}")
+
 end_time = time.time() # Stop timing the while loop
 execution_time = end_time - start_time
 
@@ -396,6 +399,7 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('compareAdsD1.npz', **variablesToSave)
 # np.savez('compareAdsD01.npz', **variablesToSave)
 # np.savez('compareAdsD001.npz', **variablesToSave)
+# np.savez('compareAdsD0001.npz', **variablesToSave)
 # np.savez('compareAp2.npz', **variablesToSave)
 # np.savez('compareAp4.npz', **variablesToSave)
 # np.savez('compareAp6.npz', **variablesToSave)
