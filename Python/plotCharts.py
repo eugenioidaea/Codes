@@ -21,9 +21,9 @@ FinalPositionVert = False
 FinalPositionHor = False
 plotSruvivalTimeDistOfNonAdsorbed = False
 plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption = False
-compareAdsDiff = True
+compareAdsDiff = False
 compareAdsApertures = False
-compareAdsProb = False
+compareAdsProb = True
 
 # Load simulation results from .npz files ###################################################
 if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
@@ -428,7 +428,7 @@ if compareAdsDiff:
     plt.plot(midTimes[maskD1], dLivedtD1[maskD1], label='D=1', color='b') # , marker='+', linestyle='none', markersize='5')
     plt.plot(midTimes[maskD01], dLivedtD01[maskD01], label='D=0.1', color='r') # , marker='+', linestyle='none', markersize='5')
     plt.plot(midTimes[maskD001], dLivedtD001[maskD001], label='D=0.01', color='g') # , marker='+', linestyle='none', markersize='5')
-    plt.plot(midTimes[maskD0001], dLivedtD0001[maskD0001], label='D=0.001', color='g') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes[maskD0001], dLivedtD0001[maskD0001], label='D=0.001', color='purple') # , marker='+', linestyle='none', markersize='5')
     plt.title("Effective reaction rate")
     plt.xlabel('Time')
     plt.ylabel('k(t)')
@@ -457,9 +457,9 @@ if compareAdsDiff:
     # splineD001 = make_interp_spline(midTimes[validMask], dLivedtD001[validMask], k=3)
     # dLivedtD001spline = splineD001(midTimes[::100])
     plt.plot(midTimes[maskD1]/tauD1, dLivedtD1[maskD1], 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$\tau_d = 4$')
-    plt.plot(midTimes[maskD01]/tauD01, dLivedtD01[maskD01], 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$\tau_d = 4$')
-    plt.plot(midTimes[maskD001]/tauD001, dLivedtD001[maskD001], 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$\tau_d = 4$')
-    plt.plot(midTimes[maskD0001]/tauD0001, dLivedtD0001[maskD0001], label=r'$\tau_d = 4000$', color='purple') # , marker='+', linestyle='none', markersize='5')
+    plt.plot(midTimes[maskD01]/tauD01, dLivedtD01[maskD01], 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$\tau_d = 40$')
+    plt.plot(midTimes[maskD001]/tauD001, dLivedtD001[maskD001], 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$\tau_d = 400$')
+    plt.plot(midTimes[maskD0001]/tauD0001, dLivedtD0001[maskD0001], 'o', markerfacecolor='none', markeredgecolor='purple', markersize='5', label=r'$\tau_d = 4000$')
     # plt.plot(midTimes[::100]/tauD001, dLivedtD001spline, color='k')
     plt.axhline(y=0.5, color='black', linestyle='-')
     plt.axhline(y=1.2, color='black', linestyle='-')
@@ -648,7 +648,7 @@ if compareAdsProb:
 #    plt.tight_layout()
 
     # Rates of normalised particles decay
-    compareDiffNormAdsRates = plt.figure(figsize=(8, 8))
+    compareProbNormAdsRates = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
     dLivedtP80 = -np.diff(np.log(liveParticlesInTimeNormP80))/np.diff(timeLogSpaced/tauP)
     dLivedtP60 = -np.diff(np.log(liveParticlesInTimeNormP60))/np.diff(timeLogSpaced/tauP)
@@ -833,8 +833,8 @@ if compareAdsApertures:
     compareAdsRatesApe.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesApe.png", format="png", bbox_inches="tight")
     compareApeNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareApeNormAdsRates.png", format="png", bbox_inches="tight")
 
-# if compareAdsProb:
-#     survTimeDistCompareProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareProb.png", format="png", bbox_inches="tight")
-#     survTimeDistCompareProbNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareProbNorm.png", format="png", bbox_inches="tight")
-#     compareAdsRatesProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesProb.png", format="png", bbox_inches="tight")
-#     compareProbNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareProbNormAdsRates.png", format="png", bbox_inches="tight")
+if compareAdsProb:
+    survTimeDistCompareProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareProb.png", format="png", bbox_inches="tight")
+    survTimeDistCompareProbNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareProbNorm.png", format="png", bbox_inches="tight")
+    compareAdsRatesProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesProb.png", format="png", bbox_inches="tight")
+    compareProbNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareProbNormAdsRates.png", format="png", bbox_inches="tight")
