@@ -38,7 +38,7 @@ recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.05 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
-ap = 0.4 # Adsorption probability
+ap = 1 # Adsorption probability
 binsXinterval = 10 # Extension of the region where spatial concentration is recorded
 binsTime = int(num_steps/10) # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
@@ -93,7 +93,7 @@ liveParticle = np.array([True for _ in range(num_particles)])
 particleRT = []
 particleSemiInfRT = []
 timeStep = np.linspace(dt, sim_time, num_steps) # Array that stores time steps
-timeLinSpaced = np.linspace(dt, sim_time, binsTime) # Linearly spaced bins
+timeLinSpaced = np.linspace(0, sim_time, binsTime+1) # Linearly spaced bins
 timeLogSpaced = np.logspace(np.log10(dt), np.log10(sim_time), binsTime) # Logarithmically spaced bins
 variableWidth = abs(timeLogSpaced-timeLogSpaced[::-1])/max(abs(timeLogSpaced-timeLogSpaced[::-1]))
 timeTwoLogSpaced = np.cumsum(sim_time/sum(variableWidth)*variableWidth)
@@ -107,6 +107,7 @@ probCrossLeftToRight = np.full(num_particles, False)
 probCrossRightToLeft = np.full(num_particles, False)
 particleSteps = np.zeros(num_particles)
 impacts = 0
+numOfLivePart = []
 
 # Functions ##########################################################################
 def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
@@ -215,6 +216,7 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
     if matrixDiffVerification:
         left = x<cbx
         right = x>cbx
+    numOfLivePart.extend([fracture.sum()+matrix.sum()])
 
     # Update the position of all the particles at a given time steps according to the Langevin dynamics
     x, y = update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta)
@@ -291,6 +293,8 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
 
     # if t%1000==0:
     #     print(f"Sim time is {t}")
+
+numOfLivePart = np.array(numOfLivePart)
 
 end_time = time.time() # Stop timing the while loop
 execution_time = end_time - start_time
@@ -406,3 +410,20 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('compareAdsP80.npz', **variablesToSave)
 # np.savez('compareAdsP60.npz', **variablesToSave)
 # np.savez('compareAdsP40.npz', **variablesToSave)
+# np.savez('compareAdsP20.npz', **variablesToSave)
+
+plt.rcParams.update({'font.size': 20})
+plt.plot(timeLinSpaced, liveParticlesInTime, label=r'$D_f = 1$', color='b', linestyle='-')
+# plt.plot(timeLinSpaced, liveParticlesInTime, label=r'$D_f = 0.1$', color='r', linestyle='-')
+# plt.plot(timeLinSpaced, liveParticlesInTime, label=r'$D_f = 0.01$', color='g', linestyle='-')
+# plt.plot(timeLinSpaced, liveParticlesInTime, label=r'$D_f = 0.001$', color='purple', linestyle='-')
+plt.title("Survival times")
+# plt.xscale('log')
+# plt.yscale('log')
+plt.xlabel('Time')
+plt.ylabel('Number of live particles')
+plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+plt.xlim(0, 100)
+plt.legend(loc='best')
+plt.tight_layout()
