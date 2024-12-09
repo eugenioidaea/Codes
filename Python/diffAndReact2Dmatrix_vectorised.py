@@ -38,7 +38,7 @@ recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.05 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
-ap = 1 # Adsorption probability
+ap = 0.4 # Adsorption probability
 binsXinterval = 10 # Extension of the region where spatial concentration is recorded
 binsTime = int(num_steps) # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
@@ -419,3 +419,9 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('compareAdsP60.npz', **variablesToSave)
 # np.savez('compareAdsP40.npz', **variablesToSave)
 # np.savez('compareAdsP20.npz', **variablesToSave)
+# np.savez('compareTau4.npz', **variablesToSave)
+# np.savez('compareTau40.npz', **variablesToSave)
+# np.savez('compareTau400.npz', **variablesToSave)
+# np.savez('compareP80.npz', **variablesToSave)
+# np.savez('compareP60.npz', **variablesToSave)
+np.savez('compareP40.npz', **variablesToSave)

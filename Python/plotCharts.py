@@ -24,8 +24,10 @@ plotSruvivalTimeDistOfNonAdsorbed = False
 plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption = False
 compareAdsDiff = False
 compareAdsApertures = False
-compareAdsProb = True
-reactionVsTaus = False
+compareAdsProb = False
+reactionVsTau = False
+compareDifferentTau = False
+compareDifferentProb = True
 
 # Load simulation results from .npz files ###################################################
 if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
@@ -197,6 +199,50 @@ if compareAdsProb:
     liveParticlesInTimeP20 = liveParticlesInTime.copy()
     liveParticlesInTimeNormP20 = liveParticlesInTimeNorm.copy()
     tauP = (uby-lby)**2/Df
+
+if compareDifferentTau:
+    loadCompareTau4 = np.load('compareTau4.npz')
+    for name, value in (loadCompareTau4.items()):
+        globals()[name] = value
+    numOfLivePartTau4 = numOfLivePart.copy()
+    Time4 = Time.copy()
+    tau4 = (uby-lby)**2/Df
+
+    loadCompareTau40 = np.load('compareTau40.npz')
+    for name, value in (loadCompareTau40.items()):
+        globals()[name] = value
+    numOfLivePartTau40 = numOfLivePart.copy()
+    Time40 = Time.copy()
+    tau40 = (uby-lby)**2/Df
+
+    loadCompareTau400 = np.load('compareTau400.npz')
+    for name, value in (loadCompareTau400.items()):
+        globals()[name] = value
+    numOfLivePartTau400 = numOfLivePart.copy()
+    Time400 = Time.copy()
+    tau400 = (uby-lby)**2/Df
+
+if compareDifferentProb:
+    loadCompareP80 = np.load('compareP80.npz')
+    for name, value in (loadCompareP80.items()):
+        globals()[name] = value
+    numOfLivePartP80 = numOfLivePart.copy()
+    Time80 = Time.copy()
+    tau80 = (uby-lby)**2/Df
+
+    loadCompareP60 = np.load('compareP60.npz')
+    for name, value in (loadCompareP60.items()):
+        globals()[name] = value
+    numOfLivePartP60 = numOfLivePart.copy()
+    Time60 = Time.copy()
+    tau60 = (uby-lby)**2/Df
+
+    loadCompareP40 = np.load('compareP40.npz')
+    for name, value in (loadCompareP40.items()):
+        globals()[name] = value
+    numOfLivePartP40 = numOfLivePart.copy()
+    Time40 = Time.copy()
+    tau40 = (uby-lby)**2/Df
 
 # Plot section #########################################################################
 if plotTrajectories:
@@ -790,12 +836,14 @@ if compareAdsProb:
     plt.legend(loc='best')
     plt.tight_layout()
 
-# Particles' survival distribution and reaction rate for different tau ##################################################
+# Survival time distributions and reaction rates for different tau ##################################################
 if compareDifferentTau:
-    survTimeDistCompareDiffNorm = plt.figure(figsize=(8, 8))
+    survTimeDistCompareTau = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
-    plt.plot(Time, numOfLivePart/num_particles, 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$\tau_d = 40$')
-    plt.title("Survival times")
+    plt.plot(Time4, numOfLivePartTau4/num_particles, 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$\tau_d = 4$')
+    plt.plot(Time40, numOfLivePartTau40/num_particles, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$\tau_d = 40$')
+    plt.plot(Time400, numOfLivePartTau400/num_particles, 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$\tau_d = 400$')
+    plt.title("Survival time distributions")
     plt.xscale('log')
     plt.yscale('log')
     plt.xlabel(r'$t$')
@@ -812,19 +860,27 @@ if compareDifferentTau:
     # plt.rcParams.update({'font.size': 20})
     # plt.plot(logBins, numOfLivePartLog/num_particles, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$\tau_d = 40$')
 
-    compareDiffNormAdsRates = plt.figure(figsize=(8, 8))
+    ratesCompareTau = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
-    dLivedt = -np.diff(np.log(numOfLivePart/num_particles))/np.diff(np.log(Time))
-    mask0 = dLivedt!=0
-    midTimes = ((Time)[:-1] + (Time)[1:]) / 2
-    plt.plot(midTimes[mask0], dLivedt[mask0], 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$\tau_d = 40$')
+    dLivedtTau4 = -np.diff(np.log(numOfLivePartTau4/num_particles))/np.diff(np.log(Time4))
+    dLivedtTau40 = -np.diff(np.log(numOfLivePartTau40/num_particles))/np.diff(np.log(Time40))
+    dLivedtTau400 = -np.diff(np.log(numOfLivePartTau400/num_particles))/np.diff(np.log(Time400))
+    mask0tau4 = dLivedtTau4!=0
+    mask0tau40 = dLivedtTau40!=0
+    mask0tau400 = dLivedtTau400!=0
+    midTimes4 = ((Time4)[:-1] + (Time4)[1:]) / 2
+    midTimes40 = ((Time40)[:-1] + (Time40)[1:]) / 2
+    midTimes400 = ((Time400)[:-1] + (Time400)[1:]) / 2
+    plt.plot(midTimes4[mask0tau4], dLivedtTau4[mask0tau4], 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$\tau_d = 4$')
+    plt.plot(midTimes40[mask0tau40], dLivedtTau40[mask0tau40], 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$\tau_d = 40$')
+    plt.plot(midTimes400[mask0tau400], dLivedtTau400[mask0tau400], 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$\tau_d = 400$')
     plt.title("Reaction rates")
     plt.xlabel(r'$t$')
     plt.ylabel('k(t)')
     plt.xscale('log')
     plt.yscale('log')
     # plt.xlim(0, 20)
-    plt.ylim(0, 200)
+    # plt.ylim(0, 200)
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
     plt.legend(loc='best')
     plt.tight_layout()
@@ -834,12 +890,15 @@ if compareDifferentTau:
     # midLogTimes = ((logBins)[maskNaN][:-1] + (logBins)[maskNaN][1:]) / 2
     # plt.plot(midLogTimes, dLiveLogdt, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$\tau_d = 40$')
 
-    from sklearn.linear_model import LinearRegression
-    timeReshaped = (midTimes[mask0][:300]).reshape(-1, 1)
-    modelLin = LinearRegression()
-    modelLin.fit(timeReshaped, dLivedt[mask0][:300])
-    print(f"Coeff D1: {modelLin.coef_}")
-    print(f"Intercept D1: {modelLin.intercept_}")
+    sliceTau4 = slice(5, 50)
+    sliceTau40 = slice(20, 200)
+    sliceTau400 = slice(50, 500)
+    timeReshapedTau4 = (midTimes4[mask0tau4][sliceTau4]).reshape(-1, 1)
+    timeReshapedTau40 = (midTimes40[mask0tau40][sliceTau40]).reshape(-1, 1)
+    timeReshapedTau400 = (midTimes400[mask0tau400][sliceTau400]).reshape(-1, 1)
+    interpTau4 = LinearRegression().fit(timeReshapedTau4, dLivedtTau4[mask0tau4][sliceTau4])
+    interpTau40 = LinearRegression().fit(timeReshapedTau40, dLivedtTau40[mask0tau40][sliceTau40])
+    interpTau400 = LinearRegression().fit(timeReshapedTau400, dLivedtTau400[mask0tau400][sliceTau400])
 
     # timeLogReshaped = (midLogTimes[:100]).reshape(-1, 1)
     # modelLog = LinearRegression()
@@ -847,14 +906,101 @@ if compareDifferentTau:
     # print(f"Coeff D1: {modelLog.coef_}")
     # print(f"Intercept D1: {modelLog.intercept_}")
 
-    kInterpLin = modelLin.intercept_+modelLin.coef_*midTimes
-    plt.plot(midTimes, kInterpLin, color='blue')
+    kInterpLinTau4 = interpTau4.intercept_+interpTau4.coef_*midTimes4[mask0tau4][sliceTau4]
+    plt.plot(midTimes4[mask0tau4][sliceTau4], kInterpLinTau4, color='black', linewidth='2')
+    plt.text(midTimes4[mask0tau4][sliceTau4][-1], kInterpLinTau4[-1], f"k={interpTau4.coef_[0]:.2f}", fontsize=18, ha='right')
+    kInterpLinTau40 = interpTau40.intercept_+interpTau40.coef_*midTimes40[mask0tau40][sliceTau40]
+    plt.plot(midTimes40[mask0tau40][sliceTau40], kInterpLinTau40, color='black', linewidth='2')
+    plt.text(midTimes40[mask0tau40][sliceTau40][-1], kInterpLinTau40[-1], f"k={interpTau40.coef_[0]:.2f}", fontsize=18, ha='right')
+    kInterpLinTau400 = interpTau400.intercept_+interpTau400.coef_*midTimes400[mask0tau400][sliceTau400]
+    plt.plot(midTimes400[mask0tau400][sliceTau400], kInterpLinTau400, color='black', linewidth='2')
+    plt.text(midTimes400[mask0tau400][sliceTau400][-1], kInterpLinTau400[-1], f"k={interpTau400.coef_[0]:.2f}", fontsize=18, ha='right')
 
     # kInterpLog = modelLog.intercept_+modelLog.coef_*midLogTimes
     # plt.plot(midLogTimes, kInterpLog, color='red')
 
 # Particles' survival distribution and reaction rate for different adsorption probability ###############################
+if compareDifferentProb:
+    survTimeDistCompareAdsProb = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    plt.plot(Time80, numOfLivePartP80/num_particles, 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$p = 0.8$')
+    plt.plot(Time60, numOfLivePartP60/num_particles, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$p = 0.6$')
+    plt.plot(Time40, numOfLivePartP40/num_particles, 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$p = 0.4$')
+    plt.title("Survival time distributions")
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel(r'$t$')
+    plt.ylabel(r'$N/N_0$')
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+    plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+    # plt.xlim(0, 200)
+    plt.legend(loc='best')
+    plt.tight_layout()
 
+    # logBins = np.logspace(np.log10(dt), np.log10(Time.max()), len(Time))
+    # binIndeces = np.digitize(Time, logBins)
+    # numOfLivePartLog = np.array([numOfLivePart[binIndeces == i].mean() for i in range(0, len(Time))])
+    # plt.rcParams.update({'font.size': 20})
+    # plt.plot(logBins, numOfLivePartLog/num_particles, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$\tau_d = 40$')
+
+    ratesCompareProb = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    dLivedtP80 = -np.diff(np.log(numOfLivePartP80/num_particles))/np.diff(np.log(Time80))
+    dLivedtP60 = -np.diff(np.log(numOfLivePartP60/num_particles))/np.diff(np.log(Time60))
+    dLivedtP40 = -np.diff(np.log(numOfLivePartP40/num_particles))/np.diff(np.log(Time40))
+    mask0p80 = dLivedtP80!=0
+    mask0p60 = dLivedtP60!=0
+    mask0p40 = dLivedtP40!=0
+    midTimes80 = ((Time80)[:-1] + (Time80)[1:]) / 2
+    midTimes60 = ((Time60)[:-1] + (Time60)[1:]) / 2
+    midTimes40 = ((Time40)[:-1] + (Time40)[1:]) / 2
+    plt.plot(midTimes80[mask0p80], dLivedtP80[mask0p80], 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$p = 0.8$')
+    plt.plot(midTimes60[mask0p60], dLivedtP60[mask0p60], 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$p = 0.6$')
+    plt.plot(midTimes40[mask0p40], dLivedtP40[mask0p40], 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$p = 0.4$')
+    plt.title("Reaction rates")
+    plt.xlabel(r'$t$')
+    plt.ylabel('k(t)')
+    plt.xscale('log')
+    plt.yscale('log')
+    # plt.xlim(0, 20)
+    # plt.ylim(0, 200)
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
+    plt.legend(loc='best')
+    plt.tight_layout()
+
+    # maskNaN = np.isfinite(numOfLivePartLog)
+    # dLiveLogdt = -np.diff(np.log(numOfLivePartLog[maskNaN]/num_particles))/np.diff(np.log(Time[maskNaN]))
+    # midLogTimes = ((logBins)[maskNaN][:-1] + (logBins)[maskNaN][1:]) / 2
+    # plt.plot(midLogTimes, dLiveLogdt, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$\tau_d = 40$')
+
+    sliceP80 = slice(5, 100)
+    sliceP60 = slice(20, 200)
+    sliceP40 = slice(40, 400)
+    timeReshapedP80 = (midTimes80[mask0p80][sliceP80]).reshape(-1, 1)
+    timeReshapedP60 = (midTimes60[mask0p60][sliceP60]).reshape(-1, 1)
+    timeReshapedP40 = (midTimes40[mask0p40][sliceP40]).reshape(-1, 1)
+    interpP80 = LinearRegression().fit(timeReshapedP80, dLivedtP80[mask0p80][sliceP80])
+    interpP60 = LinearRegression().fit(timeReshapedP60, dLivedtP60[mask0p60][sliceP60])
+    interpP40 = LinearRegression().fit(timeReshapedP40, dLivedtP40[mask0p40][sliceP40])
+
+    # timeLogReshaped = (midLogTimes[:100]).reshape(-1, 1)
+    # modelLog = LinearRegression()
+    # modelLog.fit(timeLogReshaped, dLiveLogdt[:100])
+    # print(f"Coeff D1: {modelLog.coef_}")
+    # print(f"Intercept D1: {modelLog.intercept_}")
+
+    kInterpLinP80 = interpP80.intercept_+interpP80.coef_*midTimes80[mask0p80][sliceP80]
+    plt.plot(midTimes80[mask0p80][sliceP80], kInterpLinP80, color='black', linewidth='2')
+    plt.text(midTimes80[mask0p80][sliceP80][-1], kInterpLinP80[-1], f"k={interpP80.coef_[0]:.2f}", fontsize=18, ha='right')
+    kInterpLinP60 = interpP60.intercept_+interpP60.coef_*midTimes60[mask0p60][sliceP60]
+    plt.plot(midTimes60[mask0p60][sliceP60], kInterpLinP60, color='black', linewidth='2')
+    plt.text(midTimes60[mask0p60][sliceP60][-1], kInterpLinP60[-1], f"k={interpP60.coef_[0]:.2f}", fontsize=18, ha='right')
+    kInterpLinP40 = interpP40.intercept_+interpP40.coef_*midTimes40[mask0p40][sliceP40]
+    plt.plot(midTimes40[mask0p40][sliceP40], kInterpLinP40, color='black', linewidth='2')
+    plt.text(midTimes40[mask0p40][sliceP40][-1], kInterpLinP40[-1], f"k={interpP40.coef_[0]:.2f}", fontsize=18, ha='right')
+
+    # kInterpLog = modelLog.intercept_+modelLog.coef_*midLogTimes
+    # plt.plot(midLogTimes, kInterpLog, color='red')
 
 # Reaction rates vs characteristic times ################################################################################
 if reactionVsTau:
@@ -1035,11 +1181,11 @@ if FinalPositions:
     finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
     histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
 
-# if compareAdsDiff:
-#     survTimeDistCompareDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiff.png", format="png", bbox_inches="tight")
-#     survTimeDistCompareDiffNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiffNorm.png", format="png", bbox_inches="tight")
-#     compareAdsRatesDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesDiff.png", format="png", bbox_inches="tight")
-#     compareDiffNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDiffNormAdsRates.png", format="png", bbox_inches="tight")
+if compareAdsDiff:
+    survTimeDistCompareDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiff.png", format="png", bbox_inches="tight")
+    survTimeDistCompareDiffNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiffNorm.png", format="png", bbox_inches="tight")
+    compareAdsRatesDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesDiff.png", format="png", bbox_inches="tight")
+    compareDiffNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDiffNormAdsRates.png", format="png", bbox_inches="tight")
 
 if compareAdsApertures:
     survTimeDistCompareApe.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareApe.png", format="png", bbox_inches="tight")
@@ -1047,8 +1193,16 @@ if compareAdsApertures:
     compareAdsRatesApe.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesApe.png", format="png", bbox_inches="tight")
     compareApeNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareApeNormAdsRates.png", format="png", bbox_inches="tight")
 
-# if compareAdsProb:
-#     survTimeDistCompareProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareProb.png", format="png", bbox_inches="tight")
-#     survTimeDistCompareProbNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareProbNorm.png", format="png", bbox_inches="tight")
-#     compareAdsRatesProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesProb.png", format="png", bbox_inches="tight")
-#     compareProbNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareProbNormAdsRates.png", format="png", bbox_inches="tight")
+if compareAdsProb:
+    survTimeDistCompareProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareProb.png", format="png", bbox_inches="tight")
+    survTimeDistCompareProbNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareProbNorm.png", format="png", bbox_inches="tight")
+    compareAdsRatesProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareAdsRatesProb.png", format="png", bbox_inches="tight")
+    compareProbNormAdsRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareProbNormAdsRates.png", format="png", bbox_inches="tight")
+
+if compareDifferentTau:
+    survTimeDistCompareTau.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareTau.png", format="png", bbox_inches="tight")
+    ratesCompareTau.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/ratesCompareTau.png", format="png", bbox_inches="tight")
+
+if compareDifferentProb:
+    survTimeDistCompareAdsProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareAdsProb.png", format="png", bbox_inches="tight")
+    ratesCompareProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/ratesCompareProb.png", format="png", bbox_inches="tight")
