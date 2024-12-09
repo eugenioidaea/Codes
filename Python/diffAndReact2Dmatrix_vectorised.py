@@ -23,7 +23,7 @@ if plotCharts:
 
 # Parameters #################################################################
 num_particles = int(1e6) # Number of particles in the simulation
-sim_time = int(8e3)
+sim_time = int(8e2)
 dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1 # Diffusion for particles moving in the fracture
@@ -40,7 +40,7 @@ k_deg = 0.05 # Degradation kinetic constant
 k_ads = 0.1 # Adsorption constant
 ap = 1 # Adsorption probability
 binsXinterval = 10 # Extension of the region where spatial concentration is recorded
-binsTime = int(num_steps/10) # Number of temporal bins for the logarithmic plot
+binsTime = int(num_steps) # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 if matrixDiffVerification:
     Dl = 0.1 # Diffusion left side of the domain (matrixDiffVerification only)
@@ -108,6 +108,9 @@ probCrossRightToLeft = np.full(num_particles, False)
 particleSteps = np.zeros(num_particles)
 impacts = 0
 numOfLivePart = []
+Time = []
+# numOfLivePart = np.array([num_particles])
+# Time = np.array([0])
 
 # Functions ##########################################################################
 def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
@@ -211,12 +214,13 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
     if lbxOn:
         fracture = fracture & np.logical_not(crossOutLeft)
         matrix = matrix & np.logical_not(crossOutLeft)
-    particleSteps[fracture | matrix] += 1 # It keeps track of the number of steps of each particle (no degradeted nor adsorbed are moving)
+    # particleSteps[fracture | matrix] += 1 # It keeps track of the number of steps of each particle (no degradeted nor adsorbed are moving)
     # particleSteps[survivalTimeDist>t] = particleSteps[survivalTimeDist>t] + 1 # It keeps track of the number of steps of each particle
     if matrixDiffVerification:
         left = x<cbx
         right = x>cbx
     numOfLivePart.extend([fracture.sum()+matrix.sum()])
+    Time.extend([t])
 
     # Update the position of all the particles at a given time steps according to the Langevin dynamics
     x, y = update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta)
@@ -281,6 +285,9 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
     # Move forward time step
     t += dt
 
+    # numOfLivePart = np.append(numOfLivePart, [inside.sum()+outsideAbove.sum()+outsideBelow.sum()])
+    # Time = np.append(Time, [t])
+
     binCenterSpace = (xBins[:-1] + xBins[1:]) / 2
     # Record the spatial distribution of the particles at a given time, e.g.: 'recordSpatialConc'
     if (t <= recordSpatialConc) & (recordSpatialConc < t+dt):
@@ -295,6 +302,7 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
     #     print(f"Sim time is {t}")
 
 numOfLivePart = np.array(numOfLivePart)
+Time = np.array(Time)
 
 end_time = time.time() # Stop timing the while loop
 execution_time = end_time - start_time
@@ -360,15 +368,15 @@ if recordTrajectories and np.logical_not(reflection):
     hDist, hBins = np.histogram(xDist, np.linspace(-binsXinterval, binsXinterval, binsSpace))
 
 # Survival time distribution
-liveParticlesInTime = np.sum(particleSteps[:, None] > timeLinSpaced, axis=0)
-liveParticlesInTimeNorm = liveParticlesInTime/num_particles
-liveParticlesInTimePDF = liveParticlesInTime/sum(liveParticlesInTime*np.diff(np.insert(timeLinSpaced, 0, 0)))
-liveParticlesInLogTime = np.sum(particleSteps[:, None] > timeLogSpaced, axis=0)
-liveParticlesInLogTimeNorm = liveParticlesInLogTime/num_particles
-liveParticlesInLogTimePDF = liveParticlesInLogTime/sum(liveParticlesInLogTime*np.diff(np.insert(timeLogSpaced, 0, 0)))
-liveParticlesInTwoLogTime = np.sum(particleSteps[:, None] > timeTwoLogSpaced, axis=0)
-liveParticlesInTwoLogTime = liveParticlesInTwoLogTime/num_particles
-liveParticlesInTwoLogTimePDF = liveParticlesInTwoLogTime/sum(liveParticlesInTwoLogTime*np.diff(np.insert(timeTwoLogSpaced, 0, 0)))
+# liveParticlesInTime = np.sum(particleSteps[:, None] > timeLinSpaced, axis=0)
+# liveParticlesInTimeNorm = liveParticlesInTime/num_particles
+# liveParticlesInTimePDF = liveParticlesInTime/sum(liveParticlesInTime*np.diff(np.insert(timeLinSpaced, 0, 0)))
+# liveParticlesInLogTime = np.sum(particleSteps[:, None] > timeLogSpaced, axis=0)
+# liveParticlesInLogTimeNorm = liveParticlesInLogTime/num_particles
+# liveParticlesInLogTimePDF = liveParticlesInLogTime/sum(liveParticlesInLogTime*np.diff(np.insert(timeLogSpaced, 0, 0)))
+# liveParticlesInTwoLogTime = np.sum(particleSteps[:, None] > timeTwoLogSpaced, axis=0)
+# liveParticlesInTwoLogTime = liveParticlesInTwoLogTime/num_particles
+# liveParticlesInTwoLogTimePDF = liveParticlesInTwoLogTime/sum(liveParticlesInTwoLogTime*np.diff(np.insert(timeTwoLogSpaced, 0, 0)))
 
 # Statistichs ########################################################################
 print(f"Execution time: {execution_time:.6f} seconds")
@@ -411,19 +419,3 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('compareAdsP60.npz', **variablesToSave)
 # np.savez('compareAdsP40.npz', **variablesToSave)
 # np.savez('compareAdsP20.npz', **variablesToSave)
-
-plt.rcParams.update({'font.size': 20})
-plt.plot(timeLinSpaced, liveParticlesInTime, label=r'$D_f = 1$', color='b', linestyle='-')
-# plt.plot(timeLinSpaced, liveParticlesInTime, label=r'$D_f = 0.1$', color='r', linestyle='-')
-# plt.plot(timeLinSpaced, liveParticlesInTime, label=r'$D_f = 0.01$', color='g', linestyle='-')
-# plt.plot(timeLinSpaced, liveParticlesInTime, label=r'$D_f = 0.001$', color='purple', linestyle='-')
-plt.title("Survival times")
-# plt.xscale('log')
-# plt.yscale('log')
-plt.xlabel('Time')
-plt.ylabel('Number of live particles')
-plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
-plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
-plt.xlim(0, 100)
-plt.legend(loc='best')
-plt.tight_layout()
