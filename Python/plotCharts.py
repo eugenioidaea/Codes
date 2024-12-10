@@ -26,8 +26,8 @@ compareAdsDiff = False
 compareAdsApertures = False
 compareAdsProb = False
 reactionVsTauAndProb = False
-compareDifferentTau = False
-compareDifferentProb = True
+compareDifferentTau = True
+compareDifferentProb = False
 
 # Load simulation results from .npz files ###################################################
 if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
@@ -221,6 +221,13 @@ if compareDifferentTau:
     numOfLivePartTau400 = numOfLivePart.copy()
     Time400 = Time.copy()
     tau400 = (uby-lby)**2/Df
+
+    loadCompareTau4000 = np.load('compareTau4000.npz')
+    for name, value in (loadCompareTau4000.items()):
+        globals()[name] = value
+    numOfLivePartTau4000 = numOfLivePart.copy()
+    Time4000 = Time.copy()
+    tau4000 = (uby-lby)**2/Df
 
 if compareDifferentProb:
     loadCompareP80 = np.load('compareP80.npz')
@@ -843,6 +850,7 @@ if compareDifferentTau:
     plt.plot(Time4, numOfLivePartTau4/num_particles, 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$\tau_d = 4$')
     plt.plot(Time40, numOfLivePartTau40/num_particles, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$\tau_d = 40$')
     plt.plot(Time400, numOfLivePartTau400/num_particles, 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$\tau_d = 400$')
+    plt.plot(Time4000, numOfLivePartTau4000/num_particles, 'o', markerfacecolor='none', markeredgecolor='purple', markersize='5', label=r'$\tau_d = 4000$')    
     plt.title("Survival time distributions")
     plt.xscale('log')
     plt.yscale('log')
@@ -864,15 +872,19 @@ if compareDifferentTau:
     dLivedtTau4 = -np.diff(np.log(numOfLivePartTau4/num_particles))/np.diff(np.log(Time4))
     dLivedtTau40 = -np.diff(np.log(numOfLivePartTau40/num_particles))/np.diff(np.log(Time40))
     dLivedtTau400 = -np.diff(np.log(numOfLivePartTau400/num_particles))/np.diff(np.log(Time400))
+    dLivedtTau4000 = -np.diff(np.log(numOfLivePartTau4000/num_particles))/np.diff(np.log(Time4000))
     mask0tau4 = dLivedtTau4!=0
     mask0tau40 = dLivedtTau40!=0
     mask0tau400 = dLivedtTau400!=0
+    mask0tau4000 = dLivedtTau4000!=0
     midTimes4 = ((Time4)[:-1] + (Time4)[1:]) / 2
     midTimes40 = ((Time40)[:-1] + (Time40)[1:]) / 2
     midTimes400 = ((Time400)[:-1] + (Time400)[1:]) / 2
+    midTimes4000 = ((Time4000)[:-1] + (Time4000)[1:]) / 2
     plt.plot(midTimes4[mask0tau4], dLivedtTau4[mask0tau4], 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$\tau_d = 4$')
     plt.plot(midTimes40[mask0tau40], dLivedtTau40[mask0tau40], 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$\tau_d = 40$')
     plt.plot(midTimes400[mask0tau400], dLivedtTau400[mask0tau400], 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$\tau_d = 400$')
+    plt.plot(midTimes4000[mask0tau4000], dLivedtTau4000[mask0tau4000], 'o', markerfacecolor='none', markeredgecolor='purple', markersize='5', label=r'$\tau_d = 4000$')
     plt.title("Reaction rates")
     plt.xlabel(r'$t$')
     plt.ylabel('k(t)')
@@ -890,12 +902,15 @@ if compareDifferentTau:
     sliceTau4 = slice(5, 50)
     sliceTau40 = slice(20, 200)
     sliceTau400 = slice(50, 500)
+    sliceTau4000 = slice(80, 700)
     timeReshapedTau4 = (midTimes4[mask0tau4][sliceTau4]).reshape(-1, 1)
     timeReshapedTau40 = (midTimes40[mask0tau40][sliceTau40]).reshape(-1, 1)
     timeReshapedTau400 = (midTimes400[mask0tau400][sliceTau400]).reshape(-1, 1)
+    timeReshapedTau4000 = (midTimes4000[mask0tau4000][sliceTau4000]).reshape(-1, 1)
     interpTau4 = LinearRegression().fit(timeReshapedTau4, dLivedtTau4[mask0tau4][sliceTau4])
     interpTau40 = LinearRegression().fit(timeReshapedTau40, dLivedtTau40[mask0tau40][sliceTau40])
     interpTau400 = LinearRegression().fit(timeReshapedTau400, dLivedtTau400[mask0tau400][sliceTau400])
+    interpTau4000 = LinearRegression().fit(timeReshapedTau4000, dLivedtTau4000[mask0tau4000][sliceTau4000])
     # timeLogReshaped = (midLogTimes[:100]).reshape(-1, 1)
     # modelLog = LinearRegression()
     # modelLog.fit(timeLogReshaped, dLiveLogdt[:100])
@@ -910,6 +925,9 @@ if compareDifferentTau:
     kInterpLinTau400 = interpTau400.intercept_+interpTau400.coef_*midTimes400[mask0tau400][sliceTau400]
     plt.plot(midTimes400[mask0tau400][sliceTau400], kInterpLinTau400, color='black', linewidth='2')
     plt.text(midTimes400[mask0tau400][sliceTau400][-1], kInterpLinTau400[-1], f"k={interpTau400.intercept_:.2f}+{interpTau400.coef_[0]:.2f}t", fontsize=18, ha='right')
+    kInterpLinTau4000 = interpTau4000.intercept_+interpTau4000.coef_*midTimes4000[mask0tau4000][sliceTau4000]
+    plt.plot(midTimes4000[mask0tau4000][sliceTau4000], kInterpLinTau4000, color='black', linewidth='2')
+    plt.text(midTimes4000[mask0tau4000][sliceTau4000][-1], kInterpLinTau4000[-1], f"k={interpTau4000.intercept_:.2f}+{interpTau4000.coef_[0]:.2f}t", fontsize=18, ha='right')
     # kInterpLog = modelLog.intercept_+modelLog.coef_*midLogTimes
     # plt.plot(midLogTimes, kInterpLog, color='red')
 
@@ -918,6 +936,7 @@ if compareDifferentTau:
     plt.plot(Time4, numOfLivePartTau4/num_particles, 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$\tau_d = 4$')
     plt.plot(Time40, numOfLivePartTau40/num_particles, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$\tau_d = 40$')
     plt.plot(Time400, numOfLivePartTau400/num_particles, 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$\tau_d = 400$')
+    plt.plot(Time4000, numOfLivePartTau4000/num_particles, 'o', markerfacecolor='none', markeredgecolor='purple', markersize='5', label=r'$\tau_d = 4000$')
     plt.title("Survival time distributions")
     # plt.xscale('log')
     plt.yscale('log')
@@ -931,12 +950,15 @@ if compareDifferentTau:
     sliceSemilogTau4 = slice(30, 80)
     sliceSemilogTau40 = slice(300, 500)
     sliceSemilogTau400 = slice(2000, 4000)
+    sliceSemilogTau4000 = slice(8000, 16000)
     timeReshapedSemilogTau4 = (Time4[sliceSemilogTau4]).reshape(-1, 1)
     timeReshapedSemilogTau40 = (Time40[sliceSemilogTau40]).reshape(-1, 1)
     timeReshapedSemilogTau400 = (Time400[sliceSemilogTau400]).reshape(-1, 1)
+    timeReshapedSemilogTau4000 = (Time4000[sliceSemilogTau4000]).reshape(-1, 1)
     interpSemilogTau4 = LinearRegression().fit(timeReshapedSemilogTau4, np.log(numOfLivePartTau4[sliceSemilogTau4]/num_particles))
     interpSemilogTau40 = LinearRegression().fit(timeReshapedSemilogTau40, np.log(numOfLivePartTau40[sliceSemilogTau40]/num_particles))
     interpSemilogTau400 = LinearRegression().fit(timeReshapedSemilogTau400, np.log(numOfLivePartTau400[sliceSemilogTau400]/num_particles))
+    interpSemilogTau4000 = LinearRegression().fit(timeReshapedSemilogTau4000, np.log(numOfLivePartTau4000[sliceSemilogTau4000]/num_particles))
     kInterpSemilogTau4 = np.exp(interpSemilogTau4.intercept_+interpSemilogTau4.coef_*timeReshapedSemilogTau4)
     plt.plot(timeReshapedSemilogTau4, kInterpSemilogTau4, color='black', linewidth='2')
     plt.text(timeReshapedSemilogTau4[-1], kInterpSemilogTau4[-1], f"k={interpSemilogTau4.coef_[0]:.2f}", fontsize=18, ha='left')
@@ -946,14 +968,18 @@ if compareDifferentTau:
     kInterpSemilogTau400 = np.exp(interpSemilogTau400.intercept_+interpSemilogTau400.coef_*timeReshapedSemilogTau400)
     plt.plot(timeReshapedSemilogTau400, kInterpSemilogTau400, color='black', linewidth='2')
     plt.text(timeReshapedSemilogTau400[-1], kInterpSemilogTau400[-1], f"k={interpSemilogTau400.coef_[0]:.2f}", fontsize=18, ha='left')
+    kInterpSemilogTau4000 = np.exp(interpSemilogTau4000.intercept_+interpSemilogTau4000.coef_*timeReshapedSemilogTau4000)
+    plt.plot(timeReshapedSemilogTau4000, kInterpSemilogTau4000, color='black', linewidth='2')
+    plt.text(timeReshapedSemilogTau4000[-1], kInterpSemilogTau4000[-1], f"k={interpSemilogTau4000.coef_[0]:.2f}", fontsize=18, ha='left')
 
     reactionVsTau = plt.figure(figsize=(8, 8))
     plt.plot(tau4, -interpSemilogTau4.coef_[0], 'o', markerfacecolor='blue', markeredgecolor='blue', markersize='10') #, label=r'$tau_d = 4$')
     plt.plot(tau40, -interpSemilogTau40.coef_[0], 'o', markerfacecolor='red', markeredgecolor='red', markersize='10') #, label=r'$tau_d = 40$')
     plt.plot(tau400, -interpSemilogTau400.coef_[0], 'o', markerfacecolor='green', markeredgecolor='green', markersize='10') #, label=r'$tau_d = 400$')
+    plt.plot(tau4000, -interpSemilogTau4000.coef_[0], 'o', markerfacecolor='purple', markeredgecolor='purple', markersize='10') #, label=r'$tau_d = 400$')
     plt.title("Reaction rates vs characteristic times")
     # plt.xscale('log')
-    # plt.yscale('log')
+    plt.yscale('log')
     # plt.xlim(0, 20)
     # plt.ylim(-10, 1)
     plt.xlabel(r'$\tau_d$')
