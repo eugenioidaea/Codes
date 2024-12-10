@@ -9,12 +9,12 @@ import time
 plotCharts = True # It controls graphical features (disable when run on HPC)
 recordTrajectories = False # It uses up memory
 degradation = False # Switch for the degradation of the particles
-reflection = False # If False, the particles get adsorbed
+reflection = True # If False, the particles get adsorbed
 lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
 vcpOn = False # It regulates the visualisation of the vertical control plane
-matrixDiffVerification = False # It activates the matrix-diffusion verification testcase
+matrixDiffVerification = True # It activates the matrix-diffusion verification testcase
 # recordVideo = False # It slows down the script
 
 if plotCharts:
@@ -22,11 +22,11 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_particles = int(1e6) # Number of particles in the simulation
-sim_time = int(8e3)
-dt = 0.1 # Time step
+num_particles = int(1e4) # Number of particles in the simulation
+sim_time = int(1e4)
+dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-Df = 0.001 # Diffusion for particles moving in the fracture
+Df = 0.1 # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
 ap = 1 # Adsorption probability
 xInit = 0 # Initial horizontal position of the particles
@@ -426,3 +426,14 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('compareP80.npz', **variablesToSave)
 # np.savez('compareP60.npz', **variablesToSave)
 # np.savez('compareP40.npz', **variablesToSave)
+
+
+plt.plot(x, y, 'b*')
+plt.plot([lbx, rbx, rbx, lbx, lbx], [lby, lby, uby, uby, lby], color='black', linewidth=2)
+plt.scatter(x0, y0, s=2, c='purple', alpha=1, edgecolor='none', marker='o')
+if (reflectedLeft!=0) & (reflectedRight!=0):
+    plt.plot([cbx, cbx], [lby, uby], color='orange', linewidth=3, linestyle='--')
+histoMatriDiff = plt.figure(figsize=(8, 8))
+hDist, hBins = np.histogram(x, np.linspace(lbx, rbx, 100), density=True)
+plt.bar(hBins[:-1], hDist, width=np.diff(hBins), edgecolor="black", align="edge")
+plt.axvline(x=cbx, color='orange', linestyle='-', linewidth=2)
