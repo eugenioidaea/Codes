@@ -1,4 +1,4 @@
-debug = False
+debug = True
 if not debug:
     from IPython import get_ipython
     get_ipython().run_line_magic('reset', '-f')
@@ -225,7 +225,7 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
     # Update the position of all the particles at a given time steps according to the Langevin dynamics
     x, y = update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta)
 
-    # Particles which in principles would cross the fractures' walls
+    # Particles which in principle would cross the fractures' walls
     crossOutAbove = fracture & (y>uby)
     crossOutBelow = fracture & (y<lby)
     crossInAbove = outsideAbove  & (y>lby) & (y<uby)
@@ -242,8 +242,8 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
     probCrossInAbove = np.random.rand(len(crossInAbove)) > reflectedOutward
     probCrossInBelow = np.random.rand(len(crossInBelow)) > reflectedOutward
     if matrixDiffVerification:
-        probCrossLeftToRight = np.random.rand(len(crossLeftToRight)) > reflectedLeft
-        probCrossRightToLeft = np.random.rand(len(crossRightToLeft)) > reflectedRight
+        probCrossLeftToRight = np.random.rand(np.sum(crossLeftToRight)) > reflectedLeft
+        probCrossRightToLeft = np.random.rand(np.sum(crossRightToLeft)) > reflectedRight
 
     # Successfull crossing based on uniform probability distribution
     crossInToOutAbove = probCrossOutAbove & crossOutAbove
