@@ -23,7 +23,7 @@ if plotCharts:
 
 # Parameters #################################################################
 num_particles = int(1e4) # Number of particles in the simulation
-sim_time = int(1e4)
+sim_time = int(1e5)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1 # Diffusion for particles moving in the fracture
@@ -35,43 +35,39 @@ lby = -1 # Lower Boundary
 vcp = 10 # Vertical Control Plane
 if lbxOn:
     lbx = 0 # Left Boundary X
-recordSpatialConc = int(1e2) # Concentration profile recorded time
-stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_deg = 0.05 # Degradation kinetic constant
-k_ads = 0.1 # Adsorption constant
-binsXinterval = 10 # Extension of the region where spatial concentration is recorded
-binsTime = int(num_steps) # Number of temporal bins for the logarithmic plot
-binsSpace = 50 # Number of spatial bins for the concentration profile
 if matrixDiffVerification:
-    Dl = 0.1 # Diffusion left side of the domain (matrixDiffVerification only)
-    Dr = 0.01 # Diffusion right side of the domain (matrixDiffVerification only)
-    # reflectedLeft = 0.0 # Particles being reflected while crossing left to right the central wall
-    reflectedLeft = np.sqrt(Dl)/(np.sqrt(Dl)+np.sqrt(Dr))
-    # reflectedRight = 0.0 # Particles being reflected while crossing right to left the central wall
-    reflectedRight = np.sqrt(Dr)/(np.sqrt(Dl)+np.sqrt(Dr))
+    Dl = 0.01 # Diffusion left side of the domain (matrixDiffVerification only)
+    Dr = 0.001 # Diffusion right side of the domain (matrixDiffVerification only)
+    # probReflectedLeft = 0.0 # Particles being reflected while crossing left to right the central wall
+    probReflectedLeft = np.sqrt(Dl)/(np.sqrt(Dl)+np.sqrt(Dr))
+    # probReflectedLeft = Dl/(Dl+Dr)
+    # probReflectedLeft = Dl**(2/3)/(Dl**(2/3)+Dr**(2/3))
+    # probReflectedRight = 0.0 # Particles being reflected while crossing right to left the central wall
+    probReflectedRight = np.sqrt(Dr)/(np.sqrt(Dl)+np.sqrt(Dr))
+    # probReflectedRight = Dr**(2/3)/(Dl**(2/3)+Dr**(2/3))
 reflectedInward = 1.0 # Probability of impacts from the fracture reflected again into the fracture
 # reflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
 reflectedOutward = 1.0 # Probability of impacts from the porous matrix reflected again into the porous matrix
 # reflectedOutward = np.sqrt(Dm)/(np.sqrt(Df)+np.sqrt(Dm))
+recordSpatialConc = int(1e2) # Concentration profile recorded time
+stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
+k_ads = 0.1 # Adsorption constant
+binsXinterval = 10 # Extension of the region where spatial concentration is recorded
+binsTime = int(num_steps) # Number of temporal bins for the logarithmic plot
+binsSpace = 50 # Number of spatial bins for the concentration profile
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
 meanEta = 0 # Spatial jump distribution paramenter
 stdEta = 1 # Spatial jump distribution paramenter
 animatedParticle = 0 # Index of the particle whose trajectory will be animated
 fTstp = 0 # First time step to be recorded in the video
 lTstp = 90 # Final time step to appear in the video
-if matrixDiffVerification:
+if matrixDiffVerification: # Boundaries of the test case for the verification of the matrix diffusion conditions
     lbx = 4
     rbx = 8
     cbx = 6
-
-# Initialisation ####################################################################
-t = 0 # Time
-i = 0 # Index for converting Eulerian pdf to Lagrangian pdf
-cdf = 0
-pdf_part = np.zeros(num_steps)
-pdf_lbxOn = np.zeros(num_steps)
-if matrixDiffVerification:
-    noc = 100 # Number of columns
+if matrixDiffVerification: # Initial positions of the particles
+    noc = 10 # Number of columns
     nor = int(num_particles/noc) # Number of rows
     x0 = np.linspace(lbx+((uby-lby)*0.01), cbx-((uby-lby)*0.01), noc) # Particles initial positions: left
     # x0 = np.linspace(cbx, rbx, noc) # Particles initial positions: right
@@ -81,6 +77,13 @@ if matrixDiffVerification:
 else:
     x0 = np.ones(num_particles)*xInit # Horizontal initial positions
     y0 = np.linspace(lby+init_shift, uby-init_shift, num_particles) # Vertical initial positions
+
+# Initialisation ####################################################################
+t = 0 # Time
+i = 0 # Index for converting Eulerian pdf to Lagrangian pdf
+cdf = 0
+pdf_part = np.zeros(num_steps)
+pdf_lbxOn = np.zeros(num_steps)
 if recordTrajectories:
     xPath = np.zeros((num_particles, num_steps+1))  # Matrix for storing x trajectories
     yPath = np.zeros((num_particles, num_steps+1))  # Matrix for storing y trajectories
@@ -109,8 +112,8 @@ particleSteps = np.zeros(num_particles)
 impacts = 0
 numOfLivePart = []
 Time = []
-# numOfLivePart = np.array([num_particles])
-# Time = np.array([0])
+x = x0.copy()
+y = y0.copy()
 
 # Functions ##########################################################################
 def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
@@ -148,8 +151,10 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
     if matrixDiffVerification:
         x[crossOutLeft] = -x[crossOutLeft]+2*lbx
         x[crossOutRight] = -x[crossOutRight]+2*rbx
-        x[crossLeftToRight] = np.where(crossLtR[crossLeftToRight], x[crossLeftToRight], -x[crossLeftToRight]+2*cbx)
-        x[crossRightToLeft] = np.where(crossRtL[crossRightToLeft], x[crossRightToLeft], -x[crossRightToLeft]+2*cbx)
+        x[reflectedLeft] = -x[reflectedLeft]+2*cbx
+        x[reflectedRight] = -x[reflectedRight]+2*cbx
+        x[crossFromLeft] = cbx+(x[crossFromLeft]-cbx)*(Dr/Dl)
+        x[crossFromRight] = cbx-(cbx-x[crossFromRight])*(Dl/Dr)
     return x, y
 
 def apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist, impacts):
@@ -188,17 +193,13 @@ def adsorption_dist(k_ads):
     adsDist = np.random.choice(valueRange, size=num_particles, p=expProbAds)
     return adsDist
 
-# Time loop ###########################################################################
-start_time = time.time() # Start timing the while loop
-
-x = x0.copy()
-y = y0.copy()
-
-# Chemical degradation times
-if degradation:
+if degradation: # Chemical degradation times
     survivalTimeDist, exp_prob = degradation_dist(num_steps, k_deg, num_particles)
 else:
     survivalTimeDist = np.ones(num_particles)*sim_time
+
+# Time loop ###########################################################################
+start_time = time.time() # Start timing the while loop
 
 while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any()):
 
@@ -242,8 +243,8 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
     probCrossInAbove = np.random.rand(len(crossInAbove)) > reflectedOutward
     probCrossInBelow = np.random.rand(len(crossInBelow)) > reflectedOutward
     if matrixDiffVerification:
-        probCrossLeftToRight = np.random.rand(np.sum(crossLeftToRight)) > reflectedLeft
-        probCrossRightToLeft = np.random.rand(np.sum(crossRightToLeft)) > reflectedRight
+        probCrossLeftToRight = np.random.rand(np.sum(crossLeftToRight))
+        probCrossRightToLeft = np.random.rand(np.sum(crossRightToLeft))
 
     # Successfull crossing based on uniform probability distribution
     crossInToOutAbove = probCrossOutAbove & crossOutAbove
@@ -251,8 +252,14 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
     crossOutToInAbove = probCrossInAbove & crossInAbove
     crossOutToInBelow = probCrossInBelow & crossInBelow
     if matrixDiffVerification:
-        crossLtR = probCrossLeftToRight & crossLeftToRight
-        crossRtL = probCrossRightToLeft & crossRightToLeft
+        reflectedLeft = np.full(num_particles, False)
+        reflectedRight = np.full(num_particles, False)
+        crossFromLeft = np.full(num_particles, False)
+        crossFromRight = np.full(num_particles, False)
+        reflectedLeft[crossLeftToRight] = probCrossLeftToRight<probReflectedLeft
+        crossFromLeft[crossLeftToRight] = probCrossLeftToRight>probReflectedLeft
+        reflectedRight[crossRightToLeft] = probCrossRightToLeft<probReflectedRight
+        crossFromRight[crossRightToLeft] = probCrossRightToLeft>probReflectedRight
 
     # Particles hitting the left control plane
     if lbxOn:
@@ -262,8 +269,7 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
     # Decide what happens to the particles which hit the fracture's walls: all get reflected, some get reflected some manage to escape, all get absorbed by the fracture's walls
     if reflection:
         # Update the reflected particles' positions according to an elastic reflection dynamic
-        x, y = apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow,
-                                crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, lbxOn)
+        x, y = apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow, crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, lbxOn)
     else:
         # adsDist = adsorption_dist(k_ads) # Exponential distribution
         adsDist = np.random.uniform(0, 1, num_particles) # Uniform distribution
@@ -278,17 +284,11 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
     outsideAbove = y>uby # Particles in the porous matrix above the fracture
     outsideBelow = y<lby # Particles in the porous matrix below the fracture
 
-    # Count the particle which exit the control planes at each time step
-    pdf_part[int(t/dt)] = sum(abs(x[isIn])>vcp)
-    # Compute the CDF and increase the time
-    cdf = sum(pdf_part)/num_particles
-    # Move forward time step
-    t += dt
+    pdf_part[int(t/dt)] = sum(abs(x[isIn])>vcp) # Count the particle which exit the control planes at each time step
+    cdf = sum(pdf_part)/num_particles # Compute the CDF and increase the time
 
-    # numOfLivePart = np.append(numOfLivePart, [inside.sum()+outsideAbove.sum()+outsideBelow.sum()])
-    # Time = np.append(Time, [t])
+    t += dt # Move forward time step
 
-    binCenterSpace = (xBins[:-1] + xBins[1:]) / 2
     # Record the spatial distribution of the particles at a given time, e.g.: 'recordSpatialConc'
     if (t <= recordSpatialConc) & (recordSpatialConc < t+dt):
         countsSpace, binEdgeSpace = np.histogram(x, xBins, density=True)
@@ -297,9 +297,6 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
     if recordTrajectories:
         xPath[:, int(t/dt)] = np.where(liveParticle, x, 0)  # Store x positions for the current time step
         yPath[:, int(t/dt)] = np.where(liveParticle, y, 0)  # Store y positions for the current time step
-
-    # if t%1000==0:
-    #     print(f"Sim time is {t}")
 
 numOfLivePart = np.array(numOfLivePart)
 Time = np.array(Time)
@@ -334,6 +331,7 @@ if lbxOn:
     timeBinsLog = (binSemiInfLog[:-1] + binSemiInfLog[1:]) / 2
     analPdfSemiInf = analytical_seminf(xInit, timeBinsLog, Df)
 else:
+    binCenterSpace = (xBins[:-1] + xBins[1:]) / 2
     yAnalytical = analytical_inf(binCenterSpace, recordSpatialConc, Df)
 
 # Compute the number of particles at a given time over the whole domain extension
@@ -431,7 +429,7 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 plt.plot(x, y, 'b*')
 plt.plot([lbx, rbx, rbx, lbx, lbx], [lby, lby, uby, uby, lby], color='black', linewidth=2)
 plt.scatter(x0, y0, s=2, c='purple', alpha=1, edgecolor='none', marker='o')
-if (reflectedLeft!=0) & (reflectedRight!=0):
+if (probReflectedLeft!=0) & (probReflectedRight!=0):
     plt.plot([cbx, cbx], [lby, uby], color='orange', linewidth=3, linestyle='--')
 histoMatriDiff = plt.figure(figsize=(8, 8))
 hDist, hBins = np.histogram(x, np.linspace(lbx, rbx, 100), density=True)
