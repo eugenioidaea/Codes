@@ -15,7 +15,7 @@ plotLagrangianPdf = False
 plotBreakthroughCurveVerification = False
 plotSpatialConcentration = False
 plotDegradation = False
-FinalPositions = False
+FinalPositions = True
 FinalPositionVertAll = False
 FinalPositionHorAll = False
 FinalPositionVert = False
@@ -26,7 +26,7 @@ compareAdsDiff = False
 compareAdsApertures = False
 compareAdsProb = False
 reactionVsTauAndProb = False
-compareDifferentTau = True
+compareDifferentTau = False
 compareDifferentProb = False
 
 save = True
@@ -77,18 +77,18 @@ if FinalPositions:
 #    loadFinalPositions = np.load('Dl01Dr001Rl0Rr0.npz')
 #    for name, value in (loadFinalPositions.items()):
 #        globals()[name] = value
-#
+
 #    loadFinalPositions = np.load('Dl01Dr01RlPlRrPr.npz')
 #    for name, value in (loadFinalPositions.items()):
 #        globals()[name] = value
-#
-#    loadFinalPositions = np.load('Dl01Dr001RlPlRrPr.npz')
-#    for name, value in (loadFinalPositions.items()):
-#        globals()[name] = value
 
-    loadFinalPositions = np.load('Dl01Dr001RlPlRrPr1e5ts.npz')
+    loadFinalPositions = np.load('Dl01Dr001RlPlRrPr.npz')
     for name, value in (loadFinalPositions.items()):
         globals()[name] = value
+
+#    loadFinalPositions = np.load('Dl01Dr001RlPlRrPr1e5ts.npz')
+#    for name, value in (loadFinalPositions.items()):
+#        globals()[name] = value
 
 if compareAdsDiff:
     loadCompareAdsD1 = np.load('compareAdsD1.npz')
@@ -359,7 +359,7 @@ if FinalPositions:
         plt.plot(x, y, 'b*')
         plt.plot([lbx, rbx, rbx, lbx, lbx], [lby, lby, uby, uby, lby], color='black', linewidth=2)
         plt.scatter(x0, y0, s=2, c='purple', alpha=1, edgecolor='none', marker='o')
-        if (reflectedLeft!=0) & (reflectedRight!=0):
+        if (reflectedLeft).any() & (reflectedRight).any():
             plt.plot([cbx, cbx], [lby, uby], color='orange', linewidth=3, linestyle='--')
         histoMatriDiff = plt.figure(figsize=(8, 8))
         hDist, hBins = np.histogram(x, np.linspace(lbx, rbx, 100), density=True)
@@ -1288,16 +1288,16 @@ if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption & save:
     compareDecayDegradationRatesNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDecayDegradationRatesNorm.png", format="png", bbox_inches="tight")
 
 if FinalPositions & save:
-    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
-    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
-    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
-    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
-    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
-    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
-    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
-    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
-    finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
-    histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
+    # finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
+    # histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
+    # finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
+    # histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
+    # finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
+    # histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
+    # finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
+    # histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
+    # finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
+    # histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
 
 if compareAdsDiff & save:
     survTimeDistCompareDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareDiff.png", format="png", bbox_inches="tight")

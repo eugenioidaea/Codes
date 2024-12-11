@@ -39,13 +39,10 @@ k_deg = 0.05 # Degradation kinetic constant
 if matrixDiffVerification:
     Dl = 0.01 # Diffusion left side of the domain (matrixDiffVerification only)
     Dr = 0.001 # Diffusion right side of the domain (matrixDiffVerification only)
-    # probReflectedLeft = 0.0 # Particles being reflected while crossing left to right the central wall
-    probReflectedLeft = np.sqrt(Dl)/(np.sqrt(Dl)+np.sqrt(Dr))
-    # probReflectedLeft = Dl/(Dl+Dr)
-    # probReflectedLeft = Dl**(2/3)/(Dl**(2/3)+Dr**(2/3))
-    # probReflectedRight = 0.0 # Particles being reflected while crossing right to left the central wall
-    probReflectedRight = np.sqrt(Dr)/(np.sqrt(Dl)+np.sqrt(Dr))
-    # probReflectedRight = Dr**(2/3)/(Dl**(2/3)+Dr**(2/3))
+    probReflectedLeft = 0.0 # Particles being reflected while crossing left to right the central wall
+    # probReflectedLeft = np.sqrt(Dl)/(np.sqrt(Dl)+np.sqrt(Dr))
+    probReflectedRight = 0.0 # Particles being reflected while crossing right to left the central wall
+    # probReflectedRight = np.sqrt(Dr)/(np.sqrt(Dl)+np.sqrt(Dr))
 reflectedInward = 1.0 # Probability of impacts from the fracture reflected again into the fracture
 # reflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
 reflectedOutward = 1.0 # Probability of impacts from the porous matrix reflected again into the porous matrix
@@ -401,11 +398,11 @@ variablesToSave = {name: value for name, value in globals().items() if isinstanc
 # np.savez('testSemra.npz', **variablesToSave)
 # np.savez('matrixDiffusionVerification.npz', **variablesToSave)
 # np.savez('partialAdsorption.npz', **variablesToSave)
-# if matrixDiffVerification:
+if matrixDiffVerification:
     # np.savez('Dl01Dr01Rl0Rr0.npz', **variablesToSave)
-    # np.savez('Dl01Dr001Rl0Rr0.npz', **variablesToSave)
+    np.savez('Dl01Dr001Rl0Rr0.npz', **variablesToSave)
     # np.savez('Dl01Dr01RlPlRrPr.npz', **variablesToSave)
-    # np.savez('Dl01Dr001RlPlRrPr1e5ts.npz', **variablesToSave)
+    # np.savez('Dl01Dr001RlPlRrPr.npz', **variablesToSave)
 # np.savez('compareAdsD1.npz', **variablesToSave)
 # np.savez('compareAdsD01.npz', **variablesToSave)
 # np.savez('compareAdsD001.npz', **variablesToSave)
