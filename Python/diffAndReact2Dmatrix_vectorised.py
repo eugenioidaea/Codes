@@ -23,7 +23,7 @@ if plotCharts:
 
 # Parameters #################################################################
 num_particles = int(1e4) # Number of particles in the simulation
-sim_time = int(1e5)
+sim_time = int(1e4)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1 # Diffusion for particles moving in the fracture
@@ -153,8 +153,8 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
         x[crossOutRight] = -x[crossOutRight]+2*rbx
         x[reflectedLeft] = -x[reflectedLeft]+2*cbx
         x[reflectedRight] = -x[reflectedRight]+2*cbx
-        x[crossFromLeft] = cbx+(x[crossFromLeft]-cbx)*(Dr/Dl)
-        x[crossFromRight] = cbx-(cbx-x[crossFromRight])*(Dl/Dr)
+        x[crossFromLeft] = cbx+(x[crossFromLeft]-cbx)*(np.sqrt(Dr)/np.sqrt(Dl))
+        x[crossFromRight] = cbx-(cbx-x[crossFromRight])*(np.sqrt(Dl)/np.sqrt(Dr))
     return x, y
 
 def apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist, impacts):
