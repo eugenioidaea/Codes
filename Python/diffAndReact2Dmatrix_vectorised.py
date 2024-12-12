@@ -132,14 +132,19 @@ def apply_reflection(x, y, crossOutAbove, crossOutBelow, crossInAbove, crossInBe
             x = np.where(crossOutLeft, lbx, x)
         else:
             x = np.where(x<lbx, -x+2*lbx, x)
-    y[reflectedInFromAbove] = -y[reflectedInFromAbove]+2*uby
-    y[reflectedOutFromAbove] = -y[reflectedOutFromAbove]+2*uby
-    y[reflectedInFromBelow] = -y[reflectedInFromBelow]+2*lby
-    y[reflectedOutFromBelow] = -y[reflectedOutFromBelow]+2*lby
-    y[crossFromInToAbove] = uby+(y[crossFromInToAbove]-uby)*(np.sqrt(Dm)/np.sqrt(Df))
-    y[crossFromOutAboveToBelow] = uby-(uby-y[crossFromOutAboveToBelow])*(np.sqrt(Df)/np.sqrt(Dm))
-    y[crossFromInToBelow] = lby+(y[crossFromInToBelow]-lby)*(np.sqrt(Dm)/np.sqrt(Df))
-    y[crossFromOutBelowToAbove] = lby-(lby-y[crossFromOutBelowToAbove])*(np.sqrt(Df)/np.sqrt(Dm))
+    # y[reflectedInFromAbove] = -y[reflectedInFromAbove]+2*uby
+    # y[reflectedOutFromAbove] = -y[reflectedOutFromAbove]+2*uby
+    # y[reflectedInFromBelow] = -y[reflectedInFromBelow]+2*lby
+    # y[reflectedOutFromBelow] = -y[reflectedOutFromBelow]+2*lby
+    # y[crossFromInToAbove] = uby+(y[crossFromInToAbove]-uby)*(np.sqrt(Dm)/np.sqrt(Df))
+    # y[crossFromOutAboveToBelow] = uby-(uby-y[crossFromOutAboveToBelow])*(np.sqrt(Df)/np.sqrt(Dm))
+    # y[crossFromInToBelow] = lby+(y[crossFromInToBelow]-lby)*(np.sqrt(Dm)/np.sqrt(Df))
+    # y[crossFromOutBelowToAbove] = lby-(lby-y[crossFromOutBelowToAbove])*(np.sqrt(Df)/np.sqrt(Dm))
+
+    y[crossOutAbove] = np.where(probCrossOutAbove<probReflectedInward, -y[crossOutAbove]+2*uby, uby+(y[crossOutAbove]-uby)*(np.sqrt(Dm)/np.sqrt(Df)))
+    y[crossOutBelow] = np.where(probCrossOutBelow<probReflectedInward, -y[crossOutBelow]+2*lby, lby+(y[crossOutBelow]-lby)*(np.sqrt(Dm)/np.sqrt(Df)))
+    y[crossInAbove] = np.where(probCrossInAbove<probReflectedOutward, -y[crossInAbove]+2*uby, uby-(uby-y[crossInAbove])*(np.sqrt(Df)/np.sqrt(Dm)))
+    y[crossInBelow] = np.where(probCrossInBelow<probReflectedOutward, -y[crossInBelow]+2*lby, lby-(lby-y[crossInBelow])*(np.sqrt(Df)/np.sqrt(Dm)))
 
     # y[crossOutAbove] = np.where(crossInToOutAbove[crossOutAbove], y[crossOutAbove], -y[crossOutAbove]+2*uby)
     # y[crossOutBelow] = np.where(crossInToOutBelow[crossOutBelow], y[crossOutBelow], -y[crossOutBelow]+2*lby)
@@ -230,7 +235,7 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
     # Update the position of all the particles at a given time steps according to the Langevin dynamics
     x, y = update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta)
 
-    # Particles which in principle would cross the fractures' walls
+    # Particles which would cross the fractures' walls if no condition is applied at the boundaries
     crossOutAbove = fracture & (y>uby)
     crossOutBelow = fracture & (y<lby)
     crossInAbove = outsideAbove  & (y>lby) & (y<uby)
@@ -241,7 +246,7 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
         crossLeftToRight = left & (x>cbx)
         crossRightToLeft = right & (x<cbx)
 
-    # Generate a vector populated with random variables from a uniform distribution with as many elements as the number of particles that are crossing the boundaries
+    # Generate a vector populated with random variables from a uniform distribution with as many elements as the number of particles that would cross the boundaries
     probCrossOutAbove = np.random.rand(np.sum(crossOutAbove))
     probCrossOutBelow = np.random.rand(np.sum(crossOutBelow))
     probCrossInAbove = np.random.rand(np.sum(crossInAbove))
@@ -251,31 +256,31 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
         probCrossRightToLeft = np.random.rand(np.sum(crossRightToLeft))
 
     # Successfull crossing based on uniform probability distribution
-    reflectedInFromAbove = np.full(num_particles, False)
-    crossFromInToAbove = np.full(num_particles, False)
-    reflectedOutFromAbove = np.full(num_particles, False)
-    crossFromOutAboveToBelow = np.full(num_particles, False)
-    reflectedInFromBelow = np.full(num_particles, False)
-    crossFromInToBelow = np.full(num_particles, False)
-    reflectedOutFromBelow = np.full(num_particles, False)
-    crossFromOutBelowToAbove = np.full(num_particles, False)
-    reflectedInFromAbove[crossOutAbove] = probCrossOutAbove<probReflectedInward
-    crossFromInToAbove[crossOutAbove] = probCrossOutAbove>probReflectedInward
-    reflectedOutFromAbove[crossInAbove] = probCrossInAbove<probReflectedOutward
-    crossFromOutAboveToBelow[crossInAbove] = probCrossInAbove>probReflectedOutward
-    reflectedInFromBelow[crossOutBelow] = probCrossOutBelow<probReflectedInward
-    crossFromInToBelow[crossOutBelow] = probCrossOutBelow>probReflectedInward
-    reflectedOutFromBelow[crossInBelow] = probCrossInBelow<probReflectedOutward
-    crossFromOutBelowToAbove[crossInBelow] = probCrossInBelow>probReflectedOutward
-    if matrixDiffVerification:
-        reflectedLeft = np.full(num_particles, False)
-        reflectedRight = np.full(num_particles, False)
-        crossFromLeft = np.full(num_particles, False)
-        crossFromRight = np.full(num_particles, False)
-        reflectedLeft[crossLeftToRight] = probCrossLeftToRight<probReflectedLeft
-        crossFromLeft[crossLeftToRight] = probCrossLeftToRight>probReflectedLeft
-        reflectedRight[crossRightToLeft] = probCrossRightToLeft<probReflectedRight
-        crossFromRight[crossRightToLeft] = probCrossRightToLeft>probReflectedRight
+    # reflectedInFromAbove = np.full(num_particles, False)
+    # crossFromInToAbove = np.full(num_particles, False)
+    # reflectedOutFromAbove = np.full(num_particles, False)
+    # crossFromOutAboveToBelow = np.full(num_particles, False)
+    # reflectedInFromBelow = np.full(num_particles, False)
+    # crossFromInToBelow = np.full(num_particles, False)
+    # reflectedOutFromBelow = np.full(num_particles, False)
+    # crossFromOutBelowToAbove = np.full(num_particles, False)
+    # reflectedInFromAbove[crossOutAbove] = probCrossOutAbove<probReflectedInward
+    # crossFromInToAbove[crossOutAbove] = probCrossOutAbove>probReflectedInward
+    # reflectedOutFromAbove[crossInAbove] = probCrossInAbove<probReflectedOutward
+    # crossFromOutAboveToBelow[crossInAbove] = probCrossInAbove>probReflectedOutward
+    # reflectedInFromBelow[crossOutBelow] = probCrossOutBelow<probReflectedInward
+    # crossFromInToBelow[crossOutBelow] = probCrossOutBelow>probReflectedInward
+    # reflectedOutFromBelow[crossInBelow] = probCrossInBelow<probReflectedOutward
+    # crossFromOutBelowToAbove[crossInBelow] = probCrossInBelow>probReflectedOutward
+    # if matrixDiffVerification:
+    #     reflectedLeft = np.full(num_particles, False)
+    #     reflectedRight = np.full(num_particles, False)
+    #     crossFromLeft = np.full(num_particles, False)
+    #     crossFromRight = np.full(num_particles, False)
+    #     reflectedLeft[crossLeftToRight] = probCrossLeftToRight<probReflectedLeft
+    #     crossFromLeft[crossLeftToRight] = probCrossLeftToRight>probReflectedLeft
+    #     reflectedRight[crossRightToLeft] = probCrossRightToLeft<probReflectedRight
+    #     crossFromRight[crossRightToLeft] = probCrossRightToLeft>probReflectedRight
 
     # Particles hitting the left control plane
     if lbxOn:
