@@ -14,7 +14,7 @@ lbxOn = False # It controls the position of the left boundary
 lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
 vcpOn = False # It regulates the visualisation of the vertical control plane
-matrixDiffVerification = False # It activates the matrix-diffusion verification testcase
+matrixDiffVerification = True # It activates the matrix-diffusion verification testcase
 # recordVideo = False # It slows down the script
 
 if plotCharts:
@@ -39,14 +39,14 @@ k_deg = 0.05 # Degradation kinetic constant
 if matrixDiffVerification:
     Dl = 0.01 # Diffusion left side of the domain (matrixDiffVerification only)
     Dr = 0.001 # Diffusion right side of the domain (matrixDiffVerification only)
-    probReflectedLeft = 0.0 # Particles being reflected while crossing left to right the central wall
-    # probReflectedLeft = np.sqrt(Dl)/(np.sqrt(Dl)+np.sqrt(Dr))
-    probReflectedRight = 0.0 # Particles being reflected while crossing right to left the central wall
-    # probReflectedRight = np.sqrt(Dr)/(np.sqrt(Dl)+np.sqrt(Dr))
-# probReflectedInward = 1.0 # Probability of impacts from the fracture reflected again into the fracture
-probReflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
-# probReflectedOutward = 1.0 # Probability of impacts from the porous matrix reflected again into the porous matrix
-probReflectedOutward = np.sqrt(Dm)/(np.sqrt(Df)+np.sqrt(Dm))
+    # probReflectedLeft = 0.0 # Particles being reflected while crossing left to right the central wall
+    probReflectedLeft = np.sqrt(Dl)/(np.sqrt(Dl)+np.sqrt(Dr))
+    # probReflectedRight = 0.0 # Particles being reflected while crossing right to left the central wall
+    probReflectedRight = np.sqrt(Dr)/(np.sqrt(Dl)+np.sqrt(Dr))
+probReflectedInward = 1.0 # Probability of impacts from the fracture reflected again into the fracture
+# probReflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
+probReflectedOutward = 1.0 # Probability of impacts from the porous matrix reflected again into the porous matrix
+# probReflectedOutward = np.sqrt(Dm)/(np.sqrt(Df)+np.sqrt(Dm))
 recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_ads = 0.1 # Adsorption constant
@@ -126,13 +126,20 @@ def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
         y[matrix] += np.sqrt(2*Dm*dt)*np.random.normal(meanEta, stdEta, np.sum(matrix))
     return x, y
 
-def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow, 
-                     crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, lbxOn):
+def apply_reflection(x, y, crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, lbxOn):
     if lbxOn:
         if lbxAdsorption:
             x = np.where(crossOutLeft, lbx, x)
         else:
             x = np.where(x<lbx, -x+2*lbx, x)
+    y[reflectedInFromAbove] = -y[reflectedInFromAbove]+2*uby
+    y[reflectedOutFromAbove] = -y[reflectedOutFromAbove]+2*uby
+    y[reflectedInFromBelow] = -y[reflectedInFromBelow]+2*lby
+    y[reflectedOutFromBelow] = -y[reflectedOutFromBelow]+2*lby
+    y[crossFromInToAbove] = uby+(y[crossFromInToAbove]-uby)*(np.sqrt(Dm)/np.sqrt(Df))
+    y[crossFromOutAboveToBelow] = uby-(uby-y[crossFromOutAboveToBelow])*(np.sqrt(Df)/np.sqrt(Dm))
+    y[crossFromInToBelow] = lby+(y[crossFromInToBelow]-lby)*(np.sqrt(Dm)/np.sqrt(Df))
+    y[crossFromOutBelowToAbove] = lby-(lby-y[crossFromOutBelowToAbove])*(np.sqrt(Df)/np.sqrt(Dm))
 
     # y[crossOutAbove] = np.where(crossInToOutAbove[crossOutAbove], y[crossOutAbove], -y[crossOutAbove]+2*uby)
     # y[crossOutBelow] = np.where(crossInToOutBelow[crossOutBelow], y[crossOutBelow], -y[crossOutBelow]+2*lby)
@@ -143,16 +150,19 @@ def apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAb
     # yob = np.where(crossOutBelow)[0]
     # ycb = np.where(crossInToOutBelow)[0]
     # reflected = np.concatenate((np.setdiff1d(yoa, yca), np.setdiff1d(yob, ycb))) # Particles that are reflected as the difference between those that hit the wall and the ones that cross it
-    while np.any((y[reflected]<lby) | (y[reflected]>uby)): # Check on the positions of all the particles that should not cross
-        y[reflected[y[reflected]>uby]] = -y[reflected[y[reflected]>uby]] + 2*uby # Reflect them back
-        y[reflected[y[reflected]<lby]] = -y[reflected[y[reflected]<lby]] + 2*lby # Reflect them back
+    # while np.any((y[reflected]<lby) | (y[reflected]>uby)): # Check on the positions of all the particles that should not cross
+    #     y[reflected[y[reflected]>uby]] = -y[reflected[y[reflected]>uby]] + 2*uby # Reflect them back
+    #     y[reflected[y[reflected]<lby]] = -y[reflected[y[reflected]<lby]] + 2*lby # Reflect them back
     if matrixDiffVerification:
         x[crossOutLeft] = -x[crossOutLeft]+2*lbx
         x[crossOutRight] = -x[crossOutRight]+2*rbx
-        x[reflectedLeft] = -x[reflectedLeft]+2*cbx
-        x[reflectedRight] = -x[reflectedRight]+2*cbx
-        x[crossFromLeft] = cbx+(x[crossFromLeft]-cbx)*(np.sqrt(Dr)/np.sqrt(Dl))
-        x[crossFromRight] = cbx-(cbx-x[crossFromRight])*(np.sqrt(Dl)/np.sqrt(Dr))
+        # x[reflectedLeft] = -x[reflectedLeft]+2*cbx
+        # x[reflectedRight] = -x[reflectedRight]+2*cbx
+        # x[crossFromLeft] = cbx+(x[crossFromLeft]-cbx)*(np.sqrt(Dr)/np.sqrt(Dl))
+        # x[crossFromRight] = cbx-(cbx-x[crossFromRight])*(np.sqrt(Dl)/np.sqrt(Dr))
+        # TO BE TESTED:
+        x[crossLeftToRight] = np.where(probCrossLeftToRight<probReflectedLeft, -x[crossLeftToRight]+2*cbx, cbx+(x[crossLeftToRight]-cbx)*(np.sqrt(Dr)/np.sqrt(Dl)))
+        x[crossRightToLeft] = np.where(probCrossRightToLeft<probReflectedRight, -x[crossRightToLeft]+2*cbx, cbx-(cbx-x[crossRightToLeft])*(np.sqrt(Dl)/np.sqrt(Dr)))
     return x, y
 
 def apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist, impacts):
@@ -275,7 +285,7 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
     # Decide what happens to the particles which hit the fracture's walls: all get reflected, some get reflected some manage to escape, all get absorbed by the fracture's walls
     if reflection:
         # Update the reflected particles' positions according to an elastic reflection dynamic
-        x, y = apply_reflection(x, y, crossInToOutAbove, crossInToOutBelow,  crossOutToInAbove, crossOutToInBelow, crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, lbxOn)
+        x, y = apply_reflection(x, y, crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, lbxOn)
     else:
         # adsDist = adsorption_dist(k_ads) # Exponential distribution
         adsDist = np.random.uniform(0, 1, num_particles) # Uniform distribution
