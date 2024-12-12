@@ -15,7 +15,7 @@ plotLagrangianPdf = False
 plotBreakthroughCurveVerification = False
 plotSpatialConcentration = False
 plotDegradation = False
-FinalPositions = True
+FinalPositions = Flase
 FinalPositionVertAll = False
 FinalPositionHorAll = False
 FinalPositionVert = False
@@ -29,7 +29,7 @@ reactionVsTauAndProb = False
 compareDifferentTau = False
 compareDifferentProb = False
 
-save = True
+save = False
 
 # Load simulation results from .npz files ###################################################
 if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
@@ -1287,7 +1287,7 @@ if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption & save:
     survTimeDistCompareNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareNorm.png", format="png", bbox_inches="tight")
     compareDecayDegradationRatesNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDecayDegradationRatesNorm.png", format="png", bbox_inches="tight")
 
-if FinalPositions & save:
+# if FinalPositions & save:
     # finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
     # histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
     # finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
