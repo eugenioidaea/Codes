@@ -15,6 +15,7 @@ lbxAdsorption = False # It controls whether the particles get adsorpted or refle
 stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
 vcpOn = False # It regulates the visualisation of the vertical control plane
 matrixDiffVerification = False # It activates the matrix-diffusion verification testcase
+matrixDecay = True
 # recordVideo = False # It slows down the script
 
 if plotCharts:
@@ -106,6 +107,7 @@ probCrossInBelow = np.full(num_particles, False) # Probability of crossing the f
 probCrossLeftToRight = np.full(num_particles, False)
 probCrossRightToLeft = np.full(num_particles, False)
 particleSteps = np.zeros(num_particles)
+timeInMatrix = np.zeros(num_particles)
 impacts = 0
 numOfLivePart = []
 Time = []
@@ -177,6 +179,9 @@ def adsorption_dist(k_ads):
 
 if degradation: # Chemical degradation times
     survivalTimeDist, exp_prob = degradation_dist(num_steps, k_deg, num_particles)
+elif matrixDecay:
+    survivalTimeDist = np.ones(num_particles)*sim_time
+    radioactiveDecay, radioactive_prob = degradation_dist(num_steps, k_deg, num_particles)
 else:
     survivalTimeDist = np.ones(num_particles)*sim_time
 
@@ -186,6 +191,7 @@ start_time = time.time() # Start timing the while loop
 while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any()):
 
     liveParticle = np.array(survivalTimeDist>t) # Particles which are not degradeted
+    liveRadioactive = np.array(radioactiveDecay>timeInMatrix) # Radioactive decay in the porous matrix
 
     if stopOnCDF & (cdf>stopBTC/100):
         break
@@ -194,6 +200,8 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
     fracture = inside & liveParticle # Particles in the domain and inside the fracture and not degradeted yet
     outside = np.array(outsideAbove) | np.array(outsideBelow) # Particles outside the fracture
     matrix = outside & liveParticle # Particles in the domain and outside the fracture and not degradeted yet
+    if matrixDecay:
+        matrix = matrix & liveRadioactive
     if lbxOn:
         fracture = fracture & np.logical_not(crossOutLeft)
         matrix = matrix & np.logical_not(crossOutLeft)
@@ -204,6 +212,7 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
         right = x>cbx
     numOfLivePart.extend([fracture.sum()+matrix.sum()])
     Time.extend([t])
+    timeInMatrix[matrix] += dt
 
     # Update the position of all the particles at a given time steps according to the Langevin dynamics
     x, y = update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta)
