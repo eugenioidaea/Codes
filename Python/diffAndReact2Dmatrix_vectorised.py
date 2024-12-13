@@ -6,17 +6,18 @@ import numpy as np
 import time
 
 # Features ###################################################################
-plotCharts = True # It controls graphical features (disable when run on HPC)
-recordTrajectories = False # It uses up memory
-degradation = False # Switch for the degradation of the particles
-reflection = True # If False, the particles get adsorbed
-lbxOn = False # It controls the position of the left boundary
-lbxAdsorption = False # It controls whether the particles get adsorpted or reflected on the left boundary 
-stopOnCDF = False # Simulation is terminated when CDF reaches the stopBTC value
-vcpOn = False # It regulates the visualisation of the vertical control plane
-matrixDiffVerification = False # It activates the matrix-diffusion verification testcase
-matrixDecay = True
-# recordVideo = False # It slows down the script
+plotCharts =                True # It controls graphical features (disable when run on HPC)
+matrixDecay =               True # It activates the radioactive decay only in the porous matrix
+domainDecay =               False # Switch for the radioactive (exponential) decay of the particles in the whole domain
+partialReflection =         True # Depending on the value of the boundary conditions (Semra 1993), particles can be reflected or partially diffuse into the porou matrix
+partialAdsorption =         False # Particles' adsorption probability (ap) sets the fraction of impacts that are adsorbed on average at every time step
+matrixDiffVerification =    False # It activates the matrix-diffusion verification testcase
+lbxOn =                     False # It controls the position of the left boundary
+lbxAdsorption =             False # It controls whether the particles get adsorpted or reflected on the left boundary 
+stopOnCDF =                 False # Simulation is terminated when CDF reaches the stopBTC value
+vcpOn =                     False # It regulates the visualisation of the vertical control plane
+recordTrajectories =        False # It uses up memory
+recordVideo =               False # Only implemented in the non-vectorised script
 
 if plotCharts:
     import matplotlib.pyplot as plt
@@ -177,13 +178,12 @@ def adsorption_dist(k_ads):
     adsDist = np.random.choice(valueRange, size=num_particles, p=expProbAds)
     return adsDist
 
-if degradation: # Chemical degradation times
+survivalTimeDist = np.ones(num_particles)*sim_time
+if domainDecay:
     survivalTimeDist, exp_prob = degradation_dist(num_steps, k_deg, num_particles)
-elif matrixDecay:
+if matrixDecay:
     survivalTimeDist = np.ones(num_particles)*sim_time
     radioactiveDecay, radioactive_prob = degradation_dist(num_steps, k_deg, num_particles)
-else:
-    survivalTimeDist = np.ones(num_particles)*sim_time
 
 # Time loop ###########################################################################
 start_time = time.time() # Start timing the while loop
@@ -243,10 +243,10 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
         pdf_lbxOn[int(t/dt)] = sum(crossOutLeft)
 
     # Decide what happens to the particles which hit the fracture's walls: all get reflected, some get reflected some manage to escape, all get absorbed by the fracture's walls
-    if reflection:
+    if partialReflection:
         # Update the reflected particles' positions according to an elastic reflection dynamic
         x, y = apply_reflection(x, y, crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, lbxOn)
-    else:
+    if partialAdsorption:
         # adsDist = adsorption_dist(k_ads) # Exponential distribution
         adsDist = np.random.uniform(0, 1, num_particles) # Uniform distribution
         x, y, impacts = apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist, impacts)
@@ -311,7 +311,7 @@ else:
     yAnalytical = analytical_inf(binCenterSpace, recordSpatialConc, Df)
 
 # Compute the number of particles at a given time over the whole domain extension
-if np.logical_not(reflection):
+if partialAdsorption:
     # Average concentration in X and Y
     recordTdist = int(timeStep[-2]) # Final time step
     vInterval = np.array([xInit-0.1, xInit+0.1])
@@ -330,7 +330,7 @@ if np.logical_not(reflection):
     hDistAll, hBinsAll = np.histogram(xDistAll, np.linspace(-binsXinterval, binsXinterval, binsSpace))
 
 # Compute the number of particles at a given time within a vertical and a horizontal stripe
-if recordTrajectories and np.logical_not(reflection):
+if recordTrajectories and partialAdsorption:
     # Average concentration in X and Y
     recordTdist = int(timeStep[-2])
     vInterval = np.array([xInit-0.1, xInit+0.1])
@@ -356,7 +356,7 @@ if recordTrajectories and np.logical_not(reflection):
 print(f"Execution time: {execution_time:.6f} seconds")
 print(f"<t>: {meanTstep:.6f} s")
 print(f"sigmat: {stdTstep:.6f} s")
-if np.logical_not(reflection):
+if partialAdsorption:
     print(f"# adsorbed particles/# impacts: {num_particles/impacts}")
 if recordSpatialConc>t:
     print("WARNING! The simulation time is smaller than the specified time for recording the spatial distribution of the concentration")
@@ -365,41 +365,50 @@ elif lbxOn & (recordSpatialConc<t):
 else:
     print(f"sum(|yEmpirical-yAnalytical|)= {sum(np.abs(countsSpace-yAnalytical))}")
 
-# Save and export variables for plotting #############################################
-# Filter the variables we want to save by type
-variablesToSave = {name: value for name, value in globals().items() if isinstance(value, (np.ndarray, int, float, bool))}
-# Save all the variables to an .npz file
-# np.savez('infiniteDomain1e6.npz', **variablesToSave)
-# np.savez('semiInfiniteDomain1e3.npz', **variablesToSave)
-# np.savez('degradation_3.npz', **variablesToSave)
-# np.savez('totalAdsorption_3.npz', **variablesToSave)
-# np.savez('finalPositions1e5.npz', **variablesToSave)
-# np.savez('testSemra.npz', **variablesToSave)
-# np.savez('matrixDiffusionVerification.npz', **variablesToSave)
-# np.savez('partialAdsorption.npz', **variablesToSave)
-# if matrixDiffVerification:
-    # np.savez('Dl01Dr01Rl0Rr0.npz', **variablesToSave)
-    # np.savez('Dl01Dr001Rl0Rr0.npz', **variablesToSave)
-    # np.savez('Dl01Dr01RlPlRrPr.npz', **variablesToSave)
-    # np.savez('Dl01Dr001RlPlRrPr.npz', **variablesToSave)
-# np.savez('compareAdsD1.npz', **variablesToSave)
-# np.savez('compareAdsD01.npz', **variablesToSave)
-# np.savez('compareAdsD001.npz', **variablesToSave)
-# np.savez('compareAdsD0001.npz', **variablesToSave)
-# np.savez('compareAp2.npz', **variablesToSave)
-# np.savez('compareAp4.npz', **variablesToSave)
-# np.savez('compareAp6.npz', **variablesToSave)
-# np.savez('compareAdsP80.npz', **variablesToSave)
-# np.savez('compareAdsP60.npz', **variablesToSave)
-# np.savez('compareAdsP40.npz', **variablesToSave)
-# np.savez('compareAdsP20.npz', **variablesToSave)
-# np.savez('compareTau4.npz', **variablesToSave)
-# np.savez('compareTau40.npz', **variablesToSave)
-# np.savez('compareTau400.npz', **variablesToSave)
-# np.savez('compareTau4000.npz', **variablesToSave)
-# np.savez('compareP80.npz', **variablesToSave)
-# np.savez('compareP60.npz', **variablesToSave)
-# np.savez('compareP40.npz', **variablesToSave)
+# Save and export variables to a .npz file #############################################
+save = input("Do you want to save? Results may be overwritten. [Y][N]")
+if save.upper()=="Y":
+    # variablesToSave = {name: value for name, value in globals().items() if isinstance(value, (np.ndarray, int, float, bool))} # Filter the variables we want to save by type
+    # np.savez('infiniteDomain1e6.npz', **variablesToSave)
+    # np.savez('semiInfiniteDomain1e3.npz', **variablesToSave)
+    # np.savez('degradation_3.npz', **variablesToSave)
+    # np.savez('totalAdsorption_3.npz', **variablesToSave)
+    # np.savez('finalPositions1e5.npz', **variablesToSave)
+    # np.savez('testSemra.npz', **variablesToSave)
+    # np.savez('matrixDiffusionVerification.npz', **variablesToSave)
+    # np.savez('partialAdsorption.npz', **variablesToSave)
+    # if matrixDiffVerification:
+        # np.savez('Dl01Dr01Rl0Rr0.npz', **variablesToSave)
+        # np.savez('Dl01Dr001Rl0Rr0.npz', **variablesToSave)
+        # np.savez('Dl01Dr01RlPlRrPr.npz', **variablesToSave)
+        # np.savez('Dl01Dr001RlPlRrPr.npz', **variablesToSave)
+    # np.savez('compareAdsD1.npz', **variablesToSave)
+    # np.savez('compareAdsD01.npz', **variablesToSave)
+    # np.savez('compareAdsD001.npz', **variablesToSave)
+    # np.savez('compareAdsD0001.npz', **variablesToSave)
+    # np.savez('compareAp2.npz', **variablesToSave)
+    # np.savez('compareAp4.npz', **variablesToSave)
+    # np.savez('compareAp6.npz', **variablesToSave)
+    # np.savez('compareAdsP80.npz', **variablesToSave)
+    # np.savez('compareAdsP60.npz', **variablesToSave)
+    # np.savez('compareAdsP40.npz', **variablesToSave)
+    # np.savez('compareAdsP20.npz', **variablesToSave)
+    # np.savez('compareTau4.npz', **variablesToSave)
+    # np.savez('compareTau40.npz', **variablesToSave)
+    # np.savez('compareTau400.npz', **variablesToSave)
+    # np.savez('compareTau4000.npz', **variablesToSave)
+    # np.savez('compareP80.npz', **variablesToSave)
+    # np.savez('compareP60.npz', **variablesToSave)
+    # np.savez('compareP40.npz', **variablesToSave)
+    if variablesToSave:
+        print("\n RESULTS SAVED")
+else:
+    print("\n RESULTS NOT SAVED.")
+
+
+
+
+
 
 plt.plot(x, y, 'b*')
 plt.plot([xInit, xInit], [lby, uby], color='yellow', linewidth=2)
