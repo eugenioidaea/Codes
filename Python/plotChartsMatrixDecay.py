@@ -8,7 +8,7 @@ from sklearn.linear_model import LinearRegression
 
 # Choose what should be plotted #############################################################
 
-plotMatrixDecay = False
+plotMatrixDecay = True
 
 save = False
 
@@ -19,12 +19,14 @@ if plotMatrixDecay:
         globals()[name] = value
 
 # Plot section #########################################################################
+finalPositionMatrixDecay = plt.figure(figsize=(8, 8))
+plt.rcParams.update({'font.size': 20})
 plt.plot(x, y, 'b*')
 plt.plot([xInit, xInit], [lby, uby], color='yellow', linewidth=2)
 plt.axhline(y=uby, color='r', linestyle='--', linewidth=1)
 plt.axhline(y=lby, color='r', linestyle='--', linewidth=1)
 
-survTimeDistCompareAdsProb = plt.figure(figsize=(8, 8))
+survTimeDistMatrixDecay = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
 plt.plot(Time, numOfLivePart/num_particles, 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$k_{decay} = 0.05$')
 # plt.plot(Time80, numOfLivePartP80/num_particles, 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$p = 0.8$')
@@ -46,8 +48,7 @@ plt.tight_layout()
 # plt.rcParams.update({'font.size': 20})
 # plt.plot(logBins, numOfLivePartLog/num_particles, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$\tau_d = 40$')
 
-from sklearn.linear_model import LinearRegression
-ratesCompareProb = plt.figure(figsize=(8, 8))
+ratesMatrixDecay = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
 dLivedt = -np.diff(np.log(numOfLivePart/num_particles))/np.diff(Time)
 # dLivedtP80 = -np.diff(np.log(numOfLivePartP80/num_particles))/np.diff(Time80)
@@ -110,3 +111,8 @@ plt.text(midTimes[mask0][sliceDecay][0], kInterpLin[0], f"k={interp.intercept_:.
 # plt.text(midTimes40[mask0p40][sliceP40][0], kInterpLinP40[0], f"k={interpP40.intercept_:.2f}", fontsize=18, ha='right', va='top')
 # kInterpLog = modelLog.intercept_+modelLog.coef_*midLogTimes
 # plt.plot(midLogTimes, kInterpLog, color='red')
+
+if plotMatrixDecay & save:
+    finalPositionMatrixDecay.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositionMatrixDecay.png", format="png", bbox_inches="tight")
+    survTimeDistMatrixDecay.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistMatrixDecay.png", format="png", bbox_inches="tight")
+    ratesMatrixDecay.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/ratesMatrixDecay.png", format="png", bbox_inches="tight")
