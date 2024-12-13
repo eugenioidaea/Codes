@@ -24,20 +24,20 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_particles = int(1e3) # Number of particles in the simulation
-sim_time = int(1e3)
+num_particles = int(1e4) # Number of particles in the simulation
+sim_time = int(1e4)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.01 # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
 ap = 1 # Adsorption probability
+kDecay = 0.05 # Degradation kinetic constant
 xInit = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 vcp = 10 # Vertical Control Plane
 if lbxOn:
     lbx = 0 # Left Boundary X
-k_deg = 0.05 # Degradation kinetic constant
 if matrixDiffVerification:
     Dl = 0.01 # Diffusion left side of the domain (matrixDiffVerification only)
     Dr = 0.001 # Diffusion right side of the domain (matrixDiffVerification only)
@@ -163,9 +163,9 @@ def analytical_inf(x, t, D):
     y = np.exp(-x**2/(4*D*t))/(np.sqrt(4*np.pi*D*t))
     return y
 
-def degradation_dist(num_steps, k_deg, num_particles):
+def degradation_dist(num_steps, kDecay, num_particles):
     t_steps = np.linspace(dt, sim_time, num_steps)
-    exp_prob = k_deg*np.exp(-k_deg*t_steps)
+    exp_prob = kDecay*np.exp(-kDecay*t_steps)
     exp_prob = exp_prob/exp_prob.sum()
     survivalTimeDist = np.random.choice(t_steps, size=num_particles, p=exp_prob)
     return survivalTimeDist, exp_prob
@@ -180,10 +180,9 @@ def adsorption_dist(k_ads):
 
 survivalTimeDist = np.ones(num_particles)*sim_time
 if domainDecay:
-    survivalTimeDist, exp_prob = degradation_dist(num_steps, k_deg, num_particles)
+    survivalTimeDist, exp_prob = degradation_dist(num_steps, kDecay, num_particles)
 if matrixDecay:
-    survivalTimeDist = np.ones(num_particles)*sim_time
-    radioactiveDecay, radioactive_prob = degradation_dist(num_steps, k_deg, num_particles)
+    survivalTimeDist, exp_prob = degradation_dist(num_steps, kDecay, num_particles)
 
 # Time loop ###########################################################################
 start_time = time.time() # Start timing the while loop
@@ -191,7 +190,8 @@ start_time = time.time() # Start timing the while loop
 while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any()):
 
     liveParticle = np.array(survivalTimeDist>t) # Particles which are not degradeted
-    liveRadioactive = np.array(radioactiveDecay>timeInMatrix) # Radioactive decay in the porous matrix
+    if matrixDecay:
+        liveParticle = np.array(survivalTimeDist>timeInMatrix) # Radioactive decay in the porous matrix
 
     if stopOnCDF & (cdf>stopBTC/100):
         break
@@ -200,8 +200,6 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
     fracture = inside & liveParticle # Particles in the domain and inside the fracture and not degradeted yet
     outside = np.array(outsideAbove) | np.array(outsideBelow) # Particles outside the fracture
     matrix = outside & liveParticle # Particles in the domain and outside the fracture and not degradeted yet
-    if matrixDecay:
-        matrix = matrix & liveRadioactive
     if lbxOn:
         fracture = fracture & np.logical_not(crossOutLeft)
         matrix = matrix & np.logical_not(crossOutLeft)
@@ -212,7 +210,6 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
         right = x>cbx
     numOfLivePart.extend([fracture.sum()+matrix.sum()])
     Time.extend([t])
-    timeInMatrix[matrix] += dt
 
     # Update the position of all the particles at a given time steps according to the Langevin dynamics
     x, y = update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta)
@@ -263,6 +260,7 @@ while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any
     pdf_part[int(t/dt)] = sum(abs(x[isIn])>vcp) # Count the particle which exit the control planes at each time step
     cdf = sum(pdf_part)/num_particles # Compute the CDF and increase the time
 
+    timeInMatrix[matrix] += dt
     t += dt # Move forward time step
 
     # Record the spatial distribution of the particles at a given time, e.g.: 'recordSpatialConc'
@@ -368,7 +366,7 @@ else:
 # Save and export variables to a .npz file #############################################
 save = input("Do you want to save? Results may be overwritten. [Y][N]")
 if save.upper()=="Y":
-    # variablesToSave = {name: value for name, value in globals().items() if isinstance(value, (np.ndarray, int, float, bool))} # Filter the variables we want to save by type
+    variablesToSave = {name: value for name, value in globals().items() if isinstance(value, (np.ndarray, int, float, bool))} # Filter the variables we want to save by type
     # np.savez('infiniteDomain1e6.npz', **variablesToSave)
     # np.savez('semiInfiniteDomain1e3.npz', **variablesToSave)
     # np.savez('degradation_3.npz', **variablesToSave)
@@ -400,17 +398,8 @@ if save.upper()=="Y":
     # np.savez('compareP80.npz', **variablesToSave)
     # np.savez('compareP60.npz', **variablesToSave)
     # np.savez('compareP40.npz', **variablesToSave)
+    np.savez('matrixDecay.npz', **variablesToSave)
     if variablesToSave:
         print("\n RESULTS SAVED")
 else:
     print("\n RESULTS NOT SAVED.")
-
-
-
-
-
-
-plt.plot(x, y, 'b*')
-plt.plot([xInit, xInit], [lby, uby], color='yellow', linewidth=2)
-plt.axhline(y=uby, color='r', linestyle='--', linewidth=1)
-plt.axhline(y=lby, color='r', linestyle='--', linewidth=1)
