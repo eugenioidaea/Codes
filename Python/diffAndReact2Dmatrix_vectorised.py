@@ -31,7 +31,7 @@ num_steps = int(sim_time/dt) # Number of steps
 Df = 0.01 # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
 ap = 1 # Adsorption probability
-kDecay = 0.05 # Degradation kinetic constant
+kDecay = 0.1 # Degradation kinetic constant
 xInit = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
@@ -398,7 +398,8 @@ if save.upper()=="Y":
     # np.savez('compareP80.npz', **variablesToSave)
     # np.savez('compareP60.npz', **variablesToSave)
     # np.savez('compareP40.npz', **variablesToSave)
-    np.savez('matrixDecay.npz', **variablesToSave)
+    # np.savez('matrixDecayK005.npz', **variablesToSave)
+    np.savez('matrixDecayK010.npz', **variablesToSave)
     if variablesToSave:
         print("\n RESULTS SAVED")
 else:

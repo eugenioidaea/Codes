@@ -9,30 +9,30 @@ from sklearn.linear_model import LinearRegression
 
 # Choose what should be plotted #############################################################
 
-plotTrajectories = False
-plotEulerianPdfCdf = False
-plotLagrangianPdf = False
+plotTrajectories =                  False
+plotEulerianPdfCdf =                False
+plotLagrangianPdf =                 False
 plotBreakthroughCurveVerification = False
-plotSpatialConcentration = False
-plotDegradation = False
-FinalPositions = Flase
-FinalPositionVertAll = False
-FinalPositionHorAll = False
-FinalPositionVert = False
-FinalPositionHor = False
+plotSpatialConcentration =          False
+plotDegradation =                   False
+FinalPositions =                    False
+FinalPositionVertAll =              False
+FinalPositionHorAll =               False
+FinalPositionVert =                 False
+FinalPositionHor =                  False
 plotSruvivalTimeDistOfNonAdsorbed = False
-plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption = False
-compareAdsDiff = False
-compareAdsApertures = False
-compareAdsProb = False
-reactionVsTauAndProb = False
-compareDifferentTau = False
-compareDifferentProb = False
+survTimesAndReactionsDegAndAds =    False
+compareAdsDiff =                    False
+compareAdsApertures =               False
+compareAdsProb =                    False
+reactionVsTauAndProb =              False
+compareDifferentTau =               False
+compareDifferentProb =              False
 
-save = False
+save =                              False
 
 # Load simulation results from .npz files ###################################################
-if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
+if survTimesAndReactionsDegAndAds:
     loadAdsorption = np.load('totalAdsorption_3.npz')
     for name, value in (loadAdsorption.items()):
         globals()[name] = value
@@ -1159,7 +1159,7 @@ if reactionVsTauAndProb:
     plt.tight_layout()
 
 # Well-mixed vs diffusion-limited survival time distributions ###########################################################
-if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
+if survTimesAndReactionsDegAndAds:
     # Distribution of live particles in time
     survTimeDistCompare = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})    
@@ -1281,7 +1281,7 @@ if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption:
 
 # survTimeDistCompareNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareNorm.png", format="png", bbox_inches="tight")
 
-if plotSurvivalTimeDistAndReactionRatesForDegradationAndAdsorption & save:
+if survTimesAndReactionsDegAndAds & save:
     survTimeDistCompare.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompare.png", format="png", bbox_inches="tight")
     compareDecayDegradationRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDecayDegradationRates.png", format="png", bbox_inches="tight")
     survTimeDistCompareNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareNorm.png", format="png", bbox_inches="tight")
