@@ -7,8 +7,8 @@ import time
 
 # Features ###################################################################
 plotCharts =                True # It controls graphical features (disable when run on HPC)
-matrixDecay =               True # It activates the radioactive decay only in the porous matrix
-domainDecay =               False # Switch for the radioactive (exponential) decay of the particles in the whole domain
+matrixDecay =               False # It activates the radioactive decay only in the porous matrix
+domainDecay =               True # Switch for the radioactive (exponential) decay of the particles in the whole domain
 partialReflection =         True # Depending on the value of the boundary conditions (Semra 1993), particles can be reflected or partially diffuse into the porou matrix
 partialAdsorption =         False # Particles' adsorption probability (ap) sets the fraction of impacts that are adsorbed on average at every time step
 matrixDiffVerification =    False # It activates the matrix-diffusion verification testcase
@@ -400,7 +400,10 @@ if save.upper()=="Y":
     # np.savez('compareP40.npz', **variablesToSave)
     # np.savez('matrixDecayK01.npz', **variablesToSave)
     # np.savez('matrixDecayK001.npz', **variablesToSave)
-    np.savez('matrixDecayK0001.npz', **variablesToSave)
+    # np.savez('matrixDecayK0001.npz', **variablesToSave)
+    # np.savez('domainDecayK01.npz', **variablesToSave)
+    # np.savez('domainDecayK001.npz', **variablesToSave)
+    np.savez('domainDecayK0001.npz', **variablesToSave)
     if variablesToSave:
         print("\n RESULTS SAVED")
 else:

@@ -5,6 +5,7 @@ if not debug:
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
+from scipy.interpolate import CubicSpline
 
 # Choose what should be plotted #############################################################
 
@@ -38,6 +39,24 @@ if plotMatrixDecay:
     xK0001 = x.copy()
     yK0001 = y.copy()
 
+    loadDomainDecayK01 = np.load('domainDecayK01.npz')
+    for name, value in (loadDomainDecayK01.items()):
+        globals()[name] = value
+    numOfLivePartDomainK01 = numOfLivePart.copy()
+    timeDomainK01 = Time.copy()
+
+    loadDomainDecayK001 = np.load('domainDecayK001.npz')
+    for name, value in (loadDomainDecayK001.items()):
+        globals()[name] = value
+    numOfLivePartDomainK001 = numOfLivePart.copy()
+    timeDomainK001 = Time.copy()
+
+    loadDomainDecayK0001 = np.load('domainDecayK0001.npz')
+    for name, value in (loadDomainDecayK0001.items()):
+        globals()[name] = value
+    numOfLivePartDomainK0001 = numOfLivePart.copy()
+    timeDomainK0001 = Time.copy()
+
 # Plot section #########################################################################
 finalPositionMatrixDecay = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
@@ -50,10 +69,12 @@ plt.axhline(y=lby, color='r', linestyle='--', linewidth=1)
 
 survTimeDistMatrixDecay = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
-plt.plot(timeK01, numOfLivePartK01/num_particles, 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$k_{decay} = 0.1$')
-plt.plot(timeK001, numOfLivePartK001/num_particles, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$k_{decay} = 0.01$')
-plt.plot(timeK0001, numOfLivePartK0001/num_particles, 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$k_{decay} = 0.001$')
-# plt.plot(Time40, numOfLivePartP40/num_particles, 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$p = 0.4$')
+plt.plot(timeK01, numOfLivePartK01/num_particles, 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$k_{matrixDecay} = 0.1$')
+plt.plot(timeK001, numOfLivePartK001/num_particles, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$k_{matrixDecay} = 0.01$')
+plt.plot(timeK0001, numOfLivePartK0001/num_particles, 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$k_{matrixDecay} = 0.001$')
+plt.plot(timeDomainK01, numOfLivePartDomainK01/num_particles, color='blue', linestyle='-', label=r'$k_{domainDecay}=0.1$')
+plt.plot(timeDomainK001, numOfLivePartDomainK001/num_particles, color='red', linestyle='-', label=r'$k_{domainDecay}=0.01$')
+plt.plot(timeDomainK0001, numOfLivePartDomainK0001/num_particles, color='green', linestyle='-', label=r'$k_{domainDecay}=0.001$')
 plt.title("Survival time distributions")
 plt.xscale('log')
 plt.yscale('log')
@@ -79,9 +100,9 @@ midTimesK001 = ((timeK001[::derStep])[:-1] + (timeK001[::derStep])[1:]) / 2
 dLivedtK001 = -np.diff(np.log(numOfLivePartK001[::derStep]))/np.diff(timeK001[::derStep])
 midTimesK0001 = ((timeK0001[::derStep])[:-1] + (timeK0001[::derStep])[1:]) / 2
 dLivedtK0001 = -np.diff(np.log(numOfLivePartK0001[::derStep]))/np.diff(timeK0001[::derStep])
-plt.plot(midTimesK01, dLivedtK01, 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$k_{decay}=0.1$')
-plt.plot(midTimesK001, dLivedtK001, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$k_{decay}=0.01$')
-plt.plot(midTimesK0001, dLivedtK0001, 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$k_{decay}=0.001$')
+plt.plot(midTimesK01, dLivedtK01, 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$k_{matrixDecay}=0.1$')
+plt.plot(midTimesK001, dLivedtK001, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$k_{matrixDecay}=0.01$')
+plt.plot(midTimesK0001, dLivedtK0001, 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$k_{matrixDecay}=0.001$')
 plt.title("Reaction rates")
 plt.xlabel(r'$t$')
 plt.ylabel('k(t)')
@@ -113,9 +134,9 @@ plt.text(midTimesK0001[sliceDecayK0001][0], kInterpLinK0001[0], f"k={interpK0001
 
 survTimeDistSemilogMatrixdecay = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
-plt.plot(timeK01, numOfLivePartK01/num_particles, 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$k_{decay} = 0.1$')
-plt.plot(timeK001, numOfLivePartK001/num_particles, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$k_{decay} = 0.01$')
-plt.plot(timeK0001, numOfLivePartK0001/num_particles, 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$k_{decay} = 0.001$')
+plt.plot(timeK01, numOfLivePartK01/num_particles, 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$k_{matrixDecay} = 0.1$')
+plt.plot(timeK001, numOfLivePartK001/num_particles, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$k_{matrixDecay} = 0.01$')
+plt.plot(timeK0001, numOfLivePartK0001/num_particles, 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$k_{matrixDecay} = 0.001$')
 plt.title("Survival time distributions")
 plt.yscale('log')
 plt.xlabel(r'$t$')
@@ -143,8 +164,59 @@ kInterpSemilogK0001 = np.exp(interpSemilogK0001.intercept_+interpSemilogK0001.co
 plt.plot(timeReshapedSemilogK0001, kInterpSemilogK0001, color='black', linewidth='2')
 plt.text(timeReshapedSemilogK0001[-1], kInterpSemilogK0001[-1], f"k={interpSemilogK0001.coef_[0]:.5f}", fontsize=18, ha='left', va='top')
 
+spStep = 10
+splineK01 = CubicSpline(timeK01, numOfLivePartK01/num_particles)
+xSplineK01 = np.linspace(timeK01.min(), timeK01[-100], spStep)
+ySplineK01 = splineK01(xSplineK01)
+plt.plot(xSplineK01, ySplineK01, color='yellow')
+splineK001 = CubicSpline(timeK001, numOfLivePartK001/num_particles)
+xSplineK001 = np.linspace(timeK001.min(), timeK001[-100], spStep)
+ySplineK001 = splineK001(xSplineK001)
+plt.plot(xSplineK001, ySplineK001, color='yellow')
+splineK0001 = CubicSpline(timeK0001, numOfLivePartK0001/num_particles)
+xSplineK0001 = np.linspace(timeK0001.min(), timeK0001[-100], spStep)
+ySplineK0001 = splineK0001(xSplineK0001)
+plt.plot(xSplineK0001, ySplineK0001, color='yellow')
+
+derStep = 1
+ratesMatrixDecaySpline = plt.figure(figsize=(8, 8))
+plt.rcParams.update({'font.size': 20})
+midTimesK01 = ((xSplineK01[::derStep])[:-1] + (xSplineK01[::derStep])[1:]) / 2
+dLivedtK01 = -np.diff(np.log(ySplineK01[::derStep]))/np.diff(xSplineK01[::derStep])
+midTimesK001 = ((xSplineK001[::derStep])[:-1] + (xSplineK001[::derStep])[1:]) / 2
+dLivedtK001 = -np.diff(np.log(ySplineK001[::derStep]))/np.diff(xSplineK001[::derStep])
+midTimesK0001 = ((xSplineK0001[::derStep])[:-1] + (xSplineK0001[::derStep])[1:]) / 2
+dLivedtK0001 = -np.diff(np.log(ySplineK0001[::derStep]))/np.diff(xSplineK0001[::derStep])
+plt.plot(midTimesK01, dLivedtK01, '-', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$k_{matrixDecay}=0.1$')
+plt.plot(midTimesK001, dLivedtK001, '-', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$k_{matrixDecay}=0.01$')
+plt.plot(midTimesK0001, dLivedtK0001, '-', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$k_{matrixDecay}=0.001$')
+plt.title("Reaction rates")
+plt.xlabel(r'$t$')
+plt.ylabel('k(t)')
+# plt.xscale('log')
+# plt.yscale('log')
+# plt.xlim(0, 20)
+# plt.ylim(0, 0.1)
+plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
+plt.legend(loc='best')
+plt.tight_layout()
+
+effVsDecayRates = plt.figure(figsize=(8, 8))
+plt.rcParams.update({'font.size': 20})
+plt.plot([0.1], interpSemilogK01.coef_[0], 'o', markerfacecolor='blue', markeredgecolor='blue', markersize='10')
+plt.plot([0.01], interpSemilogK001.coef_[0], 'o', markerfacecolor='red', markeredgecolor='red', markersize='10')
+plt.plot([0.001], interpSemilogK0001.coef_[0], 'o', markerfacecolor='green', markeredgecolor='green', markersize='10')
+plt.title("Effective rates vs radioactive decays")
+plt.xlabel(r'$k_{matrixDecay}$')
+plt.ylabel(r'$k_{eff}$')
+plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
+plt.legend(loc='best')
+plt.tight_layout()
+
 if plotMatrixDecay & save:
     finalPositionMatrixDecay.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositionMatrixDecay.png", format="png", bbox_inches="tight")
     survTimeDistMatrixDecay.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistMatrixDecay.png", format="png", bbox_inches="tight")
     ratesMatrixDecay.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/ratesMatrixDecay.png", format="png", bbox_inches="tight")
     survTimeDistSemilogMatrixdecay.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistSemilogMatrixdecay.png", format="png", bbox_inches="tight")
+    ratesMatrixDecaySpline.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/ratesMatrixDecaySpline.png", format="png", bbox_inches="tight")
+    effVsDecayRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/effVsDecayRates.png", format="png", bbox_inches="tight")
