@@ -24,14 +24,14 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_particles = int(1e4) # Number of particles in the simulation
+num_particles = int(1e6) # Number of particles in the simulation
 sim_time = int(1e4)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.01 # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
 ap = 1 # Adsorption probability
-kDecay = 0.1 # Degradation kinetic constant
+kDecay = 0.001 # Degradation kinetic constant
 xInit = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
@@ -398,8 +398,9 @@ if save.upper()=="Y":
     # np.savez('compareP80.npz', **variablesToSave)
     # np.savez('compareP60.npz', **variablesToSave)
     # np.savez('compareP40.npz', **variablesToSave)
-    # np.savez('matrixDecayK005.npz', **variablesToSave)
-    np.savez('matrixDecayK010.npz', **variablesToSave)
+    # np.savez('matrixDecayK01.npz', **variablesToSave)
+    # np.savez('matrixDecayK001.npz', **variablesToSave)
+    np.savez('matrixDecayK0001.npz', **variablesToSave)
     if variablesToSave:
         print("\n RESULTS SAVED")
 else:
