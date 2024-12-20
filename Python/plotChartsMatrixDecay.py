@@ -11,7 +11,7 @@ from scipy.interpolate import CubicSpline
 
 plotMatrixDecay = True
 
-save = True
+save = False
 
 # Load simulation results from .npz files ###################################################
 if plotMatrixDecay:
@@ -155,26 +155,26 @@ interpSemilogK01 = LinearRegression().fit(timeReshapedSemilogK01, np.log(numOfLi
 interpSemilogK001 = LinearRegression().fit(timeReshapedSemilogK001, np.log(numOfLivePartK001[sliceSemilogK001]/num_particles))
 interpSemilogK0001 = LinearRegression().fit(timeReshapedSemilogK0001, np.log(numOfLivePartK0001[sliceSemilogK0001]/num_particles))
 kInterpSemilogK01 = np.exp(interpSemilogK01.intercept_+interpSemilogK01.coef_*timeReshapedSemilogK01)
-plt.plot(timeReshapedSemilogK01, kInterpSemilogK01, color='black', linewidth='2')
+plt.plot(timeReshapedSemilogK01, kInterpSemilogK01, color='black', linewidth='4')
 plt.text(timeReshapedSemilogK01[-1], kInterpSemilogK01[-1], f"k={interpSemilogK01.coef_[0]:.5f}", fontsize=18, ha='left', va='top')
 kInterpSemilogK001 = np.exp(interpSemilogK001.intercept_+interpSemilogK001.coef_*timeReshapedSemilogK001)
-plt.plot(timeReshapedSemilogK001, kInterpSemilogK001, color='black', linewidth='2')
+plt.plot(timeReshapedSemilogK001, kInterpSemilogK001, color='black', linewidth='4')
 plt.text(timeReshapedSemilogK001[-1], kInterpSemilogK001[-1], f"k={interpSemilogK001.coef_[0]:.5f}", fontsize=18, ha='left', va='top')
 kInterpSemilogK0001 = np.exp(interpSemilogK0001.intercept_+interpSemilogK0001.coef_*timeReshapedSemilogK0001)
-plt.plot(timeReshapedSemilogK0001, kInterpSemilogK0001, color='black', linewidth='2')
+plt.plot(timeReshapedSemilogK0001, kInterpSemilogK0001, color='black', linewidth='4')
 plt.text(timeReshapedSemilogK0001[-1], kInterpSemilogK0001[-1], f"k={interpSemilogK0001.coef_[0]:.5f}", fontsize=18, ha='left', va='top')
 
 spStep = 10
 splineK01 = CubicSpline(timeK01, numOfLivePartK01/num_particles)
-xSplineK01 = np.linspace(timeK01.min(), timeK01[-100], spStep)
+xSplineK01 = np.linspace(timeK01.min(), timeK01[-2], spStep)
 ySplineK01 = splineK01(xSplineK01)
 plt.plot(xSplineK01, ySplineK01, color='yellow')
 splineK001 = CubicSpline(timeK001, numOfLivePartK001/num_particles)
-xSplineK001 = np.linspace(timeK001.min(), timeK001[-100], spStep)
+xSplineK001 = np.linspace(timeK001.min(), timeK001[-2], spStep)
 ySplineK001 = splineK001(xSplineK001)
 plt.plot(xSplineK001, ySplineK001, color='yellow')
 splineK0001 = CubicSpline(timeK0001, numOfLivePartK0001/num_particles)
-xSplineK0001 = np.linspace(timeK0001.min(), timeK0001[-100], spStep)
+xSplineK0001 = np.linspace(timeK0001.min(), timeK0001[-2], spStep)
 ySplineK0001 = splineK0001(xSplineK0001)
 plt.plot(xSplineK0001, ySplineK0001, color='yellow')
 
@@ -187,6 +187,50 @@ midTimesK001 = ((xSplineK001[::derStep])[:-1] + (xSplineK001[::derStep])[1:]) / 
 dLivedtK001 = -np.diff(np.log(ySplineK001[::derStep]))/np.diff(xSplineK001[::derStep])
 midTimesK0001 = ((xSplineK0001[::derStep])[:-1] + (xSplineK0001[::derStep])[1:]) / 2
 dLivedtK0001 = -np.diff(np.log(ySplineK0001[::derStep]))/np.diff(xSplineK0001[::derStep])
+plt.plot(midTimesK01, dLivedtK01, '-', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$k_{matrixDecay}=0.1$')
+plt.plot(midTimesK001, dLivedtK001, '-', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$k_{matrixDecay}=0.01$')
+plt.plot(midTimesK0001, dLivedtK0001, '-', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$k_{matrixDecay}=0.001$')
+plt.title("Reaction rates")
+plt.xlabel(r'$t$')
+plt.ylabel('k(t)')
+# plt.xscale('log')
+# plt.yscale('log')
+# plt.xlim(0, 20)
+# plt.ylim(0, 0.1)
+plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
+plt.legend(loc='best')
+plt.tight_layout()
+
+logBins = 50
+ratesMatrixDecayLog = plt.figure(figsize=(8, 8))
+plt.rcParams.update({'font.size': 20})
+timeLogSpacedK01 = np.logspace(timeK01.min(), np.log10(timeK01.max()), logBins)-1 # Logarithmically spaced bins
+timeLogSpacedK001 = np.logspace(timeK001.min(), np.log10(timeK001.max()), logBins)-1 # Logarithmically spaced bins
+timeLogSpacedK0001 = np.logspace(timeK0001.min(), np.log10(timeK0001.max()), logBins)-1 # Logarithmically spaced bins
+timeIndexK01 = np.array([np.sum(timeK01[i]>timeLogSpacedK01) for i in range(len(timeK01))])
+timeIndexK001 = np.array([np.sum(timeK001[i]>timeLogSpacedK001) for i in range(len(timeK001))])
+timeIndexK0001 = np.array([np.sum(timeK0001[i]>timeLogSpacedK0001) for i in range(len(timeK0001))])
+# timeIndex = np.digitize(timeK01, timeLogSpaced)
+timeLogMeanK01 = np.array([timeK01[timeIndexK01 == i].mean() for i in range(len(timeLogSpacedK01))])
+timeLogMeanK001 = np.array([timeK001[timeIndexK001 == i].mean() for i in range(len(timeLogSpacedK001))])
+timeLogMeanK0001 = np.array([timeK0001[timeIndexK0001 == i].mean() for i in range(len(timeLogSpacedK0001))])
+numPartLogMeanK01 = np.array([numOfLivePartK01[timeIndexK01 == i].mean() for i in range(len(timeLogSpacedK01))])
+numPartLogMeanK001 = np.array([numOfLivePartK001[timeIndexK001 == i].mean() for i in range(len(timeLogSpacedK001))])
+numPartLogMeanK0001 = np.array([numOfLivePartK0001[timeIndexK0001 == i].mean() for i in range(len(timeLogSpacedK0001))])
+plt.plot(timeLogMeanK01, numPartLogMeanK01/num_particles, 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$k_{matrixDecay} = 0.1$')
+plt.plot(timeLogMeanK001, numPartLogMeanK001/num_particles, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$k_{matrixDecay} = 0.01$')
+plt.plot(timeLogMeanK0001, numPartLogMeanK0001/num_particles, 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$k_{matrixDecay} = 0.001$')
+plt.yscale('log')
+
+derStep = 1
+ratesMatrixDecayLog = plt.figure(figsize=(8, 8))
+plt.rcParams.update({'font.size': 20})
+midTimesK01 = ((timeLogMeanK01[::derStep])[:-1] + (timeLogMeanK01[::derStep])[1:]) / 2
+dLivedtK01 = -np.diff(np.log(numPartLogMeanK01[::derStep]))/np.diff(timeLogMeanK01[::derStep])
+midTimesK001 = ((timeLogMeanK001[::derStep])[:-1] + (timeLogMeanK001[::derStep])[1:]) / 2
+dLivedtK001 = -np.diff(np.log(numPartLogMeanK001[::derStep]))/np.diff(timeLogMeanK001[::derStep])
+midTimesK0001 = ((timeLogMeanK0001[::derStep])[:-1] + (timeLogMeanK0001[::derStep])[1:]) / 2
+dLivedtK0001 = -np.diff(np.log(numPartLogMeanK0001[::derStep]))/np.diff(timeLogMeanK0001[::derStep])
 plt.plot(midTimesK01, dLivedtK01, '-', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$k_{matrixDecay}=0.1$')
 plt.plot(midTimesK001, dLivedtK001, '-', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$k_{matrixDecay}=0.01$')
 plt.plot(midTimesK0001, dLivedtK0001, '-', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$k_{matrixDecay}=0.001$')
