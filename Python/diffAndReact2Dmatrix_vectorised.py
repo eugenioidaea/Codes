@@ -403,7 +403,7 @@ if save.upper()=="Y":
     # np.savez('matrixDecayK0001.npz', **variablesToSave)
     # np.savez('domainDecayK01.npz', **variablesToSave)
     # np.savez('domainDecayK001.npz', **variablesToSave)
-    np.savez('domainDecayK0001.npz', **variablesToSave)
+    # np.savez('domainDecayK0001.npz', **variablesToSave)
     if variablesToSave:
         print("\n RESULTS SAVED")
 else:

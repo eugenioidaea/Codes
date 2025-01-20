@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 op.visualization.set_mpl_style()
 
-pn = op.network.Cubic(shape=[4, 4, 4], spacing=1e-5)
+pn = op.network.Cubic(shape=[3, 4, 5], spacing=1e-3)
 ax = op.visualization.plot_coordinates(pn)
 ax = op.visualization.plot_connections(pn, ax=ax)
 
@@ -11,7 +11,7 @@ pn = op.network.Cubic(shape=[8, 4, 2], spacing=[10e-5, 5e-5, 4e-5])
 ax = op.visualization.plot_coordinates(pn)
 ax = op.visualization.plot_connections(pn, ax=ax)
 
-pn = op.network.Cubic(shape=[4, 4, 4], connectivity=26)
+pn = op.network.Cubic(shape=[4, 4, 4], connectivity=14)
 ax = op.visualization.plot_coordinates(pn)
 ax = op.visualization.plot_connections(pn, ax=ax)
 
