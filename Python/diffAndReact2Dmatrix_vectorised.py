@@ -7,8 +7,8 @@ import time
 
 # Features ###################################################################
 plotCharts =                True # It controls graphical features (disable when run on HPC)
-matrixDecay =               False # It activates the radioactive decay only in the porous matrix
-domainDecay =               True # Switch for the radioactive (exponential) decay of the particles in the whole domain
+matrixDecay =               True # It activates the radioactive decay only in the porous matrix
+domainDecay =               False # Switch for the radioactive (exponential) decay of the particles in the whole domain
 partialReflection =         True # Depending on the value of the boundary conditions (Semra 1993), particles can be reflected or partially diffuse into the porou matrix
 partialAdsorption =         False # Particles' adsorption probability (ap) sets the fraction of impacts that are adsorbed on average at every time step
 matrixDiffVerification =    False # It activates the matrix-diffusion verification testcase
@@ -31,7 +31,7 @@ num_steps = int(sim_time/dt) # Number of steps
 Df = 0.01 # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
 ap = 1 # Adsorption probability
-kDecay = 0.001 # Degradation kinetic constant
+kDecay = 0.07 # Degradation kinetic constant
 xInit = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
@@ -400,6 +400,8 @@ if save.upper()=="Y":
     # np.savez('compareP40.npz', **variablesToSave)
     # np.savez('matrixDecayK01.npz', **variablesToSave)
     # np.savez('matrixDecayK001.npz', **variablesToSave)
+    # np.savez('matrixDecayK004.npz', **variablesToSave)
+    # np.savez('matrixDecayK007.npz', **variablesToSave)
     # np.savez('matrixDecayK0001.npz', **variablesToSave)
     # np.savez('domainDecayK01.npz', **variablesToSave)
     # np.savez('domainDecayK001.npz', **variablesToSave)
