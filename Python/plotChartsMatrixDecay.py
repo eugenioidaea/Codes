@@ -9,7 +9,8 @@ from scipy.interpolate import CubicSpline
 
 # Choose what should be plotted #############################################################
 
-plotMatrixDecay = True
+plotMatrixDecay = False # Radioactive decay in the matrix for different values of radioactive decay (kDecay)
+plotMatrixDecayDm = True # Radioactive decay in the matrix for different values of molecular diffusion (Dm)
 
 save = False
 
@@ -72,6 +73,31 @@ if plotMatrixDecay:
         globals()[name] = value
     numOfLivePartDomainK0001 = numOfLivePart.copy()
     timeDomainK0001 = Time.copy()
+
+# Load simulation results from .npz files for different Dm #############################
+if plotMatrixDecayDm:
+    loadMatrixDecayDm00001 = np.load('compareDm/Dm1e-4matrixK1e-2.npz')
+    for name, value in (loadMatrixDecayDm00001.items()):
+        globals()[name] = value
+    numOfLivePartDm00001 = numOfLivePart.copy()
+    timeDm00001 = Time.copy()
+    xDm00001 = x.copy()
+    yDm00001 = y.copy()
+
+    loadMatrixDecayDm000001 = np.load('compareDm/Dm1e-5matrixK1e-2.npz')
+    for name, value in (loadMatrixDecayDm000001.items()):
+        globals()[name] = value
+    numOfLivePartDm000001 = numOfLivePart.copy()
+    timeDm000001 = Time.copy()
+    xDm000001 = x.copy()
+    yDm000001 = y.copy()
+
+    timeReshapedSemilogDm00001 = (timeDm00001[slice(500, 1000)]).reshape(-1, 1)
+    interpSemilogDm00001 = LinearRegression().fit(timeReshapedSemilogDm00001, np.log(numOfLivePartDm00001[slice(500, 1000)]/num_particles))
+    timeReshapedSemilogDm000001 = (timeDm000001[slice(500, 1000)]).reshape(-1, 1)
+    interpSemilogDm000001 = LinearRegression().fit(timeReshapedSemilogDm000001, np.log(numOfLivePartDm000001[slice(500, 1000)]/num_particles))
+
+    print(interpSemilogK007.coef_[0])
 
 # Plot section #########################################################################
 finalPositionMatrixDecay = plt.figure(figsize=(8, 8))
