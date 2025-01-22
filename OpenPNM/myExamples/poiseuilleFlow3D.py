@@ -9,9 +9,9 @@ np.set_printoptions(precision=5)
 pn = op.network.Cubic(shape=[15, 15, 15], spacing=1e-2)
 # pn.add_model_collection(op.models.collections.geometry.spheres_and_cylinders)
 # pn.regenerate_models()
-Lthroat = [1e-2]*9450 # How to get the number of throats and pores??
-Dthroat = [1e-4]*9450
-Dpore = [1e-3]*3375
+Lthroat = [1e-2]*pn.Nt
+Dthroat = [1e-4]*pn.Nt
+Dpore = [1e-3]*pn.Np
 
 pn['throat.length'] = Lthroat
 pn['pore.diameter'] = Dpore
