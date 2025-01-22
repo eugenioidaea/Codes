@@ -29,7 +29,7 @@ sim_time = int(1e4)
 dt = 1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.01 # Diffusion for particles moving in the fracture
-Dm = 0.00001  # Diffusion for particles moving in the porous matrix
+Dm = 0.01  # Diffusion for particles moving in the porous matrix
 ap = 1 # Adsorption probability
 kDecay = 0.01 # Degradation kinetic constant
 xInit = 0 # Initial horizontal position of the particles
@@ -408,8 +408,9 @@ if save.upper()=="Y":
     # np.savez('domainDecayK01.npz', **variablesToSave)
     # np.savez('domainDecayK001.npz', **variablesToSave)
     # np.savez('domainDecayK0001.npz', **variablesToSave)
+    np.savez('compareDm/Dm1e-2matrixK1e-2.npz', **variablesToSave)
     # np.savez('compareDm/Dm1e-4matrixK1e-2.npz', **variablesToSave)
-    np.savez('compareDm/Dm1e-5matrixK1e-2.npz', **variablesToSave)
+    # np.savez('compareDm/Dm1e-5matrixK1e-2.npz', **variablesToSave)
     if variablesToSave:
         print("\n RESULTS SAVED")
 else:
