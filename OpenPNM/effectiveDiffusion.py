@@ -44,14 +44,14 @@ liquid['throat.diffusive_conductance'] = tld # In this test, the molecular diffu
 
 fd = op.algorithms.FickianDiffusion(network=pn, phase=liquid)
 
-Cl = 1
+Cl = 1e-3
 Cr = 0
 fd.set_value_BC(pores=pn.pores('left'), values=Cl)
 fd.set_value_BC(pores=pn.pores('right'), values=Cr)
 
 fd.run()
 
-Q = sf.rate(throats=pn.pores('right'), mode='group')[0]
+Q = fd.rate(throats=pn.pores('right'), mode='group')[0]
 kEff = Q/(Cl-Cr)
 A = (pn['throat.diameter'][pn.pores('right')]**2*np.pi/4).sum()
 dEff = kEff/A # *L ??
@@ -70,7 +70,10 @@ poreNetwork = op.visualization.plot_coordinates(pn)
 poreNetwork = op.visualization.plot_connections(pn, size_by=liquid['throat.diffusive_conductance'], ax=poreNetwork)
 
 lognormDist = plt.figure(figsize=(8, 8))
-lognormDist = plt.hist(tld, edgecolor='k')
+plt.hist(tld, edgecolor='k')
+plt.title('Distribution of throats diffusivities')
+plt.xlabel('Diffusive flux [m3/s]')
+plt.ylabel('Number of throats [-]')
 
 pc = fd['pore.concentration']
 tc = fd.interpolate_data(propname='throat.concentration')
