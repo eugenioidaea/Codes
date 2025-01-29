@@ -5,36 +5,36 @@ import scipy.stats as spst
 op.visualization.set_mpl_style()
 np.set_printoptions(precision=5)
 
-
-throatLength = 1e-3
-throatDiameter = throatLength/10
+spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
+throatDiameter = spacing/10
 poreDiameter = throatDiameter*2
-md = 1e-3 # Molecular Diffusion
+Dmol = 1e-3 # Molecular Diffusion
 
 # Pore network #####################################################
-shape = [10, 10, 1]
-net = op.network.Cubic(shape=shape, spacing=throatLength)
+shape = [2, 1, 1]
+net = op.network.Cubic(shape=shape, spacing=spacing) # Shape of the elementary cell of the network: cubic
+# geo = op.models.collections.geometry.spheres_and_cylinders # Shape of the pore and throats
+# net.add_model_collection(geo, domain='all') # Assign the shape of pores and throats to the network
+net.regenerate_models() # Compute geometric properties such as pore volume
 
-tl = [throatLength]*net.Nt
-td = [throatDiameter]*net.Nt
-pd = [poreDiameter]*net.Np
+net['throat.length'] = spacing
+net['throat.diameter'] = throatDiameter
+net['pore.diameter'] = poreDiameter
+net['pore.volume'] = 4/3*np.pi*poreDiameter**3/8
 Athroat = throatDiameter**2*np.pi/4
-
-net['throat.length'] = tl
-net['throat.diameter'] = td
-net['pore.diameter'] = pd
+net['throat.volume'] = Athroat*spacing
 
 print(net)
 
 liquid = op.phase.Phase(network=net)
 
 # Uniform diffusive conductance #################################################
-# unifCond = np.full(net.Nt, md*Athroat/throatLength)
-# liquid['throat.diffusive_conductance'] = unifCond
+unifCond = np.full(net.Nt, Dmol*Athroat/spacing)
+liquid['throat.diffusive_conductance'] = unifCond
 
 # Lognormal diffusive conductance ###############################################
-cld = spst.lognorm.rvs(0.5, loc=0, scale=md, size=net.Nt) # Conductance lognormal distribution
-liquid['throat.diffusive_conductance'] = cld
+# cld = spst.lognorm.rvs(0.5, loc=0, scale=Dmol, size=net.Nt) # Conductance lognormal distribution
+# liquid['throat.diffusive_conductance'] = cld
 
 fd = op.algorithms.FickianDiffusion(network=net, phase=liquid)
 
@@ -49,12 +49,21 @@ fd.run()
 rate_inlet = fd.rate(pores=inlet)[0]
 print(f'Flow rate: {rate_inlet:.5e} m3/s')
 
-Adomain = (shape[1] * shape[2])*(throatLength**2)
-Ldomain = shape[0]*throatLength
-D_eff_fracture = rate_inlet * throatLength / (Athroat * (C_in - C_out))
-D_eff_domain = rate_inlet * Ldomain / (Adomain * (C_in - C_out))
-print(f'Effective diffusivity (fracture dimensions): {D_eff_fracture:.5e} m2/s')
-print(f'Effective diffusivity (domain dimensions): {D_eff_domain:.5e} m2/s')
+Adomain = throatDiameter**2
+Ldomain = (shape[0]-1)*spacing
+D_eff_fracture = rate_inlet * Ldomain / (Athroat * (C_in - C_out))
+D_eff = rate_inlet * Ldomain / (Adomain * (C_in - C_out))
+print(f'Effective diffusivity (throat dimensions) [m2/s]', "{0:.6E}".format(D_eff_fracture))
+print(f'Effective diffusivity (domain dimensions) [m2/s]', "{0:.6E}".format(D_eff))
+
+V_p = net['pore.volume'].sum()
+V_t = net['throat.volume'].sum()
+V_bulk = np.prod(shape)*(spacing**3)
+e = (V_p + V_t) / V_bulk
+print('The porosity is: ', "{0:.6E}".format(e))
+
+tau = e * Dmol / D_eff
+print('The tortuosity is:', "{0:.6E}".format(tau))
 
 # Plot #############################################################
 poreNetwork = plt.figure(figsize=(8, 8))
