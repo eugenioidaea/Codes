@@ -9,10 +9,10 @@ from scipy.interpolate import CubicSpline
 
 # Choose what should be plotted #############################################################
 
-plotMatrixDecay = False # Radioactive decay in the matrix for different values of radioactive decay (kDecay)
+plotMatrixDecay = True # Radioactive decay in the matrix for different values of radioactive decay (kDecay)
 plotMatrixDecayDm = True # Radioactive decay in the matrix for different values of molecular diffusion (Dm)
 
-save = True
+save = False
 
 # Load simulation results from .npz files ###################################################
 if plotMatrixDecay:
@@ -291,7 +291,10 @@ if plotMatrixDecay:
     plt.title("Effective rates vs radioactive decays")
     plt.xlabel(r'$k_{matrixDecay}$')
     plt.ylabel(r'$k_{eff}$')
-    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
+    plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+    plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+    plt.xscale('log')
+    plt.yscale('log')
     plt.legend(loc='best')
     plt.tight_layout()
 
@@ -307,7 +310,7 @@ if plotMatrixDecay:
 
     # Load simulation results from .npz files for different Dm #############################
 if plotMatrixDecayDm:
-    loadMatrixDecayDm001 = np.load('compareDm/Dm1e-2matrixK1e-2.npz')
+    loadMatrixDecayDm001 = np.load('Dm1e-2matrixK1e-2.npz')
     for name, value in (loadMatrixDecayDm001.items()):
         globals()[name] = value
     numOfLivePartDm001 = numOfLivePart.copy()
@@ -315,7 +318,7 @@ if plotMatrixDecayDm:
     dm001 = Dm.copy()
     df001 = Df.copy()
 
-    loadMatrixDecayDm0001 = np.load('compareDm/Dm1e-3matrixK1e-2.npz')
+    loadMatrixDecayDm0001 = np.load('Dm1e-3matrixK1e-2.npz')
     for name, value in (loadMatrixDecayDm0001.items()):
         globals()[name] = value
     numOfLivePartDm0001 = numOfLivePart.copy()
@@ -323,7 +326,7 @@ if plotMatrixDecayDm:
     dm0001 = Dm.copy()
     df0001 = Df.copy()
 
-    loadMatrixDecayDm00001 = np.load('compareDm/Dm1e-4matrixK1e-2.npz')
+    loadMatrixDecayDm00001 = np.load('Dm1e-4matrixK1e-2.npz')
     for name, value in (loadMatrixDecayDm00001.items()):
         globals()[name] = value
     numOfLivePartDm00001 = numOfLivePart.copy()
@@ -331,7 +334,7 @@ if plotMatrixDecayDm:
     dm00001 = Dm.copy()
     df00001 = Df.copy()
 
-    loadMatrixDecayDm000001 = np.load('compareDm/Dm1e-5matrixK1e-2.npz')
+    loadMatrixDecayDm000001 = np.load('Dm1e-5matrixK1e-2.npz')
     for name, value in (loadMatrixDecayDm000001.items()):
         globals()[name] = value
     numOfLivePartDm000001 = numOfLivePart.copy()
@@ -359,6 +362,8 @@ if plotMatrixDecayDm:
     plt.ylabel(r'$k_{eff}$')
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
     plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+    plt.xscale('log')
+    plt.yscale('log')
     plt.legend(loc='best')
     plt.tight_layout()
 
