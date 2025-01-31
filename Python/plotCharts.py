@@ -22,7 +22,7 @@ FinalPositionVert =                 False
 FinalPositionHor =                  False
 plotSruvivalTimeDistOfNonAdsorbed = False
 survTimesAndReactionsDegAndAds =    False
-compareAdsDiff =                    False
+compareAdsDiff =                    True
 compareAdsApertures =               False
 compareAdsProb =                    False
 reactionVsTauAndProb =              False
@@ -430,10 +430,10 @@ if compareAdsDiff:
     # Distribution of live particles in time
     survTimeDistCompareDiff = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
-    plt.plot(timeLogSpaced, liveParticlesInTimeD1, label=r'$D_f = 1$', color='b', linestyle='-')
-    plt.plot(timeLogSpaced, liveParticlesInTimeD01, label=r'$D_f = 0.1$', color='r', linestyle='-')
-    plt.plot(timeLogSpaced, liveParticlesInTimeD001, label=r'$D_f = 0.01$', color='g', linestyle='-')
-    plt.plot(timeLogSpaced, liveParticlesInTimeD0001, label=r'$D_f = 0.001$', color='purple', linestyle='-')
+    plt.plot(timeLinSpaced, liveParticlesInTimeD1, label=r'$D_f = 1$', color='b', linestyle='-')
+    plt.plot(timeLinSpaced, liveParticlesInTimeD01, label=r'$D_f = 0.1$', color='r', linestyle='-')
+    plt.plot(timeLinSpaced, liveParticlesInTimeD001, label=r'$D_f = 0.01$', color='g', linestyle='-')
+    plt.plot(timeLinSpaced, liveParticlesInTimeD0001, label=r'$D_f = 0.001$', color='purple', linestyle='-')
     plt.title("Survival times")
     plt.xscale('log')
     plt.yscale('log')

@@ -30,6 +30,7 @@ liquid = op.phase.Phase(network=net)
 # liquid['throat.diffusive_conductance'] = unifCond
 
 # Lognormal diffusive conductance ###############################################
+# throatDiameter = np.array([1e-5, 1e-6])
 throatDiameter = spst.lognorm.rvs(0.5, loc=0, scale=Dmol, size=net.Nt) # Conductance lognormal distribution
 net['throat.diameter'] = throatDiameter
 Athroat = throatDiameter**2*np.pi/4
@@ -50,14 +51,17 @@ fd.run()
 rate_inlet = fd.rate(pores=inlet)[0]
 print(f'Flow rate: {rate_inlet:.5e} m3/s')
 
-Adomain = throatDiameter**2
-Ldomain = (shape[0]-1)*spacing
-D_eff_fracture = rate_inlet * Ldomain / (max(Athroat) * (C_in - C_out))
-D_eff = rate_inlet * Ldomain / (max(Adomain) * (C_in - C_out))
+Adomain = spacing**2
+Ldomain = net.Nt*spacing
+# D_eff_fracture = rate_inlet * spacing / (np.mean(Athroat) * (C_in - C_out))
+D_eff = rate_inlet * spst.hmean(spacing) / (spst.hmean(Athroat) * (C_in - C_out)/net.Nt)
+D_eff_fracture = rate_inlet * spacing / (np.mean(Athroat) * (C_in - C_out))
+D_eff_domain = rate_inlet * Ldomain / (Adomain * (C_in - C_out))
+print(f'Effective diffusivity [m2/s]', "{0:.6E}".format(D_eff))
 print(f'Effective diffusivity (throat dimensions) [m2/s]', "{0:.6E}".format(D_eff_fracture))
-print(f'Effective diffusivity (domain dimensions) [m2/s]', "{0:.6E}".format(D_eff))
-hMean = spst.hmean(diffCond)
-print(f'The harmonic mean of the diffusive conductances is', "{0:.6E}".format(hMean))
+print(f'Effective diffusivity (domain dimensions) [m2/s]', "{0:.6E}".format(D_eff_domain))
+Kd = spst.hmean(diffCond)
+print(f'The harmonic mean of the diffusive conductances is Kd =', "{0:.6E}".format(Kd))
 
 V_p = net['pore.volume'].sum()
 V_t = net['throat.volume'].sum()
@@ -65,7 +69,7 @@ V_bulk = np.prod(shape)*(spacing**3)
 e = (V_p + V_t) / V_bulk
 print('The porosity is: ', "{0:.6E}".format(e))
 
-tau = e * Dmol / D_eff
+tau = e * Dmol / D_eff_domain
 print('The tortuosity is:', "{0:.6E}".format(tau))
 
 # Plot #############################################################

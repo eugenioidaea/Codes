@@ -24,7 +24,7 @@ net['pore.volume'] = 4/3*np.pi*poreDiameter**3/8
 Athroat = throatDiameter**2*np.pi/4
 net['throat.volume'] = Athroat*spacing
 
-print(net)
+# print(net)
 
 liquid = op.phase.Phase(network=net)
 
@@ -53,8 +53,8 @@ Adomain = throatDiameter**2
 Ldomain = (shape[0]-1)*spacing
 D_eff_fracture = rate_inlet * Ldomain / (Athroat * (C_in - C_out))
 D_eff = rate_inlet * Ldomain / (Adomain * (C_in - C_out))
-print(f'Effective diffusivity (throat dimensions) [m2/s]', "{0:.6E}".format(D_eff_fracture))
-print(f'Effective diffusivity (domain dimensions) [m2/s]', "{0:.6E}".format(D_eff))
+print(f'Effective diffusion (throat area) [m2/s]', "{0:.6E}".format(D_eff_fracture))
+print(f'Effective diffusion (cross section area) [m2/s]', "{0:.6E}".format(D_eff))
 
 V_p = net['pore.volume'].sum()
 V_t = net['throat.volume'].sum()
