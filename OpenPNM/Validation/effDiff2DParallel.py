@@ -11,32 +11,11 @@ poreDiameter = spacing/10
 Dmol = 1e-5 # Molecular Diffusion
 
 # Pore network #####################################################
-shape = [10, 10, 1]
+shape = [100, 100, 1]
 net = op.network.Cubic(shape=shape, spacing=spacing) # Shape of the elementary cell of the network: cubic
 # geo = op.models.collections.geometry.spheres_and_cylinders # Shape of the pore and throats
 # net.add_model_collection(geo, domain='all') # Assign the shape of pores and throats to the network
-
-
-
-def generate_series(limit=100, group_size=9, gap=10):
-    numbers = []
-    value = 0
-    while value <= limit:
-        for _ in range(group_size):
-            if value > limit:
-                break
-            numbers.append(value)
-            value += 1
-        value += gap  # Skip the gap value
-    return np.array(numbers)
-
-# Generate the array
-arr = generate_series()
-print(arr)
-
-
-
-
+arr = np.arange(shape[0]*(shape[1]-1)) # Trim the vertical throats (that happen to be labeled from 0 to 89)
 op.topotools.trim(network=net, throats=arr)
 net.regenerate_models() # Compute geometric properties such as pore volume
 
@@ -58,6 +37,7 @@ net['throat.volume'] = Athroat*spacing
 
 fd = op.algorithms.FickianDiffusion(network=net, phase=liquid)
 
+
 inlet = net.pores('left')
 outlet = net.pores('right')
 C_in, C_out = [10, 5]
@@ -69,6 +49,9 @@ fd.run()
 rate_inlet = fd.rate(pores=inlet)[0]
 print(f'Flow rate: {rate_inlet:.5e} m3/s')
 
+reshapedCond = diffCond.reshape(-1, (shape[0]-1))
+pipeCond = np.apply_along_axis(spst.hmean, 1, reshapedCond) # The conductance of each pipe is the harmonic mean of the values of conductance of its throats
+
 Adomain = (shape[1] * shape[2])*(spacing**2)
 Ldomain = net.Nt*spacing
 # D_eff_fracture = rate_inlet * spacing / (shape[0] * Athroat * (C_in - C_out))
@@ -78,10 +61,11 @@ D_eff_domain = rate_inlet * Ldomain / (Adomain * (C_in - C_out))
 print(f'Effective diffusivity [m2/s]', "{0:.6E}".format(D_eff))
 print(f'Effective diffusivity (throat dimensions) [m2/s]', "{0:.6E}".format(D_eff_fracture))
 print(f'Effective diffusivity (domain dimensions) [m2/s]', "{0:.6E}".format(D_eff_domain))
-KdOpenPNM = shape[1]*rate_inlet/(C_in-C_out)
+KdOpenPNM = rate_inlet/(C_in-C_out)
 print(f'Diffusive conductance from OpenPNM (Qd/deltaC)', "{0:.6E}".format(KdOpenPNM))
-KdGmean = spst.gmean(diffCond)
-print(f'The geometric mean of the diffusive conductances is Kd =', "{0:.6E}".format(KdGmean))
+KdSum = np.sum(pipeCond)
+# KdSum = np.sum(diffCond)
+print(f'The arithmetic mean of the diffusive conductances is Kd =', "{0:.6E}".format(KdSum))
 
 V_p = net['pore.volume'].sum()
 V_t = net['throat.volume'].sum()
@@ -95,7 +79,7 @@ print('The tortuosity is:', "{0:.6E}".format(tau))
 # Plot #############################################################
 poreNetwork = plt.figure(figsize=(8, 8))
 poreNetwork = op.visualization.plot_coordinates(net)
-poreNetwork = op.visualization.plot_connections(net, ax=poreNetwork)
+poreNetwork = op.visualization.plot_connections(net, size_by=liquid['throat.diffusive_conductance'], ax=poreNetwork)
 
 lognormDist = plt.figure(figsize=(8, 8))
 if 'cld' in globals():

@@ -15,7 +15,7 @@ poreDiameter = spacing/10
 Dmol = 1e-5 # Molecular Diffusion
 
 # Pore network #####################################################
-shape = [10, 1, 1]
+shape = [100, 1, 1]
 net = op.network.Cubic(shape=shape, spacing=spacing) # Shape of the elementary cell of the network: cubic
 # geo = op.models.collections.geometry.spheres_and_cylinders # Shape of the pore and throats
 # net.add_model_collection(geo, domain='all') # Assign the shape of pores and throats to the network
