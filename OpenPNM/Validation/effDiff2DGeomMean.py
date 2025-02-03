@@ -11,7 +11,7 @@ poreDiameter = spacing/10
 Dmol = 1e-5 # Molecular Diffusion
 
 # Pore network #####################################################
-shape = [10, 1, 1]
+shape = [100, 10, 1]
 net = op.network.Cubic(shape=shape, spacing=spacing) # Shape of the elementary cell of the network: cubic
 # geo = op.models.collections.geometry.spheres_and_cylinders # Shape of the pore and throats
 # net.add_model_collection(geo, domain='all') # Assign the shape of pores and throats to the network
@@ -25,13 +25,8 @@ net['pore.volume'] = 4/3*np.pi*poreDiameter**3/8
 
 liquid = op.phase.Phase(network=net)
 
-# Uniform diffusive conductance #################################################
-# unifCond = np.full(net.Nt, Dmol*Athroat/spacing)
-# liquid['throat.diffusive_conductance'] = unifCond
-
 # Lognormal diffusive conductance ###############################################
-# throatDiameter = np.array([1e-5, 1e-6])
-throatDiameter = spst.lognorm.rvs(0.5, loc=0, scale=Dmol, size=net.Nt) # Conductance lognormal distribution
+throatDiameter = spst.lognorm.rvs(0.5, loc=0, scale=poreDiameter/2, size=net.Nt) # Conductance lognormal distribution
 net['throat.diameter'] = throatDiameter
 Athroat = throatDiameter**2*np.pi/4
 diffCond = Dmol*Athroat/spacing
@@ -51,19 +46,19 @@ fd.run()
 rate_inlet = fd.rate(pores=inlet)[0]
 print(f'Flow rate: {rate_inlet:.5e} m3/s')
 
-Adomain = spacing**2
+Adomain = (shape[1] * shape[2])*(spacing**2)
 Ldomain = net.Nt*spacing
-# D_eff_fracture = rate_inlet * spacing / (np.mean(Athroat) * (C_in - C_out))
+# D_eff_fracture = rate_inlet * spacing / (shape[0] * Athroat * (C_in - C_out))
 D_eff = rate_inlet * spst.hmean(spacing) / (spst.hmean(Athroat) * (C_in - C_out)/net.Nt)
 D_eff_fracture = rate_inlet * spacing / (np.mean(Athroat) * (C_in - C_out))
 D_eff_domain = rate_inlet * Ldomain / (Adomain * (C_in - C_out))
 print(f'Effective diffusivity [m2/s]', "{0:.6E}".format(D_eff))
 print(f'Effective diffusivity (throat dimensions) [m2/s]', "{0:.6E}".format(D_eff_fracture))
 print(f'Effective diffusivity (domain dimensions) [m2/s]', "{0:.6E}".format(D_eff_domain))
-KdOpenPNM = net.Nt*rate_inlet/(C_in-C_out)
-print(f'Diffusive conductance from OpenPNM (#Throats*Qd/deltaC)', "{0:.6E}".format(KdOpenPNM))
-KdHmean = spst.hmean(diffCond)
-print(f'The harmonic mean of the diffusive conductances is Kd =', "{0:.6E}".format(KdHmean))
+KdOpenPNM = shape[1]*rate_inlet/(C_in-C_out)
+print(f'Diffusive conductance from OpenPNM (Qd/deltaC)', "{0:.6E}".format(KdOpenPNM))
+KdGmean = spst.gmean(diffCond)
+print(f'The geometric mean of the diffusive conductances is Kd =', "{0:.6E}".format(KdGmean))
 
 V_p = net['pore.volume'].sum()
 V_t = net['throat.volume'].sum()
@@ -71,7 +66,7 @@ V_bulk = np.prod(shape)*(spacing**3)
 e = (V_p + V_t) / V_bulk
 print('The porosity is: ', "{0:.6E}".format(e))
 
-tau = e * Dmol / D_eff_domain
+tau = e * Dmol / D_eff
 print('The tortuosity is:', "{0:.6E}".format(tau))
 
 # Plot #############################################################
