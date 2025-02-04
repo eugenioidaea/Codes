@@ -62,7 +62,7 @@ print(f'Effective diffusivity [m2/s]', "{0:.6E}".format(D_eff))
 print(f'Effective diffusivity (throat dimensions) [m2/s]', "{0:.6E}".format(D_eff_fracture))
 print(f'Effective diffusivity (domain dimensions) [m2/s]', "{0:.6E}".format(D_eff_domain))
 KdOpenPNM = shape[0]*rate_inlet/(C_in-C_out)
-print(f'Diffusive conductance from OpenPNM (#Throats*Qd/deltaC)', "{0:.6E}".format(KdOpenPNM))
+print(f'Diffusive conductance from OpenPNM (#Pores*Qd/deltaC)', "{0:.6E}".format(KdOpenPNM))
 KdHmean = spst.hmean(diffCond)
 print(f'The harmonic mean of the diffusive conductances is Kd =', "{0:.6E}".format(KdHmean))
 
@@ -77,7 +77,7 @@ print('The tortuosity is:', "{0:.6E}".format(tau))
 
 # Plot #############################################################
 poreNetwork = plt.figure(figsize=(8, 8))
-poreNetwork = op.visualization.plot_coordinates(net)
+poreNetwork = op.visualization.plot_coordinates(net, markersize=1)
 poreNetwork = op.visualization.plot_connections(net, size_by=liquid['throat.diffusive_conductance'], ax=poreNetwork)
 
 lognormDist = plt.figure(figsize=(8, 8))
@@ -90,7 +90,7 @@ if 'cld' in globals():
 pc = fd['pore.concentration']
 tc = fd.interpolate_data(propname='throat.concentration')
 d = net['pore.diameter']
-fig, ax = plt.subplots(figsize=[5, 5])
+fig, ax = plt.subplots(figsize=[8, 8])
 op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=400, ax=ax)
 op.visualization.plot_connections(network=net, color_by=tc, linewidth=3, ax=ax)
-_ = plt.axis('off')
+# _ = plt.axis('off')
