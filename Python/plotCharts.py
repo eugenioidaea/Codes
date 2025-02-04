@@ -52,27 +52,6 @@ save =                              False
 # for name, value in (loadFinalPositions.items()):
 #     globals()[name] = value
 
-if FinalPositions:
-#    loadFinalPositions = np.load('Dl01Dr01Rl0Rr0.npz')
-#    for name, value in (loadFinalPositions.items()):
-#        globals()[name] = value
-
-#    loadFinalPositions = np.load('Dl01Dr001Rl0Rr0.npz')
-#    for name, value in (loadFinalPositions.items()):
-#        globals()[name] = value
-
-#    loadFinalPositions = np.load('Dl01Dr01RlPlRrPr.npz')
-#    for name, value in (loadFinalPositions.items()):
-#        globals()[name] = value
-
-    loadFinalPositions = np.load('Dl01Dr001RlPlRrPr.npz')
-    for name, value in (loadFinalPositions.items()):
-        globals()[name] = value
-
-#    loadFinalPositions = np.load('Dl01Dr001RlPlRrPr1e5ts.npz')
-#    for name, value in (loadFinalPositions.items()):
-#        globals()[name] = value
-
 if compareAdsApertures:
     loadCompareAdsAp2 = np.load('compareAp2.npz')
     for name, value in (loadCompareAdsAp2.items()):
@@ -272,31 +251,6 @@ if plotDegradation:
     plt.yscale('log')
     plt.xlabel('Time')
     plt.ylabel('PDF of live particles')
-    plt.tight_layout()
-
-if FinalPositions:
-# Final particles's positions
-    finalPositions = plt.figure(figsize=(8, 8))
-    if matrixDiffVerification:
-        plt.plot(x, y, 'b*')
-        plt.plot([lbx, rbx, rbx, lbx, lbx], [lby, lby, uby, uby, lby], color='black', linewidth=2)
-        plt.scatter(x0, y0, s=2, c='purple', alpha=1, edgecolor='none', marker='o')
-        if (reflectedLeft).any() & (reflectedRight).any():
-            plt.plot([cbx, cbx], [lby, uby], color='orange', linewidth=3, linestyle='--')
-        histoMatriDiff = plt.figure(figsize=(8, 8))
-        hDist, hBins = np.histogram(x, np.linspace(lbx, rbx, 100), density=True)
-        plt.bar(hBins[:-1], hDist, width=np.diff(hBins), edgecolor="black", align="edge")
-        plt.axvline(x=cbx, color='orange', linestyle='-', linewidth=2)
-    else:
-        # plt.plot(xPath[:, -1], yPath[:, -1], 'b*')
-        plt.plot(x, y, 'b*')
-        plt.axvline(x=xInit, color='yellow', linestyle='--', linewidth=2)
-        plt.axhline(y=uby, color='r', linestyle='--', linewidth=1)
-        plt.axhline(y=lby, color='r', linestyle='--', linewidth=1)
-        # for val in vInterval:
-        #     plt.axvline(x=val, color='black', linestyle='--', linewidth=2)
-        # for val in hInterval:
-        #     plt.axhline(y=val, color='black', linestyle='--', linewidth=2)
     plt.tight_layout()
 
 if FinalPositionVertAll:
