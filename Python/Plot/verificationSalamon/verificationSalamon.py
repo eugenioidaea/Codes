@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
 from sklearn.linear_model import LinearRegression
 
+save = False
+
 #    loadFinalPositions = np.load('Dl01Dr01Rl0Rr0.npz')
 #    for name, value in (loadFinalPositions.items()):
 #        globals()[name] = value
@@ -26,6 +28,14 @@ for name, value in (loadFinalPositions.items()):
 #    loadFinalPositions = np.load('Dl01Dr001RlPlRrPr1e5ts.npz')
 #    for name, value in (loadFinalPositions.items()):
 #        globals()[name] = value
+
+# loadMatrixDiffVer = np.load('matrixDiffusionVerification.npz')
+# for name, value in (loadMatrixDiffVer.items()):
+#     globals()[name] = value
+
+# loadTestSalamon = np.load('testSalamon.npz')
+# for name, value in (loadTestSalamon.items()):
+#     globals()[name] = value
 
 # Final particles's positions
 finalPositions = plt.figure(figsize=(8, 8))
@@ -50,3 +60,15 @@ else:
     # for val in hInterval:
     #     plt.axhline(y=val, color='black', linestyle='--', linewidth=2)
 plt.tight_layout()
+
+# if save:
+    # finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
+    # histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01Rl0Rr0.png", format="png", bbox_inches="tight")
+    # finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
+    # histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001Rl0Rr0.png", format="png", bbox_inches="tight")
+    # finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
+    # histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr01RlPlRrPr.png", format="png", bbox_inches="tight")
+    # finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
+    # histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr.png", format="png", bbox_inches="tight")
+    # finalPositions.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/positionsDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")
+    # histoMatriDiff.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/histDl01Dr001RlPlRrPr1e5ts.png", format="png", bbox_inches="tight")

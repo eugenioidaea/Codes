@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
 from sklearn.linear_model import LinearRegression
 
+save = False
+
 loadAdsorption = np.load('totalAdsorption_3.npz')
 for name, value in (loadAdsorption.items()):
     globals()[name] = value
@@ -115,3 +117,10 @@ plt.xscale('log')
 plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='gray')
 plt.legend(loc='best')
 plt.tight_layout()
+
+
+if save:
+    survTimeDistCompare.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompare.png", format="png", bbox_inches="tight")
+    compareDecayDegradationRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDecayDegradationRates.png", format="png", bbox_inches="tight")
+    survTimeDistCompareNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareNorm.png", format="png", bbox_inches="tight")
+    compareDecayDegradationRatesNorm.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/compareDecayDegradationRatesNorm.png", format="png", bbox_inches="tight")
