@@ -326,6 +326,14 @@ if plotMatrixDecayDm:
     dm0001 = Dm.copy()
     df0001 = Df.copy()
 
+    loadMatrixDecayDm00005 = np.load('Dm5e-4matrixK1e-2.npz')
+    for name, value in (loadMatrixDecayDm00005.items()):
+        globals()[name] = value
+    numOfLivePartDm00005 = numOfLivePart.copy()
+    timeDm00005 = Time.copy()
+    dm00005 = Dm.copy()
+    df00005 = Df.copy()
+
     loadMatrixDecayDm00001 = np.load('Dm1e-4matrixK1e-2.npz')
     for name, value in (loadMatrixDecayDm00001.items()):
         globals()[name] = value
@@ -346,6 +354,8 @@ if plotMatrixDecayDm:
     interpSemilogDm001 = LinearRegression().fit(timeReshapedSemilogDm001, np.log(numOfLivePartDm001[slice(500, 1000)]/num_particles))
     timeReshapedSemilogDm0001 = (timeDm0001[slice(500, 1000)]).reshape(-1, 1)
     interpSemilogDm0001 = LinearRegression().fit(timeReshapedSemilogDm0001, np.log(numOfLivePartDm0001[slice(500, 1000)]/num_particles))
+    timeReshapedSemilogDm00005 = (timeDm00005[slice(500, 1000)]).reshape(-1, 1)
+    interpSemilogDm00005 = LinearRegression().fit(timeReshapedSemilogDm00005, np.log(numOfLivePartDm00005[slice(500, 1000)]/num_particles))
     timeReshapedSemilogDm00001 = (timeDm00001[slice(500, 1000)]).reshape(-1, 1)
     interpSemilogDm00001 = LinearRegression().fit(timeReshapedSemilogDm00001, np.log(numOfLivePartDm00001[slice(500, 1000)]/num_particles))
     timeReshapedSemilogDm000001 = (timeDm000001[slice(500, 1000)]).reshape(-1, 1)
@@ -355,6 +365,7 @@ if plotMatrixDecayDm:
     plt.rcParams.update({'font.size': 20})
     plt.plot(dm001/df001, abs(interpSemilogDm001.coef_[0]), 'o', markerfacecolor='blue', markeredgecolor='blue', markersize='10', label=r'$D_m/D_f = 1.0$')
     plt.plot(dm0001/df0001, abs(interpSemilogDm0001.coef_[0]), 'o', markerfacecolor='red', markeredgecolor='red', markersize='10', label=r'$D_m/D_f = 0.1$')
+    plt.plot(dm00005/df00005, abs(interpSemilogDm00005.coef_[0]), 'o', markerfacecolor='purple', markeredgecolor='purple', markersize='10', label=r'$D_m/D_f = 0.05$')
     plt.plot(dm00001/df00001, abs(interpSemilogDm00001.coef_[0]), 'o', markerfacecolor='green', markeredgecolor='green', markersize='10', label=r'$D_m/D_f = 0.01$')
     plt.plot(dm000001/df000001, abs(interpSemilogDm000001.coef_[0]), 'o', markerfacecolor='orange', markeredgecolor='orange', markersize='10', label=r'$D_m/D_f = 0.001$')
     plt.title("Effective decay vs mol diff in matrix")
@@ -362,8 +373,8 @@ if plotMatrixDecayDm:
     plt.ylabel(r'$k_{eff}$')
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
     plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
-    plt.xscale('log')
-    plt.yscale('log')
+    # plt.xscale('log')
+    # plt.yscale('log')
     plt.legend(loc='best')
     plt.tight_layout()
 
