@@ -11,7 +11,7 @@ poreDiameter = spacing/10
 Dmol = 1e-5 # Molecular Diffusion
 
 # Pore network #####################################################
-shape = [100, 100, 1]
+shape = [3, 2, 1]
 net = op.network.Cubic(shape=shape, spacing=spacing) # Shape of the elementary cell of the network: cubic
 # geo = op.models.collections.geometry.spheres_and_cylinders # Shape of the pore and throats
 # net.add_model_collection(geo, domain='all') # Assign the shape of pores and throats to the network
@@ -32,11 +32,11 @@ throatDiameter = spst.lognorm.rvs(0.5, loc=0, scale=poreDiameter/2, size=net.Nt)
 net['throat.diameter'] = throatDiameter
 Athroat = throatDiameter**2*np.pi/4
 diffCond = Dmol*Athroat/spacing
+# diffCond = np.array([6.489035295544095e-12, 3.744909705678948e-12])
 liquid['throat.diffusive_conductance'] = diffCond
 net['throat.volume'] = Athroat*spacing
 
 fd = op.algorithms.FickianDiffusion(network=net, phase=liquid)
-
 
 inlet = net.pores('left')
 outlet = net.pores('right')
@@ -49,8 +49,9 @@ fd.run()
 rate_inlet = fd.rate(pores=inlet)[0]
 print(f'Flow rate: {rate_inlet:.5e} m3/s')
 
-reshapedCond = diffCond.reshape(-1, (shape[0]-1))
-pipeCond = np.apply_along_axis(spst.hmean, 1, reshapedCond) # The conductance of each pipe is the harmonic mean of the values of conductance of its throats
+reshapedCond = [diffCond[i::shape[1]] for i in range(shape[0]-1)]
+# pipeCond = np.apply_along_axis(spst.hmean, 1, reshapedCond)/(shape[0]-1) # The conductance of each pipe is the harmonic mean of the values of conductance of its throats
+pipeCond = [1/(np.sum(1/reshapedCond[i])) for i in range(len(reshapedCond))]
 
 Adomain = (shape[1] * shape[2])*(spacing**2)
 Ldomain = net.Nt*spacing
@@ -61,7 +62,7 @@ D_eff_domain = rate_inlet * Ldomain / (Adomain * (C_in - C_out))
 print(f'Effective diffusivity [m2/s]', "{0:.6E}".format(D_eff))
 print(f'Effective diffusivity (throat dimensions) [m2/s]', "{0:.6E}".format(D_eff_fracture))
 print(f'Effective diffusivity (domain dimensions) [m2/s]', "{0:.6E}".format(D_eff_domain))
-KdOpenPNM = shape[0] * rate_inlet/(C_in-C_out)
+KdOpenPNM = rate_inlet/(C_in-C_out)
 print(f'Diffusive conductance from OpenPNM (Qd/deltaC)', "{0:.6E}".format(KdOpenPNM))
 KdSum = np.sum(pipeCond)
 print(f'Sum of the pipe conductance values Kd =', "{0:.6E}".format(KdSum))
