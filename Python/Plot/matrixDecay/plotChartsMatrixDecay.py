@@ -368,13 +368,28 @@ if plotMatrixDecayDm:
     plt.plot(dm00005/df00005, abs(interpSemilogDm00005.coef_[0]), 'o', markerfacecolor='purple', markeredgecolor='purple', markersize='10', label=r'$D_m/D_f = 0.05$')
     plt.plot(dm00001/df00001, abs(interpSemilogDm00001.coef_[0]), 'o', markerfacecolor='green', markeredgecolor='green', markersize='10', label=r'$D_m/D_f = 0.01$')
     plt.plot(dm000001/df000001, abs(interpSemilogDm000001.coef_[0]), 'o', markerfacecolor='orange', markeredgecolor='orange', markersize='10', label=r'$D_m/D_f = 0.001$')
+
+
+
+
+    ratiosDmDf = np.array([dm000001/df000001, dm00005/df00005, dm00001/df00001, dm0001/df0001, dm001/df001])
+    ratiosDmDfReshaped = (ratiosDmDf).reshape(-1, 1)
+    kEffInterp = np.array([abs(interpSemilogDm000001.coef_[0]), abs(interpSemilogDm00001.coef_[0]), abs(interpSemilogDm00005.coef_[0]), abs(interpSemilogDm0001.coef_[0]), abs(interpSemilogDm001.coef_[0])])
+    interpRatiosDmDf = LinearRegression().fit(np.log(ratiosDmDfReshaped), np.log(kEffInterp))
+    effDecayVsMolDiff = np.exp(interpRatiosDmDf.intercept_+interpRatiosDmDf.coef_*ratiosDmDf)
+    plt.plot(np.exp(ratiosDmDf), effDecayVsMolDiff, color='black', linewidth='4')
+    plt.text(ratiosDmDfReshaped[-1], effDecayVsMolDiff[-1], f"m={interpRatiosDmDf.coef_[0]:.5f}", fontsize=18, ha='left', va='top')
+
+
+
+
     plt.title("Effective decay vs mol diff in matrix")
     plt.xlabel(r'$D_m/D_f$')
     plt.ylabel(r'$k_{eff}$')
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
     plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
-    # plt.xscale('log')
-    # plt.yscale('log')
+    plt.xscale('log')
+    plt.yscale('log')
     plt.legend(loc='best')
     plt.tight_layout()
 
