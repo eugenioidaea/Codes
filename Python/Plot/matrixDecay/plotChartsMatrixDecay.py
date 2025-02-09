@@ -23,6 +23,7 @@ if plotMatrixDecay:
     timeK01 = Time.copy()
     xK01 = x.copy()
     yK01 = y.copy()
+    kDecay01 = kDecay.copy()
 
     loadMatrixDecayK001 = np.load('matrixDecayK001.npz')
     for name, value in (loadMatrixDecayK001.items()):
@@ -31,6 +32,7 @@ if plotMatrixDecay:
     timeK001 = Time.copy()
     xK001 = x.copy()
     yK001 = y.copy()
+    kDecay001 = kDecay.copy()
 
     loadMatrixDecayK004 = np.load('matrixDecayK004.npz')
     for name, value in (loadMatrixDecayK004.items()):
@@ -39,6 +41,7 @@ if plotMatrixDecay:
     timeK004 = Time.copy()
     xK004 = x.copy()
     yK004 = y.copy()
+    kDecay004 = kDecay.copy()
 
     loadMatrixDecayK007 = np.load('matrixDecayK007.npz')
     for name, value in (loadMatrixDecayK007.items()):
@@ -47,6 +50,7 @@ if plotMatrixDecay:
     timeK007 = Time.copy()
     xK007 = x.copy()
     yK007 = y.copy()
+    kDecay007 = kDecay.copy()
 
     loadMatrixDecayK0001 = np.load('matrixDecayK0001.npz')
     for name, value in (loadMatrixDecayK0001.items()):
@@ -55,6 +59,7 @@ if plotMatrixDecay:
     timeK0001 = Time.copy()
     xK0001 = x.copy()
     yK0001 = y.copy()
+    kDecay0001 = kDecay.copy()
 
     loadDomainDecayK01 = np.load('domainDecayK01.npz')
     for name, value in (loadDomainDecayK01.items()):
@@ -281,13 +286,14 @@ if plotMatrixDecay:
     plt.legend(loc='best')
     plt.tight_layout()
 
+    kDecay = np.array([kDecay01, kDecay001, kDecay004, kDecay007, kDecay0001])
     effVsDecayRates = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
-    plt.plot([0.1], abs(interpSemilogK01.coef_[0]), 'o', markerfacecolor='blue', markeredgecolor='blue', markersize='10')
-    plt.plot([0.01], abs(interpSemilogK001.coef_[0]), 'o', markerfacecolor='red', markeredgecolor='red', markersize='10')
-    plt.plot([0.04], abs(interpSemilogK004.coef_[0]), 'o', markerfacecolor='purple', markeredgecolor='purple', markersize='10')
-    plt.plot([0.07], abs(interpSemilogK007.coef_[0]), 'o', markerfacecolor='orange', markeredgecolor='orange', markersize='10')
-    plt.plot([0.001], abs(interpSemilogK0001.coef_[0]), 'o', markerfacecolor='green', markeredgecolor='green', markersize='10')
+    plt.plot(kDecay[0], abs(interpSemilogK01.coef_[0]), 'o', markerfacecolor='blue', markeredgecolor='blue', markersize='10')
+    plt.plot(kDecay[1], abs(interpSemilogK001.coef_[0]), 'o', markerfacecolor='red', markeredgecolor='red', markersize='10')
+    plt.plot(kDecay[2], abs(interpSemilogK004.coef_[0]), 'o', markerfacecolor='purple', markeredgecolor='purple', markersize='10')
+    plt.plot(kDecay[3], abs(interpSemilogK007.coef_[0]), 'o', markerfacecolor='orange', markeredgecolor='orange', markersize='10')
+    plt.plot(kDecay[4], abs(interpSemilogK0001.coef_[0]), 'o', markerfacecolor='green', markeredgecolor='green', markersize='10')
     plt.title("Effective rates vs radioactive decays")
     plt.xlabel(r'$k_{matrixDecay}$')
     plt.ylabel(r'$k_{eff}$')
@@ -297,6 +303,15 @@ if plotMatrixDecay:
     plt.yscale('log')
     plt.legend(loc='best')
     plt.tight_layout()
+
+    kDecayReshaped = (kDecay).reshape(-1, 1)
+    kDecayInterp = np.array([abs(interpSemilogK01.coef_[0]), abs(interpSemilogK001.coef_[0]), abs(interpSemilogK004.coef_[0]), abs(interpSemilogK007.coef_[0]), abs(interpSemilogK0001.coef_[0])])
+    interpKdecay = LinearRegression().fit(np.log(kDecayReshaped), np.log(kDecayInterp))
+    # points = np.linspace(np.log(min(ratiosDmDf)), np.log(max(ratiosDmDf)), 10)
+    points = np.log(kDecay)
+    effDecayVsMolDiff = np.exp(interpKdecay.intercept_+interpKdecay.coef_*points)
+    plt.plot(np.exp(points), effDecayVsMolDiff, color='black', linewidth='4')
+    plt.text(kDecayReshaped[1], effDecayVsMolDiff[1], f"y={interpKdecay.coef_[0]:.5f}x{interpKdecay.intercept_:.5f}", fontsize=18, ha='left', va='top')
 
     if plotMatrixDecay & save:
         finalPositionMatrixDecay.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositionMatrixDecay.png", format="png", bbox_inches="tight")
@@ -376,9 +391,11 @@ if plotMatrixDecayDm:
     ratiosDmDfReshaped = (ratiosDmDf).reshape(-1, 1)
     kEffInterp = np.array([abs(interpSemilogDm000001.coef_[0]), abs(interpSemilogDm00001.coef_[0]), abs(interpSemilogDm00005.coef_[0]), abs(interpSemilogDm0001.coef_[0]), abs(interpSemilogDm001.coef_[0])])
     interpRatiosDmDf = LinearRegression().fit(np.log(ratiosDmDfReshaped), np.log(kEffInterp))
-    effDecayVsMolDiff = np.exp(interpRatiosDmDf.intercept_+interpRatiosDmDf.coef_*ratiosDmDf)
-    plt.plot(np.exp(ratiosDmDf), effDecayVsMolDiff, color='black', linewidth='4')
-    plt.text(ratiosDmDfReshaped[-1], effDecayVsMolDiff[-1], f"m={interpRatiosDmDf.coef_[0]:.5f}", fontsize=18, ha='left', va='top')
+    # points = np.linspace(np.log(min(ratiosDmDf)), np.log(max(ratiosDmDf)), 10)
+    points = np.log(ratiosDmDf)
+    effDecayVsMolDiff = np.exp(interpRatiosDmDf.intercept_+interpRatiosDmDf.coef_*points)
+    plt.plot(np.exp(points), effDecayVsMolDiff, color='black', linewidth='4')
+    plt.text(ratiosDmDfReshaped[3], effDecayVsMolDiff[3], f"y={interpRatiosDmDf.coef_[0]:.5f}x{interpRatiosDmDf.intercept_:.5f}", fontsize=18, ha='left', va='top')
 
 
 
