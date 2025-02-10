@@ -9,7 +9,7 @@ from scipy.interpolate import CubicSpline
 
 # Choose what should be plotted #############################################################
 
-plotMatrixDecay = True # Radioactive decay in the matrix for different values of radioactive decay (kDecay)
+plotMatrixDecay = False # Radioactive decay in the matrix for different values of radioactive decay (kDecay)
 plotMatrixDecayDm = True # Radioactive decay in the matrix for different values of molecular diffusion (Dm)
 
 save = False

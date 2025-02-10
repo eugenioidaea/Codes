@@ -11,7 +11,7 @@ poreDiameter = spacing/10
 Dmol = 1e-5 # Molecular Diffusion
 
 # Pore network #####################################################
-shape = [100, 10, 1]
+shape = [10, 10, 1]
 net = op.network.Cubic(shape=shape, spacing=spacing) # Shape of the elementary cell of the network: cubic
 # geo = op.models.collections.geometry.spheres_and_cylinders # Shape of the pore and throats
 # net.add_model_collection(geo, domain='all') # Assign the shape of pores and throats to the network
@@ -55,7 +55,7 @@ D_eff_domain = rate_inlet * Ldomain / (Adomain * (C_in - C_out))
 print(f'Effective diffusivity [m2/s]', "{0:.6E}".format(D_eff))
 print(f'Effective diffusivity (throat dimensions) [m2/s]', "{0:.6E}".format(D_eff_fracture))
 print(f'Effective diffusivity (domain dimensions) [m2/s]', "{0:.6E}".format(D_eff_domain))
-KdOpenPNM = shape[1]*rate_inlet/(C_in-C_out)
+KdOpenPNM = rate_inlet/(C_in-C_out)
 print(f'Diffusive conductance from OpenPNM (Qd/deltaC)', "{0:.6E}".format(KdOpenPNM))
 KdGmean = spst.gmean(diffCond)
 print(f'The geometric mean of the diffusive conductances is Kd =', "{0:.6E}".format(KdGmean))
