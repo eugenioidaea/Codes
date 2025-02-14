@@ -11,7 +11,7 @@ import scipy.special as spsp
 spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
 # throatDiameter = spacing/10
 poreDiameter = spacing/10
-Dmol = 1e-3 # Molecular Diffusion
+Dmol = 1e-5 # Molecular Diffusion
 
 # Pore network #####################################################
 shape = [10, 10, 1]
@@ -23,6 +23,9 @@ net.regenerate_models() # Compute geometric properties such as pore volume
 net['throat.length'] = spacing
 net['pore.diameter'] = poreDiameter
 net['pore.volume'] = 4/3*np.pi*poreDiameter**3/8
+
+Adomain = (shape[1] * shape[2])*(spacing**2)
+Ldomain = (shape[1]-1)*spacing
 
 # print(net)
 
@@ -61,36 +64,26 @@ for ti in times:
     q_front = tfd.rate(throats=net.Ts, mode='single')[outlet]
     cAvg.append((q_front*c_front).sum() / q_front.sum())
 cAvg = np.array(cAvg)
-
-
-
-rate_inlet = -tfd.rate(pores=outlet)[0] # Fluxes leaving the pores are negative
-print(f'Flow rate: {rate_inlet:.5e} m3/s')
 print(f'Average outlet final conc: {np.mean(cAvg):.5e}')
 
-Adomain = (shape[1] * shape[2])*(spacing**2)
-Ldomain = (shape[1]-1)*spacing
-# D_eff_fracture = rate_inlet * spacing / (shape[0] * Athroat * (Cin - C_out))
-D_eff = rate_inlet * spst.hmean(spacing) / (spst.hmean(Athroat) * (Cin - cAvg[-1])/net.Nt)
-D_eff_fracture = rate_inlet * spacing / (np.mean(Athroat) * (Cin - cAvg[-1]))
-D_eff_domain = rate_inlet * Ldomain / (Adomain * (Cin - cAvg[-1]))
-print(f'Effective diffusivity [m2/s]', "{0:.6E}".format(D_eff))
-print(f'Effective diffusivity (throat dimensions) [m2/s]', "{0:.6E}".format(D_eff_fracture))
-print(f'Effective diffusivity (domain dimensions) [m2/s]', "{0:.6E}".format(D_eff_domain))
-KdOpenPNM = rate_inlet/(Cin-cAvg[-1])
-print(f'Diffusive conductance from OpenPNM (Qd/deltaC)', "{0:.6E}".format(KdOpenPNM))
-KdGmean = spst.gmean(diffCond)
-print(f'The geometric mean of the diffusive conductances is Kd =', "{0:.6E}".format(KdGmean))
+# rate_inlet = -tfd.rate(pores=outlet)[0] # Fluxes leaving the pores are negative
+# print(f'Flow rate: {rate_inlet:.5e} m3/s')
 
-V_p = net['pore.volume'].sum()
-V_t = net['throat.volume'].sum()
-V_bulk = np.prod(shape)*(spacing**3)
-e = (V_p + V_t) / V_bulk
-print('The porosity is: ', "{0:.6E}".format(e))
+# KdOpenPNM = rate_inlet/(Cin-cAvg[-1])
+# print(f'Diffusive conductance from OpenPNM (Qd/deltaC)', "{0:.6E}".format(KdOpenPNM))
+# KdGmean = spst.gmean(diffCond)
+# print(f'The geometric mean of the diffusive conductances is Kd =', "{0:.6E}".format(KdGmean))
 
-tau = e * Dmol / D_eff
-print('The tortuosity is:', "{0:.6E}".format(tau))
+# DeffQ = rate_inlet * Ldomain / (Adomain * (Cin - cAvg[-1]))
+# print(f'Effective diffusivity DeffQ [m2/s]', "{0:.6E}".format(DeffQ))
 
+# V_p = net['pore.volume'].sum()
+# V_t = net['throat.volume'].sum()
+# V_bulk = np.prod(shape)*(spacing**3)
+# e = (V_p + V_t) / V_bulk
+# print('The porosity is: ', "{0:.6E}".format(e))
+# tau = e * Dmol / DeffQ
+# print('The tortuosity is:', "{0:.6E}".format(tau))
 
 def minMaxNorm(data):
     return (data - np.min(data)) / (np.max(data) - np.min(data))
@@ -115,7 +108,7 @@ C0 = cdfBTC(tNorm, D0)
 C0norm = minMaxNorm(C0)
 
 bounds = [(1e-8, 1)]  # Example bound: D should be between 1e-6 and 10
-fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='Nelder-Mead', tol=1e-9)
+fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='Nelder-Mead')
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='Powell')
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='CG')
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='BFGS')
@@ -124,9 +117,9 @@ fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, metho
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='COBYLA')
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='SLSQP')
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='trust-constr')
-Deff = fitting.x[0]  # Fitted parameter
+DeffBTC = fitting.x[0]  # Fitted parameter
 
-Cfit = cdfBTC(tNorm, Deff)
+Cfit = cdfBTC(tNorm, DeffBTC)
 CfitNorm = minMaxNorm(Cfit)
 
 breakthrough = plt.figure(figsize=(8, 8))
@@ -136,7 +129,8 @@ plt.plot(tNorm, C0norm, label='C0norm')
 plt.plot(tNorm, CfitNorm, label='CfitNorm')
 plt.legend(loc='best')
 
-print(f"Fitted D: {Deff:.4f}")
+print(f"Molecular diff Dmol: ", "{0:.6E}".format(Dmol))
+print(f"BTC Fitted DeffBTC: ", "{0:.6E}".format(DeffBTC))
 
 # Plot #############################################################
 networkLabels = plt.figure(figsize=(8, 8))
@@ -197,7 +191,7 @@ tReshaped = (times[-100:-1]).reshape(-1, 1)
 linRegCavg = LinearRegression().fit(tReshaped, np.log(Cin-cAvg[-100:-1]))
 interpCavg = np.exp(linRegCavg.intercept_+linRegCavg.coef_*times)
 plt.plot(times, interpCavg, color='black', linewidth='2')
-plt.text(times[1000], interpCavg[1000], f"y={linRegCavg.coef_[0]:.5f}x+{linRegCavg.intercept_:.5f}", fontsize=18, ha='left', va='bottom')
+plt.text(times[int(len(times)/2)], interpCavg[int(len(interpCavg)/2)], f"y={linRegCavg.coef_[0]:.5f}x+{linRegCavg.intercept_:.5f}", fontsize=18, ha='left', va='bottom')
 
 plt.title("Conc in time at the outlet")
 plt.xlabel(r'$Time [s]$')
