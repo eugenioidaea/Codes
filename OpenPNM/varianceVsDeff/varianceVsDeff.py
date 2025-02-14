@@ -28,7 +28,7 @@ liquid = op.phase.Phase(network=net)
 
 # Lognormal diffusive conductance ###############################################
 Deff = []
-throatVariance = np.linspace(0.1, 2, 20)
+throatVariance = np.linspace(0.1, 6, 20)
 for i in range(len(throatVariance)):
     throatDiameter = spst.lognorm.rvs(throatVariance[i], loc=0, scale=poreDiameter/2, size=net.Nt) # Conductance lognormal distribution
     net['throat.diameter'] = throatDiameter
@@ -93,7 +93,7 @@ op.visualization.plot_connections(network=net, color_by=tc, linewidth=3, ax=ax)
 _ = plt.axis('off')
 
 effDiffVsCondVar = plt.figure(figsize=(8, 8))
-plt.rcParams.update({'font.size': 40})
+plt.rcParams.update({'font.size': 20})
 plt.plot(throatVariance, Deff, 'o', markerfacecolor='blue', markeredgecolor='blue', markersize='10')
 plt.title("Effective diffusion vs conductance dist var")
 plt.xlabel(r'$s$')
