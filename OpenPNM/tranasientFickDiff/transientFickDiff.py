@@ -32,7 +32,8 @@ Ldomain = (shape[1]-1)*spacing
 liquid = op.phase.Phase(network=net)
 
 # Lognormal diffusive conductance ###############################################
-throatDiameter = spst.lognorm.rvs(0.5, loc=0, scale=poreDiameter/2, size=net.Nt) # Conductance lognormal distribution
+throatDiameter = np.ones(net.Nt)*poreDiameter/2
+# sthroatDiameter = spst.lognorm.rvs(0.5, loc=0, scale=poreDiameter/2, size=net.Nt) # Conductance lognormal distribution
 net['throat.diameter'] = throatDiameter
 Athroat = throatDiameter**2*np.pi/4
 diffCond = Dmol*Athroat/spacing
@@ -90,16 +91,13 @@ def minMaxNorm(data):
 
 def cdfBTC(t, D):
     C = -(np.sqrt(D)*t**(3/2)*spsp.erf(Ldomain/(2*np.sqrt(D*t))))/(np.sqrt(D*t**3)) #+ 1 # CONSTANT=1. WHY? IS IT BECAUSE LIMIT(C(t)) FOR t->0 IS -1?
-    # C = np.nan_to_num(C, nan=0)
     return C
 
 def errFunc(D, tNorm, cAvgNorm):
     Cpred = cdfBTC(tNorm, D)
-    CpredNorm = minMaxNorm(Cpred)
-    return np.sum((cAvgNorm-CpredNorm)**2)
-    # return np.sum((cAvg-Cpred)**2)
+    Cpred = minMaxNorm(Cpred)
+    return np.sum((cAvgNorm-Cpred)**2)
 
-# non0times = times[1:]     
 tNorm = minMaxNorm(times)[1:]
 cAvgNorm = minMaxNorm(cAvg)[1:]
 
@@ -122,14 +120,22 @@ DeffBTC = fitting.x[0]  # Fitted parameter
 Cfit = cdfBTC(tNorm, DeffBTC)
 CfitNorm = minMaxNorm(Cfit)
 
-breakthrough = plt.figure(figsize=(8, 8))
+NormBTC = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
 plt.plot(tNorm, cAvgNorm, label='CopenPNM')
 plt.plot(tNorm, C0norm, label='C0norm')
 plt.plot(tNorm, CfitNorm, label='CfitNorm')
 plt.legend(loc='best')
 
+BTCs = plt.figure(figsize=(8, 8))
+plt.rcParams.update({'font.size': 20})
+plt.plot(times, cAvg, label='CopenPNM')
+plt.plot(times[1:], C0, label='C0norm')
+plt.plot(times[1:], Cfit, label='CfitNorm')
+plt.legend(loc='best')
+
 print(f"Molecular diff Dmol: ", "{0:.6E}".format(Dmol))
+print(f"Initial guess Deff0: ", "{0:.6E}".format(D0))
 print(f"BTC Fitted DeffBTC: ", "{0:.6E}".format(DeffBTC))
 
 # Plot #############################################################
