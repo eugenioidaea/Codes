@@ -7,14 +7,19 @@ np.set_printoptions(precision=5)
 from sklearn.linear_model import LinearRegression
 import scipy.optimize as opt
 import scipy.special as spsp
+import time
 
+# Sim inputs ###################################################################
+shape = [20, 10, 1]
 spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
 # throatDiameter = spacing/10
 poreDiameter = spacing/10
-Dmol = 1e-5 # Molecular Diffusion
+Dmol = 1e-6 # Molecular Diffusion
+Cin = 1
+endSim = ((shape[0]-1)*spacing)**2/Dmol
+simTime = (0, endSim) # Simulation starting and ending times
 
-# Pore network #####################################################
-shape = [10, 10, 1]
+# Initialisation ################################################################
 net = op.network.Cubic(shape=shape, spacing=spacing) # Shape of the elementary cell of the network: cubic
 # geo = op.models.collections.geometry.spheres_and_cylinders # Shape of the pore and throats
 # net.add_model_collection(geo, domain='all') # Assign the shape of pores and throats to the network
@@ -29,44 +34,54 @@ Ldomain = (shape[1]-1)*spacing
 
 # print(net)
 
-liquid = op.phase.Phase(network=net)
+liquid = op.phase.Phase(network=net) # Phase dictionary initialisation
 
-# Lognormal diffusive conductance ###############################################
-throatDiameter = np.ones(net.Nt)*poreDiameter/2
-# sthroatDiameter = spst.lognorm.rvs(0.5, loc=0, scale=poreDiameter/2, size=net.Nt) # Conductance lognormal distribution
+# Conductance
+# throatDiameter = np.ones(net.Nt)*poreDiameter/2
+throatDiameter = spst.lognorm.rvs(2, loc=0, scale=poreDiameter/2, size=net.Nt) # Diameter lognormal distribution
 net['throat.diameter'] = throatDiameter
 Athroat = throatDiameter**2*np.pi/4
 diffCond = Dmol*Athroat/spacing
 liquid['throat.diffusive_conductance'] = diffCond
 net['throat.volume'] = Athroat*spacing
 
-tfd = op.algorithms.TransientFickianDiffusion(network=net, phase=liquid)
+tfd = op.algorithms.TransientFickianDiffusion(network=net, phase=liquid) # TransientFickianDiffusion dictionary initialisation
 
 inlet = net.pores(['left'])
 outlet = net.pores(['right'])
-Cin = 1
-tfd.set_value_BC(pores=inlet, values=Cin)
-tfd.set_rate_BC(pores=outlet, rates=0) # Outlet BC: fixed rate
+
+# Boundary conditions
+tfd.set_value_BC(pores=inlet, values=Cin) # Inlet: fixed concentration
+tfd.set_rate_BC(pores=outlet, rates=0) # Outlet: fixed rate
+
+# Initial conditions
 ic = np.concatenate((np.ones(shape[1])*Cin, np.zeros((shape[0]-1)*shape[1]))) # Initial Concentration: shape[1] represents the first column of pores and (shape[0]-1)*shape[1] are all the rest of the pores in the domain
-simTime = (0, 10) # Simulation starting and ending times
 
+# Algorithm settings
+# tfd.setup(t_scheme='cranknicolson', t_final=100, t_output=5, t_step=1, t_tolerance=1e-12)
+print(tfd.settings)
 
+start_time = time.time()
 
-
+# Run the simulation
 tfd.run(x0=ic, tspan=simTime)
+
+end_time = time.time()
+elapsed_time = end_time - start_time # Calculate elapsed time
+print(f"Elapsed time: {elapsed_time:.4f} seconds")
+
 # liquid.update(tfd.soln)
-times = tfd.soln['pore.concentration'].t
+times = tfd.soln['pore.concentration'].t # Store the time steps
 
-
-
+# Get the flux-averaged concentration at the outlet for every time step
 cAvg = []
 for ti in times:
     c_front = tfd.soln['pore.concentration'](ti)[outlet]
     q_front = tfd.rate(throats=net.Ts, mode='single')[outlet]
     cAvg.append((q_front*c_front).sum() / q_front.sum())
 cAvg = np.array(cAvg)
-print(f'Average outlet final conc: {np.mean(cAvg):.5e}')
 
+# METRICS FOR STEADY STATE #####################################################################
 # rate_inlet = -tfd.rate(pores=outlet)[0] # Fluxes leaving the pores are negative
 # print(f'Flow rate: {rate_inlet:.5e} m3/s')
 
@@ -85,14 +100,18 @@ print(f'Average outlet final conc: {np.mean(cAvg):.5e}')
 # print('The porosity is: ', "{0:.6E}".format(e))
 # tau = e * Dmol / DeffQ
 # print('The tortuosity is:', "{0:.6E}".format(tau))
+#################################################################################################
 
+# Normalisation
 def minMaxNorm(data):
     return (data - np.min(data)) / (np.max(data) - np.min(data))
 
+# Analytical solution for semi-infinite domain and continuous injection
 def cdfBTC(t, D):
-    C = -(np.sqrt(D)*t**(3/2)*spsp.erf(Ldomain/(2*np.sqrt(D*t))))/(np.sqrt(D*t**3)) #+ 1 # CONSTANT=1. WHY? IS IT BECAUSE LIMIT(C(t)) FOR t->0 IS -1?
+    C = -(np.sqrt(D)*t**(3/2)*spsp.erf(Ldomain/(2*np.sqrt(D*t))))/(np.sqrt(D*t**3))
     return C
 
+# Error function to be minismied
 def errFunc(D, tNorm, cAvgNorm):
     Cpred = cdfBTC(tNorm, D)
     Cpred = minMaxNorm(Cpred)
@@ -101,10 +120,12 @@ def errFunc(D, tNorm, cAvgNorm):
 tNorm = minMaxNorm(times)[1:]
 cAvgNorm = minMaxNorm(cAvg)[1:]
 
+# Initial guess
 D0 = 1e-4
 C0 = cdfBTC(tNorm, D0)
 C0norm = minMaxNorm(C0)
 
+# Optimisation
 bounds = [(1e-8, 1)]  # Example bound: D should be between 1e-6 and 10
 fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='Nelder-Mead')
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='Powell')
@@ -120,20 +141,8 @@ DeffBTC = fitting.x[0]  # Fitted parameter
 Cfit = cdfBTC(tNorm, DeffBTC)
 CfitNorm = minMaxNorm(Cfit)
 
-NormBTC = plt.figure(figsize=(8, 8))
-plt.rcParams.update({'font.size': 20})
-plt.plot(tNorm, cAvgNorm, label='CopenPNM')
-plt.plot(tNorm, C0norm, label='C0norm')
-plt.plot(tNorm, CfitNorm, label='CfitNorm')
-plt.legend(loc='best')
-
-BTCs = plt.figure(figsize=(8, 8))
-plt.rcParams.update({'font.size': 20})
-plt.plot(times, cAvg, label='CopenPNM')
-plt.plot(times[1:], C0, label='C0norm')
-plt.plot(times[1:], Cfit, label='CfitNorm')
-plt.legend(loc='best')
-
+# Metrics ##########################################################
+print(f'Average outlet final conc: {np.mean(cAvg):.5e}')
 print(f"Molecular diff Dmol: ", "{0:.6E}".format(Dmol))
 print(f"Initial guess Deff0: ", "{0:.6E}".format(D0))
 print(f"BTC Fitted DeffBTC: ", "{0:.6E}".format(DeffBTC))
@@ -209,3 +218,17 @@ plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
 plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
 plt.legend(loc='best')
 plt.tight_layout()
+
+NormBTC = plt.figure(figsize=(8, 8))
+plt.rcParams.update({'font.size': 20})
+plt.plot(tNorm, cAvgNorm, label='CopenPNM')
+plt.plot(tNorm, C0norm, label='C0norm')
+plt.plot(tNorm, CfitNorm, label='CfitNorm')
+plt.legend(loc='best')
+
+# BTCs = plt.figure(figsize=(8, 8))
+# plt.rcParams.update({'font.size': 20})
+# plt.plot(times, cAvg, label='CopenPNM')
+# plt.plot(times[1:], C0, label='C0norm')
+# plt.plot(times[1:], Cfit, label='CfitNorm')
+# plt.legend(loc='best')

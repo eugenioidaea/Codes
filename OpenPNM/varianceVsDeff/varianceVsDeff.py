@@ -12,7 +12,7 @@ poreDiameter = spacing/10
 Dmol = 1e-5 # Molecular Diffusion
 
 # Pore network #####################################################
-shape = [10, 5, 5]
+shape = [100, 10, 10]
 net = op.network.Cubic(shape=shape, spacing=spacing) # Shape of the elementary cell of the network: cubic
 # geo = op.models.collections.geometry.spheres_and_cylinders # Shape of the pore and throats
 # net.add_model_collection(geo, domain='all') # Assign the shape of pores and throats to the network
@@ -28,7 +28,7 @@ liquid = op.phase.Phase(network=net)
 
 # Lognormal diffusive conductance ###############################################
 Deff = []
-throatVariance = np.linspace(0.1, 6, 20)
+throatVariance = np.linspace(0.1, 6, 100)
 for i in range(len(throatVariance)):
     throatDiameter = spst.lognorm.rvs(throatVariance[i], loc=0, scale=poreDiameter/2, size=net.Nt) # Conductance lognormal distribution
     net['throat.diameter'] = throatDiameter
@@ -69,44 +69,46 @@ for i in range(len(throatVariance)):
     print('The tortuosity is:', "{0:.6E}".format(tau))
 
 # Plot #############################################################
-poreNetwork = plt.figure(figsize=(8, 8))
-poreNetwork = op.visualization.plot_coordinates(net)
-poreNetwork = op.visualization.plot_connections(net, size_by=liquid['throat.diffusive_conductance'], ax=poreNetwork)
-
 lognormDist = plt.figure(figsize=(8, 8))
 if 'diffCond' in globals():
-    # log_bins = np.logspace(np.log10(min(diffCond)), np.log10(max(diffCond)), num=20)
-    # hist, edges = np.histogram(diffCond, bins=log_bins)
-    # plt.hist(diffCond, bins=log_bins, edgecolor='k')
-    plt.hist(diffCond, edgecolor='k')
+    log_bins = np.logspace(np.log10(min(diffCond)), np.log10(max(diffCond)), num=20)
+    hist, edges = np.histogram(diffCond, bins=log_bins)
+    plt.hist(diffCond, bins=log_bins, edgecolor='k')
+    # plt.hist(diffCond, edgecolor='k')
     plt.title('Lognormal distribution of diffusive conductances')
     plt.xlabel(r'$k_D [m^3/s]$')
-    # plt.ylabel(r'$Number of throats [-]$')
-    # plt.xscale('log')
+    plt.ylabel(r'$Number of throats [-]$')
+    plt.xscale('log')
 
 pc = fd['pore.concentration']
 tc = fd.interpolate_data(propname='throat.concentration')
 d = net['pore.diameter']
-fig, ax = plt.subplots(figsize=[5, 5])
-op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=400, ax=ax)
-op.visualization.plot_connections(network=net, color_by=tc, linewidth=3, ax=ax)
-_ = plt.axis('off')
+
+poreNetwork = plt.figure(figsize=(8, 8))
+poreNetwork = op.visualization.plot_coordinates(net, size_by=d, markersize=0.1, ax=poreNetwork)
+poreNetwork = op.visualization.plot_connections(net, size_by=liquid['throat.diffusive_conductance'], linewidth=20, ax=poreNetwork)
+
+fig, ax = plt.subplots(figsize=[8, 8])
+op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=4, ax=ax)
+op.visualization.plot_connections(network=net, color_by=tc, linewidth=1, ax=ax)
+# _ = plt.axis('off')
 
 effDiffVsCondVar = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
-plt.plot(throatVariance, Deff, 'o', markerfacecolor='blue', markeredgecolor='blue', markersize='10')
+plt.plot(throatVariance, Deff, 'o', markerfacecolor='blue', markeredgecolor='blue', markersize=5)
+plt.plot(throatVariance[-1], Deff[-1], 'o', markerfacecolor='blue', markeredgecolor='red', markersize=10, markeredgewidth=3)
 plt.title("Effective diffusion vs conductance dist var")
 plt.xlabel(r'$s$')
 plt.ylabel(r'$D_{eff}$')
 
 throatVarianceReshaped = (throatVariance).reshape(-1, 1)
-linRegDeff = LinearRegression().fit(throatVarianceReshaped, Deff)
-interpDeff = linRegDeff.intercept_+linRegDeff.coef_*throatVariance
+linRegDeff = LinearRegression().fit(throatVarianceReshaped, np.log(Deff))
+interpDeff = np.exp(linRegDeff.intercept_+linRegDeff.coef_*throatVariance)
 plt.plot(throatVariance, interpDeff, color='black', linewidth='4')
-plt.text(throatVariance[10], interpDeff[10], f"y={linRegDeff.coef_[0]:.7f}x{linRegDeff.intercept_:.7f}", fontsize=18, ha='left', va='top')
+plt.text(throatVariance[len(throatVariance)//2], interpDeff[len(interpDeff)//2], r"$D_{eff} = e^{" + f"{linRegDeff.intercept_:.5f} + {linRegDeff.coef_[0]:.5f} * s" + "}$", fontsize=18, ha='right', va='bottom')
 
 # plt.xscale('log')
-# plt.yscale('log')
+plt.yscale('log')
 plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
 plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
 plt.legend(loc='best')
