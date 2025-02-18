@@ -11,10 +11,10 @@ import time
 
 # Sim inputs ###################################################################
 shape = [20, 10, 1]
-spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
+spacing = 1e-4 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
 # throatDiameter = spacing/10
 poreDiameter = spacing/10
-Dmol = 1e-6 # Molecular Diffusion
+Dmol = 1e-5 # Molecular Diffusion
 Cin = 1
 endSim = ((shape[0]-1)*spacing)**2/Dmol
 simTime = (0, endSim) # Simulation starting and ending times
@@ -37,8 +37,9 @@ Ldomain = (shape[1]-1)*spacing
 liquid = op.phase.Phase(network=net) # Phase dictionary initialisation
 
 # Conductance
+s = 0.5 # Variance of the conductance
 # throatDiameter = np.ones(net.Nt)*poreDiameter/2
-throatDiameter = spst.lognorm.rvs(2, loc=0, scale=poreDiameter/2, size=net.Nt) # Diameter lognormal distribution
+throatDiameter = spst.lognorm.rvs(s, loc=0, scale=poreDiameter/2, size=net.Nt) # Diameter lognormal distribution
 net['throat.diameter'] = throatDiameter
 Athroat = throatDiameter**2*np.pi/4
 diffCond = Dmol*Athroat/spacing
@@ -67,7 +68,7 @@ start_time = time.time()
 tfd.run(x0=ic, tspan=simTime)
 
 end_time = time.time()
-elapsed_time = end_time - start_time # Calculate elapsed time
+elapsed_time = end_time - start_time # Compute elapsed time
 print(f"Elapsed time: {elapsed_time:.4f} seconds")
 
 # liquid.update(tfd.soln)
@@ -108,7 +109,8 @@ def minMaxNorm(data):
 
 # Analytical solution for semi-infinite domain and continuous injection
 def cdfBTC(t, D):
-    C = -(np.sqrt(D)*t**(3/2)*spsp.erf(Ldomain/(2*np.sqrt(D*t))))/(np.sqrt(D*t**3))
+    # C = -(np.sqrt(D)*t**(3/2)*spsp.erf(Ldomain/(2*np.sqrt(D*t))))/(np.sqrt(D*t**3))
+    C = 1-spsp.erf(Ldomain/(2*np.sqrt(D*t)))
     return C
 
 # Error function to be minismied
@@ -142,14 +144,16 @@ Cfit = cdfBTC(tNorm, DeffBTC)
 CfitNorm = minMaxNorm(Cfit)
 
 # Metrics ##########################################################
+print(f'Number of nodes: {shape}')
+print(f'Variance of the underlying diameter dist: {s:.2e}')
 print(f'Average outlet final conc: {np.mean(cAvg):.5e}')
 print(f"Molecular diff Dmol: ", "{0:.6E}".format(Dmol))
 print(f"Initial guess Deff0: ", "{0:.6E}".format(D0))
 print(f"BTC Fitted DeffBTC: ", "{0:.6E}".format(DeffBTC))
 
 # Plot #############################################################
-networkLabels = plt.figure(figsize=(8, 8))
-networkLabels = op.visualization.plot_tutorial(net, font_size=6)
+# networkLabels = plt.figure(figsize=(8, 8))
+# networkLabels = op.visualization.plot_tutorial(net, font_size=6)
 
 poreNetwork = plt.figure(figsize=(8, 8))
 poreNetwork = op.visualization.plot_coordinates(net)
@@ -161,15 +165,6 @@ if 'diffCond' in globals():
     plt.title('Lognormal distribution of diffusive conductances')
     plt.xlabel(r'$k_D [m^3/s]$')
     plt.ylabel(r'$Number of throats [-]$')
-
-pc = tfd.soln['pore.concentration'](3)
-# tc = tfd.interpolate_data(propname='throat.concentration')
-# tc = tfd.soln['pore.concentration'](1)[throat.all]
-d = net['pore.diameter']
-fig, ax = plt.subplots(figsize=[5, 5])
-op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=400, ax=ax)
-# op.visualization.plot_connections(network=net, color_by=tc, linewidth=3, ax=ax)
-_ = plt.axis('off')
 
 breakthrough = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
@@ -232,3 +227,12 @@ plt.legend(loc='best')
 # plt.plot(times[1:], C0, label='C0norm')
 # plt.plot(times[1:], Cfit, label='CfitNorm')
 # plt.legend(loc='best')
+
+pc = tfd.soln['pore.concentration'](0.5*endSim)
+# tc = tfd.interpolate_data(propname='throat.concentration')
+# tc = tfd.soln['pore.concentration'](1)[throat.all]
+d = net['pore.diameter']
+fig, ax = plt.subplots(figsize=[5, 5])
+op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=400, ax=ax)
+# op.visualization.plot_connections(network=net, color_by=tc, linewidth=3, ax=ax)
+_ = plt.axis('off')
