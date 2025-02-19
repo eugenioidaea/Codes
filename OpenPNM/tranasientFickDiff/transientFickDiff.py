@@ -65,6 +65,8 @@ print(tfd.settings)
 start_time = time.time()
 
 # Run the simulation
+# solSetting = op.integrators.ScipyRK45(atol=1e-06, rtol=1e-06, verbose=False, linsolver=None)
+# tfd.run(x0=ic, tspan=simTime, saveat=endSim/2, integrator=solSetting)
 tfd.run(x0=ic, tspan=simTime)
 
 end_time = time.time()
@@ -221,12 +223,12 @@ plt.plot(tNorm, C0norm, label='C0norm')
 plt.plot(tNorm, CfitNorm, label='CfitNorm')
 plt.legend(loc='best')
 
-# BTCs = plt.figure(figsize=(8, 8))
-# plt.rcParams.update({'font.size': 20})
-# plt.plot(times, cAvg, label='CopenPNM')
-# plt.plot(times[1:], C0, label='C0norm')
-# plt.plot(times[1:], Cfit, label='CfitNorm')
-# plt.legend(loc='best')
+BTCs = plt.figure(figsize=(8, 8))
+plt.rcParams.update({'font.size': 20})
+plt.plot(times, cAvg, label='CopenPNM')
+plt.plot(times[1:], C0, label='C0norm')
+plt.plot(times[1:], Cfit, label='CfitNorm')
+plt.legend(loc='best')
 
 pc = tfd.soln['pore.concentration'](0.5*endSim)
 # tc = tfd.interpolate_data(propname='throat.concentration')
