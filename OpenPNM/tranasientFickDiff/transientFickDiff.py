@@ -65,6 +65,8 @@ print(tfd.settings)
 start_time = time.time()
 
 # Run the simulation
+# solSetting = op.integrators.ScipyRK45(atol=1e-06, rtol=1e-06, verbose=False, linsolver=None)
+# tfd.run(x0=ic, tspan=simTime, saveat=endSim/2, integrator=solSetting)
 tfd.run(x0=ic, tspan=simTime)
 
 end_time = time.time()
