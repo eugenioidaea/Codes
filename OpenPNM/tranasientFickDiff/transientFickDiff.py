@@ -11,11 +11,11 @@ import time
 
 # Sim inputs ###################################################################
 shape = [20, 10, 1]
-spacing = 1e-4 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
+spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
 # throatDiameter = spacing/10
 poreDiameter = spacing/10
 Dmol = 1e-5 # Molecular Diffusion
-Cin = 1
+Cin = 5
 endSim = ((shape[0]-1)*spacing)**2/Dmol
 simTime = (0, endSim) # Simulation starting and ending times
 
@@ -38,8 +38,8 @@ liquid = op.phase.Phase(network=net) # Phase dictionary initialisation
 
 # Conductance
 s = 0.5 # Variance of the conductance
-# throatDiameter = np.ones(net.Nt)*poreDiameter/2
-throatDiameter = spst.lognorm.rvs(s, loc=0, scale=poreDiameter/2, size=net.Nt) # Diameter lognormal distribution
+throatDiameter = np.ones(net.Nt)*poreDiameter/2
+# throatDiameter = spst.lognorm.rvs(s, loc=0, scale=poreDiameter/2, size=net.Nt) # Diameter lognormal distribution
 net['throat.diameter'] = throatDiameter
 Athroat = throatDiameter**2*np.pi/4
 diffCond = Dmol*Athroat/spacing
@@ -105,7 +105,8 @@ cAvg = np.array(cAvg)
 
 # Normalisation
 def minMaxNorm(data):
-    return (data - np.min(data)) / (np.max(data) - np.min(data))
+    # return (data - np.min(data)) / (np.max(data) - np.min(data))
+    return data / np.max(data)
 
 # Analytical solution for semi-infinite domain and continuous injection
 def cdfBTC(t, D):
@@ -119,16 +120,16 @@ def errFunc(D, tNorm, cAvgNorm):
     Cpred = minMaxNorm(Cpred)
     return np.sum((cAvgNorm-Cpred)**2)
 
-tNorm = minMaxNorm(times)[1:]
-cAvgNorm = minMaxNorm(cAvg)[1:]
+tNorm = minMaxNorm(times)
+cAvgNorm = minMaxNorm(cAvg)
 
 # Initial guess
-D0 = 1e-4
+D0 = 1e-3
 C0 = cdfBTC(tNorm, D0)
 C0norm = minMaxNorm(C0)
 
 # Optimisation
-bounds = [(1e-8, 1)]  # Example bound: D should be between 1e-6 and 10
+bounds = [(1e-6, 1e-1)]  # Example bound: D should be between 1e-6 and 10
 fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='Nelder-Mead')
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='Powell')
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='CG')
@@ -182,10 +183,10 @@ plt.tight_layout()
 
 btcTail = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
-plt.plot(times, 1-np.array(cAvg))
+plt.plot(times, Cin-np.array(cAvg))
 plt.title("Conc in time at the outlet")
 plt.xlabel(r'$Time [s]$')
-plt.ylabel(r'$1-Concentration [-]$')
+plt.ylabel(r'$C_{in}-Concentration [-]$')
 plt.xscale('log')
 plt.yscale('log')
 plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
@@ -195,17 +196,17 @@ plt.tight_layout()
 
 btcInterp = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
-plt.plot(times, 1-cAvg, linewidth='5')
+plt.plot(times, Cin-cAvg, linewidth='5')
 
 tReshaped = (times[-100:-1]).reshape(-1, 1)
 linRegCavg = LinearRegression().fit(tReshaped, np.log(Cin-cAvg[-100:-1]))
 interpCavg = np.exp(linRegCavg.intercept_+linRegCavg.coef_*times)
 plt.plot(times, interpCavg, color='black', linewidth='2')
-plt.text(times[int(len(times)/2)], interpCavg[int(len(interpCavg)/2)], f"y={linRegCavg.coef_[0]:.5f}x+{linRegCavg.intercept_:.5f}", fontsize=18, ha='left', va='bottom')
+plt.text(times[int(len(times)/2)], interpCavg[int(len(interpCavg)/2)], r"$C_{in}-Conc = e^{" + f"{linRegCavg.intercept_:.5f} {linRegCavg.coef_[0]:.5f} * t" + "}$", fontsize=18, ha='left', va='bottom')
 
-plt.title("Conc in time at the outlet")
+plt.title("Concentration in time at the outlet")
 plt.xlabel(r'$Time [s]$')
-plt.ylabel(r'$1-Concentration [-]$')
+plt.ylabel(r'$C_{in}-Concentration [-]$')
 # plt.xscale('log')
 plt.yscale('log')
 # plt.ylim([0.1, max(cAvg)])
@@ -219,14 +220,17 @@ plt.rcParams.update({'font.size': 20})
 plt.plot(tNorm, cAvgNorm, label='CopenPNM')
 plt.plot(tNorm, C0norm, label='C0norm')
 plt.plot(tNorm, CfitNorm, label='CfitNorm')
+#plt.xscale('log')
+#plt.yscale('log')
+#plt.ylim([1e-7, max(cAvgNorm)])
 plt.legend(loc='best')
 
-# BTCs = plt.figure(figsize=(8, 8))
-# plt.rcParams.update({'font.size': 20})
-# plt.plot(times, cAvg, label='CopenPNM')
-# plt.plot(times[1:], C0, label='C0norm')
-# plt.plot(times[1:], Cfit, label='CfitNorm')
-# plt.legend(loc='best')
+BTCs = plt.figure(figsize=(8, 8))
+plt.rcParams.update({'font.size': 20})
+plt.plot(times, cAvg, label='CopenPNM')
+plt.plot(times, C0, label='C0norm')
+plt.plot(times, Cfit, label='CfitNorm')
+plt.legend(loc='best')
 
 pc = tfd.soln['pore.concentration'](0.5*endSim)
 # tc = tfd.interpolate_data(propname='throat.concentration')
