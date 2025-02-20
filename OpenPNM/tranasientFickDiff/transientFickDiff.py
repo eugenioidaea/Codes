@@ -8,13 +8,14 @@ from sklearn.linear_model import LinearRegression
 import scipy.optimize as opt
 import scipy.special as spsp
 import time
+from lmfit import Model
 
 # Sim inputs ###################################################################
 shape = [20, 10, 1]
 spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
 # throatDiameter = spacing/10
 poreDiameter = spacing/10
-Dmol = 1e-5 # Molecular Diffusion
+Dmol = 1e-6 # Molecular Diffusion
 Cin = 5
 endSim = ((shape[0]-1)*spacing)**2/Dmol
 simTime = (0, endSim) # Simulation starting and ending times
@@ -104,11 +105,10 @@ cAvg = np.array(cAvg)
 # tau = e * Dmol / DeffQ
 # print('The tortuosity is:', "{0:.6E}".format(tau))
 #################################################################################################
-
 # Normalisation
 def minMaxNorm(data):
-    # return (data - np.min(data)) / (np.max(data) - np.min(data))
-    return data / np.max(data)
+    return (data - np.min(data)) / (np.max(data) - np.min(data))
+    # return data / np.max(data)
 
 # Analytical solution for semi-infinite domain and continuous injection
 def cdfBTC(t, D):
@@ -122,16 +122,20 @@ def errFunc(D, tNorm, cAvgNorm):
     Cpred = minMaxNorm(Cpred)
     return np.sum((cAvgNorm-Cpred)**2)
 
+# Synthetic data for testing
+# Dtest = 1e-4
+# cAvg = cdfBTC(times, Dtest)
+
 tNorm = minMaxNorm(times)
 cAvgNorm = minMaxNorm(cAvg)
 
 # Initial guess
-D0 = 1e-3
+D0 = 1e-5
 C0 = cdfBTC(tNorm, D0)
 C0norm = minMaxNorm(C0)
 
-# Optimisation
-bounds = [(1e-6, 1e-1)]  # Example bound: D should be between 1e-6 and 10
+# OPTIMISATION
+bounds = [(1e-7, 1)]  # Example bound: D should be between 1e-6 and 10
 fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='Nelder-Mead')
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='Powell')
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='CG')
@@ -143,8 +147,24 @@ fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, metho
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='trust-constr')
 DeffBTC = fitting.x[0]  # Fitted parameter
 
-Cfit = cdfBTC(tNorm, DeffBTC)
+Copt = cdfBTC(tNorm, DeffBTC)
+CoptNorm = minMaxNorm(Copt)
+
+# CURVE FITTING
+DeffFIT, covariance = opt.curve_fit(cdfBTC, tNorm, cAvgNorm, p0=[D0], bounds=bounds[0])
+DeffFIT = DeffFIT[0]
+Cfit = cdfBTC(tNorm, DeffFIT)
 CfitNorm = minMaxNorm(Cfit)
+
+# LEAST SQUARE
+cdfModel = Model(cdfBTC)
+params = cdfModel.make_params(D=D0)
+params['D'].set(min=bounds[0][0], max=bounds[0][1])
+result = cdfModel.fit(cAvgNorm, params, t=tNorm)
+print(result.fit_report())
+DeffLSQ = result.params['D'].value
+Clsq = cdfBTC(tNorm, DeffLSQ)
+ClsqNorm = minMaxNorm(Clsq)
 
 # Metrics ##########################################################
 print(f'Number of nodes: {shape}')
@@ -152,7 +172,9 @@ print(f'Variance of the underlying diameter dist: {s:.2e}')
 print(f'Average outlet final conc: {np.mean(cAvg):.5e}')
 print(f"Molecular diff Dmol: ", "{0:.6E}".format(Dmol))
 print(f"Initial guess Deff0: ", "{0:.6E}".format(D0))
-print(f"BTC Fitted DeffBTC: ", "{0:.6E}".format(DeffBTC))
+print(f"BTC optimised Deff: ", "{0:.6E}".format(DeffBTC))
+print(f"BTC fitted Deff: ", "{0:.6E}".format(DeffFIT))
+print(f"BTC least square Deff = {DeffLSQ:.4f}")
 
 # Plot #############################################################
 # networkLabels = plt.figure(figsize=(8, 8))
@@ -172,7 +194,7 @@ if 'diffCond' in globals():
 breakthrough = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
 plt.plot(times, cAvg)
-# plt.plot(times, Cfit)
+# plt.plot(times, Copt)
 plt.title("Conc in time at the outlet")
 plt.xlabel(r'$Time [s]$')
 plt.ylabel(r'$Concentration [-]$')
@@ -219,19 +241,20 @@ plt.tight_layout()
 
 NormBTC = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
-plt.plot(tNorm, cAvgNorm, label='CopenPNM')
-plt.plot(tNorm, C0norm, label='C0norm')
+plt.plot(tNorm, cAvgNorm, 'o', label='CopenPNM')
+plt.plot(tNorm, C0norm, '--', label='C0norm')
+plt.plot(tNorm, CoptNorm, label='CoptNorm')
 plt.plot(tNorm, CfitNorm, label='CfitNorm')
-#plt.xscale('log')
-#plt.yscale('log')
-#plt.ylim([1e-7, max(cAvgNorm)])
+# plt.plot(tNorm, ClsqNorm, label='ClsqNorm')
 plt.legend(loc='best')
 
 BTCs = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
 plt.plot(times, cAvg, label='CopenPNM')
 plt.plot(times, C0, label='C0norm')
-plt.plot(times, Cfit, label='CfitNorm')
+plt.plot(times, Copt, label='CoptNorm')
+plt.plot(times, Cfit, label='CoptFit')
+plt.plot(times, Clsq, label='ClsqNorm')
 plt.legend(loc='best')
 
 pc = tfd.soln['pore.concentration'](0.5*endSim)
