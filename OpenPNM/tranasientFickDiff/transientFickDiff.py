@@ -122,6 +122,8 @@ def errFunc(D, tNorm, cAvgNorm):
     Cpred = minMaxNorm(Cpred)
     return np.sum((cAvgNorm-Cpred)**2)
 
+CIAO
+
 # Synthetic data for testing
 Dtest = 1e-4
 cAvg = cdfBTC(times, Dtest)*Cin
