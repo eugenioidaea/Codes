@@ -116,9 +116,9 @@ def cdfBTC(t, D):
     return C
 
 # Error function to be minismied
-def errFunc(D, times, cAvgNorm):
+def errFunc(D, times, cAvg):
     Cpred = cdfBTC(times, D)
-    return np.sum((cAvgNorm-Cpred)**2)
+    return np.sum((cAvg-Cpred)**2)
 
 # Synthetic data for testing
 # Dtest = 1e-4
@@ -176,6 +176,31 @@ print(f"BTC initial error: ", "{0:.6E}".format(err0))
 print(f"BTC optimised error: ", "{0:.6E}".format(errOpt))
 print(f"BTC fitted error: ", "{0:.6E}".format(errFit))
 print(f"BTC least square error = {errLsq:.4f}")
+
+# Cumulative Inverse Gaussian ######################################
+
+# Analytical solution for semi-infinite domain and continuous injection
+def cdfINVGAU(t, mu, lam):
+    cInvGau = spst.norm.cdf(np.sqrt(lam/t)*(t/mu-1))+np.exp(2*lam/mu)*spst.norm.cdf(-np.sqrt(lam/t)*(t/mu+1))
+    return cInvGau
+
+# Error function to be minismied
+def errInvGau(params, times, cAvg):
+    mu, lam = params
+    Cpred = cdfINVGAU(times, mu, lam)
+    return np.sum((cAvg-Cpred)**2)
+
+# Initial guess
+mulam0 = [1, 1]
+
+# Minimisation
+minInvGau = opt.minimize(errInvGau, mulam0, args=(times, cAvg)) #, bounds=bounds)
+
+mu, lam = minInvGau.x
+Cinvgau = cdfINVGAU(times, mu, lam)
+
+varBtc = mu**3/lam
+# DeffIG = 
 
 # Plot #############################################################
 # networkLabels = plt.figure(figsize=(8, 8))
@@ -248,6 +273,7 @@ plt.plot(times[::interval], C0[::interval], 'o-', markerfacecolor='none', label=
 plt.plot(times[::interval], Copt[::interval], 's-', markerfacecolor='none', label=r"$D_{opt}=$" + f"{DeffOPT:.4E}")
 plt.plot(times[::interval], Cfit[::interval], 'd-', markerfacecolor='none', label=r"$D_{fit}=$" + f"{DeffFIT:.4E}")
 plt.plot(times[::interval], Clsq[::interval], 'p-', markerfacecolor='none', label=r"$D_{lsq}=$" + f"{DeffLSQ:.4E}")
+plt.plot(times[::interval], Cinvgau[::interval], '^-', markerfacecolor='none', label=f"mu={mu:.4f}, lam={lam:.4f}")
 plt.title('Breakthrough curves')
 plt.xlabel('time [s]')
 plt.ylabel('concentration [-]')
