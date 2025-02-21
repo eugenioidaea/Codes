@@ -123,19 +123,20 @@ def errFunc(D, tNorm, cAvgNorm):
     return np.sum((cAvgNorm-Cpred)**2)
 
 # Synthetic data for testing
-# Dtest = 1e-4
-# cAvg = cdfBTC(times, Dtest)
+Dtest = 1e-4
+cAvg = cdfBTC(times, Dtest)*Cin
 
 tNorm = minMaxNorm(times)
 cAvgNorm = minMaxNorm(cAvg)
 
 # Initial guess
-D0 = 1e-5
+D0 = 1e-4
 C0 = cdfBTC(tNorm, D0)
 C0norm = minMaxNorm(C0)
+# Mminimisation constraints
+bounds = [(1e-5, 1)]  # Example bound: D should be between 1e-6 and 10
 
 # OPTIMISATION
-bounds = [(1e-7, 1)]  # Example bound: D should be between 1e-6 and 10
 fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='Nelder-Mead')
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='Powell')
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='CG')
@@ -145,9 +146,9 @@ fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, metho
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='COBYLA')
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='SLSQP')
 # fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='trust-constr')
-DeffBTC = fitting.x[0]  # Fitted parameter
+DeffOTP = fitting.x[0]  # Fitted parameter
 
-Copt = cdfBTC(tNorm, DeffBTC)
+Copt = cdfBTC(tNorm, DeffOTP)
 CoptNorm = minMaxNorm(Copt)
 
 # CURVE FITTING
@@ -160,7 +161,10 @@ CfitNorm = minMaxNorm(Cfit)
 cdfModel = Model(cdfBTC)
 params = cdfModel.make_params(D=D0)
 params['D'].set(min=bounds[0][0], max=bounds[0][1])
-result = cdfModel.fit(cAvgNorm, params, t=tNorm)
+# result = cdfModel.fit(cAvgNorm, params, t=tNorm, method='leastsq')
+# result = cdfModel.fit(cAvgNorm, params, t=tNorm, method='least_squares')
+# result = cdfModel.fit(cAvgNorm, params, t=tNorm, method='differential_evolution')
+result = cdfModel.fit(cAvgNorm, params, t=tNorm, method='basinhopping')
 print(result.fit_report())
 DeffLSQ = result.params['D'].value
 Clsq = cdfBTC(tNorm, DeffLSQ)
@@ -172,7 +176,7 @@ print(f'Variance of the underlying diameter dist: {s:.2e}')
 print(f'Average outlet final conc: {np.mean(cAvg):.5e}')
 print(f"Molecular diff Dmol: ", "{0:.6E}".format(Dmol))
 print(f"Initial guess Deff0: ", "{0:.6E}".format(D0))
-print(f"BTC optimised Deff: ", "{0:.6E}".format(DeffBTC))
+print(f"BTC optimised Deff: ", "{0:.6E}".format(DeffOTP))
 print(f"BTC fitted Deff: ", "{0:.6E}".format(DeffFIT))
 print(f"BTC least square Deff = {DeffLSQ:.4f}")
 
@@ -241,21 +245,31 @@ plt.tight_layout()
 
 NormBTC = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
-plt.plot(tNorm, cAvgNorm, 'o', label='CopenPNM')
-plt.plot(tNorm, C0norm, '--', label='C0norm')
-plt.plot(tNorm, CoptNorm, label='CoptNorm')
-plt.plot(tNorm, CfitNorm, label='CfitNorm')
-# plt.plot(tNorm, ClsqNorm, label='ClsqNorm')
+interval=100
+plt.plot(tNorm[::interval], cAvgNorm[::interval], '*-', markerfacecolor='none', label='CopenPNM')
+plt.plot(tNorm[::interval], C0norm[::interval], '--', markerfacecolor='none', label='C0norm')
+plt.plot(tNorm[::interval], CoptNorm[::interval], 's-', markerfacecolor='none', label='CoptNorm')
+plt.plot(tNorm[::interval], CfitNorm[::interval], 'd-', markerfacecolor='none', label='CfitNorm')
+plt.plot(tNorm[::interval], ClsqNorm[::interval], 'p-', markerfacecolor='none', label='ClsqNorm')
+plt.xlabel('t norm [-]')
+plt.ylabel('c norm [-]')
 plt.legend(loc='best')
 
 BTCs = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
 plt.plot(times, cAvg, label='CopenPNM')
-plt.plot(times, C0, label='C0norm')
-plt.plot(times, Copt, label='CoptNorm')
-plt.plot(times, Cfit, label='CoptFit')
-plt.plot(times, Clsq, label='ClsqNorm')
-plt.legend(loc='best')
+# plt.plot(times, C0, label='C0norm')
+# plt.plot(times, Copt, label='CoptNorm')
+# plt.plot(times, Cfit, label='CoptFit')
+# plt.plot(times, Clsq, label='ClsqNorm')
+# plt.legend(loc='best')
+
+residuals = plt.figure(figsize=(8, 8))
+plt.plot(tNorm, result.residual, 'o')  # Check if residuals are randomly distributed
+plt.title('Residuals of least square fitting')
+plt.xlabel('t norm [-]')
+plt.ylabel('lsq residual value [m2/s]')
+plt.show()
 
 pc = tfd.soln['pore.concentration'](0.5*endSim)
 # tc = tfd.interpolate_data(propname='throat.concentration')
