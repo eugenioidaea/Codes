@@ -16,7 +16,7 @@ spacing = 1e-3 # It is the distance between pores that it does not necessarily c
 # throatDiameter = spacing/10
 poreDiameter = spacing/10
 Dmol = 1e-6 # Molecular Diffusion
-Cin = 5
+Cin = 1
 endSim = ((shape[0]-1)*spacing)**2/Dmol
 simTime = (0, endSim) # Simulation starting and ending times
 
@@ -112,73 +112,70 @@ def minMaxNorm(data):
 
 # Analytical solution for semi-infinite domain and continuous injection
 def cdfBTC(t, D):
-    # C = -(np.sqrt(D)*t**(3/2)*spsp.erf(Ldomain/(2*np.sqrt(D*t))))/(np.sqrt(D*t**3))
     C = 1-spsp.erf(Ldomain/(2*np.sqrt(D*t)))
     return C
 
 # Error function to be minismied
-def errFunc(D, tNorm, cAvgNorm):
-    Cpred = cdfBTC(tNorm, D)
-    Cpred = minMaxNorm(Cpred)
+def errFunc(D, times, cAvgNorm):
+    Cpred = cdfBTC(times, D)
     return np.sum((cAvgNorm-Cpred)**2)
 
 # Synthetic data for testing
-Dtest = 1e-4
-cAvg = cdfBTC(times, Dtest)*Cin
+# Dtest = 1e-4
+# cAvg = cdfBTC(times, Dtest)
 
-tNorm = minMaxNorm(times)
-cAvgNorm = minMaxNorm(cAvg)
+# times = minMaxNorm(times)
+# cAvgNorm = minMaxNorm(cAvg)
 
 # Initial guess
-D0 = 1e-4
-C0 = cdfBTC(tNorm, D0)
-C0norm = minMaxNorm(C0)
+D0 = 1e-5
+C0 = cdfBTC(times, D0)
+err0 = np.sum((cAvg-C0)**2)
 # Mminimisation constraints
-bounds = [(1e-5, 1)]  # Example bound: D should be between 1e-6 and 10
+bounds = [(1e-10, 1e-1)]  # Example bound: D should be between 1e-6 and 10
 
 # OPTIMISATION
-fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='Nelder-Mead')
-# fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='Powell')
-# fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='CG')
-# fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='BFGS')
-# fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='L-BFGS-B')
-# fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='TNC')
-# fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='COBYLA')
-# fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='SLSQP')
-# fitting = opt.minimize(errFunc, D0, args=(tNorm, cAvgNorm), bounds=bounds, method='trust-constr')
-DeffOTP = fitting.x[0]  # Fitted parameter
-
-Copt = cdfBTC(tNorm, DeffOTP)
-CoptNorm = minMaxNorm(Copt)
+fitting = opt.minimize(errFunc, D0, args=(times, cAvg), bounds=bounds, method='Nelder-Mead')
+# fitting = opt.minimize(errFunc, D0, args=(times, cAvgNorm), bounds=bounds, method='Powell')
+# fitting = opt.minimize(errFunc, D0, args=(times, cAvgNorm), bounds=bounds, method='CG')
+# fitting = opt.minimize(errFunc, D0, args=(times, cAvgNorm), bounds=bounds, method='BFGS')
+# fitting = opt.minimize(errFunc, D0, args=(times, cAvgNorm), bounds=bounds, method='L-BFGS-B')
+# fitting = opt.minimize(errFunc, D0, args=(times, cAvgNorm), bounds=bounds, method='TNC')
+# fitting = opt.minimize(errFunc, D0, args=(times, cAvgNorm), bounds=bounds, method='COBYLA')
+# fitting = opt.minimize(errFunc, D0, args=(times, cAvgNorm), bounds=bounds, method='SLSQP')
+# fitting = opt.minimize(errFunc, D0, args=(times, cAvgNorm), bounds=bounds, method='trust-constr')
+DeffOPT = fitting.x[0]  # Fitted parameter
+Copt = cdfBTC(times, DeffOPT)
+errOpt=np.sum((cAvg-Copt)**2)
 
 # CURVE FITTING
-DeffFIT, covariance = opt.curve_fit(cdfBTC, tNorm, cAvgNorm, p0=[D0], bounds=bounds[0])
+DeffFIT, covariance = opt.curve_fit(cdfBTC, times, cAvg, p0=[D0], bounds=bounds[0])
 DeffFIT = DeffFIT[0]
-Cfit = cdfBTC(tNorm, DeffFIT)
-CfitNorm = minMaxNorm(Cfit)
+Cfit = cdfBTC(times, DeffFIT)
+errFit=np.sum((cAvg-Cfit)**2)
 
 # LEAST SQUARE
 cdfModel = Model(cdfBTC)
 params = cdfModel.make_params(D=D0)
 params['D'].set(min=bounds[0][0], max=bounds[0][1])
-# result = cdfModel.fit(cAvgNorm, params, t=tNorm, method='leastsq')
-# result = cdfModel.fit(cAvgNorm, params, t=tNorm, method='least_squares')
-# result = cdfModel.fit(cAvgNorm, params, t=tNorm, method='differential_evolution')
-result = cdfModel.fit(cAvgNorm, params, t=tNorm, method='basinhopping')
+# result = cdfModel.fit(cAvgNorm, params, t=times, method='leastsq')
+# result = cdfModel.fit(cAvgNorm, params, t=times, method='least_squares')
+# result = cdfModel.fit(cAvgNorm, params, t=times, method='differential_evolution')
+result = cdfModel.fit(cAvg, params, t=times, method='basinhopping')
 print(result.fit_report())
 DeffLSQ = result.params['D'].value
-Clsq = cdfBTC(tNorm, DeffLSQ)
-ClsqNorm = minMaxNorm(Clsq)
+Clsq = cdfBTC(times, DeffLSQ)
+errLsq=np.sum((cAvg-Clsq)**2)
 
 # Metrics ##########################################################
 print(f'Number of nodes: {shape}')
 print(f'Variance of the underlying diameter dist: {s:.2e}')
 print(f'Average outlet final conc: {np.mean(cAvg):.5e}')
 print(f"Molecular diff Dmol: ", "{0:.6E}".format(Dmol))
-print(f"Initial guess Deff0: ", "{0:.6E}".format(D0))
-print(f"BTC optimised Deff: ", "{0:.6E}".format(DeffOTP))
-print(f"BTC fitted Deff: ", "{0:.6E}".format(DeffFIT))
-print(f"BTC least square Deff = {DeffLSQ:.4f}")
+print(f"BTC initial error: ", "{0:.6E}".format(err0))
+print(f"BTC optimised error: ", "{0:.6E}".format(errOpt))
+print(f"BTC fitted error: ", "{0:.6E}".format(errFit))
+print(f"BTC least square error = {errLsq:.4f}")
 
 # Plot #############################################################
 # networkLabels = plt.figure(figsize=(8, 8))
@@ -246,13 +243,14 @@ plt.tight_layout()
 NormBTC = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
 interval=100
-plt.plot(tNorm[::interval], cAvgNorm[::interval], '*-', markerfacecolor='none', label='CopenPNM')
-plt.plot(tNorm[::interval], C0norm[::interval], '--', markerfacecolor='none', label='C0norm')
-plt.plot(tNorm[::interval], CoptNorm[::interval], 's-', markerfacecolor='none', label='CoptNorm')
-plt.plot(tNorm[::interval], CfitNorm[::interval], 'd-', markerfacecolor='none', label='CfitNorm')
-plt.plot(tNorm[::interval], ClsqNorm[::interval], 'p-', markerfacecolor='none', label='ClsqNorm')
-plt.xlabel('t norm [-]')
-plt.ylabel('c norm [-]')
+plt.plot(times[::interval], cAvg[::interval], '*-', markerfacecolor='none', label=r"$D_{mol}=$" + f"{Dmol:.4E}")
+plt.plot(times[::interval], C0[::interval], 'o-', markerfacecolor='none', label=r"$D_0=$" + f"{D0:.4E}")
+plt.plot(times[::interval], Copt[::interval], 's-', markerfacecolor='none', label=r"$D_{opt}=$" + f"{DeffOPT:.4E}")
+plt.plot(times[::interval], Cfit[::interval], 'd-', markerfacecolor='none', label=r"$D_{fit}=$" + f"{DeffFIT:.4E}")
+plt.plot(times[::interval], Clsq[::interval], 'p-', markerfacecolor='none', label=r"$D_{lsq}=$" + f"{DeffLSQ:.4E}")
+plt.title('Breakthrough curves')
+plt.xlabel('time [s]')
+plt.ylabel('concentration [-]')
 plt.legend(loc='best')
 
 BTCs = plt.figure(figsize=(8, 8))
@@ -265,7 +263,7 @@ plt.plot(times, cAvg, label='CopenPNM')
 # plt.legend(loc='best')
 
 residuals = plt.figure(figsize=(8, 8))
-plt.plot(tNorm, result.residual, 'o')  # Check if residuals are randomly distributed
+plt.plot(times, result.residual, 'o')  # Check if residuals are randomly distributed
 plt.title('Residuals of least square fitting')
 plt.xlabel('t norm [-]')
 plt.ylabel('lsq residual value [m2/s]')
