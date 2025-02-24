@@ -26,7 +26,7 @@ net['pore.volume'] = 4/3*np.pi*poreDiameter**3/8
 liquid = op.phase.Phase(network=net)
 
 # Lognormal diffusive conductance ###############################################
-throatDiameter = spst.lognorm.rvs(6, loc=0, scale=poreDiameter/2, size=net.Nt) # Conductance lognormal distribution
+throatDiameter = spst.lognorm.rvs(0.5, loc=0, scale=poreDiameter/2, size=net.Nt) # Conductance lognormal distribution
 net['throat.diameter'] = throatDiameter
 Athroat = throatDiameter**2*np.pi/4
 diffCond = Dmol*Athroat/spacing
