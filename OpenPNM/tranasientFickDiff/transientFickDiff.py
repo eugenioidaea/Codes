@@ -16,7 +16,11 @@ spacing = 1e-3 # It is the distance between pores that it does not necessarily c
 # throatDiameter = spacing/10
 poreDiameter = spacing/10
 Dmol = 1e-6 # Molecular Diffusion
+# Boundary & Initial conditions
 Cin = 1
+Cout = 0
+Qin = 0
+Qout = 0
 endSim = ((shape[0]-1)*spacing)**2/Dmol
 simTime = (0, endSim) # Simulation starting and ending times
 
@@ -51,13 +55,16 @@ tfd = op.algorithms.TransientFickianDiffusion(network=net, phase=liquid) # Trans
 
 inlet = net.pores(['left'])
 outlet = net.pores(['right'])
+center = np.arange(99, 109, 1)
 
 # Boundary conditions
 tfd.set_value_BC(pores=inlet, values=Cin) # Inlet: fixed concentration
-tfd.set_rate_BC(pores=outlet, rates=0) # Outlet: fixed rate
+tfd.set_value_BC(pores=outlet, values=Cout) # Inlet: fixed concentration
+# tfd.set_rate_BC(pores=inlet, rates=Qin) # Outlet: fixed rate
+# tfd.set_rate_BC(pores=outlet, rates=Qout) # Outlet: fixed rate
 
 # Initial conditions
-ic = np.concatenate((np.ones(shape[1])*Cin, np.zeros((shape[0]-1)*shape[1]))) # Initial Concentration: shape[1] represents the first column of pores and (shape[0]-1)*shape[1] are all the rest of the pores in the domain
+ic = np.concatenate((np.ones(shape[1])*Cin, np.ones((shape[0]-1)*shape[1])*Cout)) # Initial Concentration: shape[1] represents the first column of pores and (shape[0]-1)*shape[1] are all the rest of the pores in the domain
 
 # Algorithm settings
 # tfd.setup(t_scheme='cranknicolson', t_final=100, t_output=5, t_step=1, t_tolerance=1e-12)
@@ -80,8 +87,8 @@ times = tfd.soln['pore.concentration'].t # Store the time steps
 # Get the flux-averaged concentration at the outlet for every time step
 cAvg = []
 for ti in times:
-    c_front = tfd.soln['pore.concentration'](ti)[outlet]
-    q_front = tfd.rate(throats=net.Ts, mode='single')[outlet]
+    c_front = tfd.soln['pore.concentration'](ti)[center] # [outlet]
+    q_front = tfd.rate(throats=net.Ts, mode='single')[center] # [outlet]
     cAvg.append((q_front*c_front).sum() / q_front.sum())
 cAvg = np.array(cAvg)
 
