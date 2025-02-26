@@ -36,6 +36,7 @@ net['pore.volume'] = 4/3*np.pi*poreDiameter**3/8
 
 Adomain = (shape[1] * shape[2])*(spacing**2)
 Ldomain = (shape[1]-1)*spacing
+cs = 0.5 # Control section location between 0 and 1
 
 # print(net)
 
@@ -55,7 +56,7 @@ tfd = op.algorithms.TransientFickianDiffusion(network=net, phase=liquid) # Trans
 
 inlet = net.pores(['left'])
 outlet = net.pores(['right'])
-center = np.arange(100, 110, 1)
+center = np.arange(int(shape[0]*shape[1]*cs), int(shape[0]*shape[1]*cs+shape[1]), 1) # Nodes at Control Section cs
 
 # Boundary conditions
 tfd.set_value_BC(pores=inlet, values=Cin) # Inlet: fixed concentration
@@ -90,7 +91,8 @@ for ti in times:
     c_front = tfd.soln['pore.concentration'](ti)[center] # [outlet]
     q_front = tfd.rate(throats=net.Ts, mode='single')[center] # [outlet]
     cAvg = np.append(cAvg, (q_front*c_front).sum() / q_front.sum())
-
+btcScalefactor = max(tfd.soln['pore.concentration'](endSim)[center])
+cAvg = cAvg/btcScalefactor # Normalisation
 
 # METRICS FOR STEADY STATE #####################################################################
 # rate_inlet = -tfd.rate(pores=outlet)[0] # Fluxes leaving the pores are negative
@@ -119,7 +121,7 @@ def minMaxNorm(data):
 
 # Analytical solution for semi-infinite domain and continuous injection
 def cdfBTC(t, D):
-    C = 1-spsp.erf(Ldomain/(2*np.sqrt(D*t)))
+    C = (1-spsp.erf(Ldomain*cs/(2*np.sqrt(D*t)))) / btcScalefactor
     return C
 
 # Error function to be minismied
@@ -306,7 +308,7 @@ pc = tfd.soln['pore.concentration'](0.5*endSim)
 # tc = tfd.interpolate_data(propname='throat.concentration')
 # tc = tfd.soln['pore.concentration'](1)[throat.all]
 d = net['pore.diameter']
-fig, ax = plt.subplots(figsize=[5, 5])
+fig, ax = plt.subplots(figsize=[8, 8])
 op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=400, ax=ax)
 # op.visualization.plot_connections(network=net, color_by=tc, linewidth=3, ax=ax)
 _ = plt.axis('off')
