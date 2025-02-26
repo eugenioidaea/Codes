@@ -56,7 +56,7 @@ tfd = op.algorithms.TransientFickianDiffusion(network=net, phase=liquid) # Trans
 
 inlet = net.pores(['left'])
 outlet = net.pores(['right'])
-center = np.arange(int(shape[0]*shape[1]*cs), int(shape[0]*shape[1]*cs+shape[1]), 1) # Nodes at Control Section cs
+csBtc = np.arange(int(shape[0]*shape[1]*cs), int(shape[0]*shape[1]*cs+shape[1]), 1) # Nodes at Control Section cs for recording the BTC
 
 # Boundary conditions
 tfd.set_value_BC(pores=inlet, values=Cin) # Inlet: fixed concentration
@@ -88,11 +88,11 @@ times = tfd.soln['pore.concentration'].t # Store the time steps
 # Get the flux-averaged concentration at the outlet for every time step
 cAvg = np.array([])
 for ti in times:
-    c_front = tfd.soln['pore.concentration'](ti)[center] # [outlet]
-    q_front = tfd.rate(throats=net.Ts, mode='single')[center] # [outlet]
+    c_front = tfd.soln['pore.concentration'](ti)[csBtc] # [outlet]
+    q_front = tfd.rate(throats=net.Ts, mode='single')[csBtc] # [outlet]
     cAvg = np.append(cAvg, (q_front*c_front).sum() / q_front.sum())
-btcScalefactor = max(tfd.soln['pore.concentration'](endSim)[center])
-cAvg = cAvg/btcScalefactor # Normalisation
+btcScalefactor = max(tfd.soln['pore.concentration'](endSim)[csBtc])
+cAvg = cAvg # / btcScalefactor # Normalisation
 
 # METRICS FOR STEADY STATE #####################################################################
 # rate_inlet = -tfd.rate(pores=outlet)[0] # Fluxes leaving the pores are negative
@@ -121,7 +121,7 @@ def minMaxNorm(data):
 
 # Analytical solution for semi-infinite domain and continuous injection
 def cdfBTC(t, D):
-    C = (1-spsp.erf(Ldomain*cs/(2*np.sqrt(D*t)))) / btcScalefactor
+    C = (1-spsp.erf(Ldomain*cs/(2*np.sqrt(D*t)))) # / btcScalefactor
     return C
 
 # Error function to be minismied
