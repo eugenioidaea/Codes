@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "../../../anaconda3/lib/python3.12/site-packages/openpnm"
+		},
+		{
+			"path": "DigitalRocks"
 		}
 	],
 	"settings": {}

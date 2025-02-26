@@ -44,7 +44,9 @@ liquid = op.phase.Phase(network=net) # Phase dictionary initialisation
 
 # Conductance
 s = 0.5 # Variance of the conductance
-throatDiameter = np.ones(net.Nt)*poreDiameter/2
+# throatDiameter = np.ones(net.Nt)*poreDiameter/2
+np.random.seed(42)
+throatDiameter = np.random.lognormal(mean=np.log(poreDiameter/2), sigma=s, size=net.Nt)
 # throatDiameter = spst.lognorm.rvs(s, loc=0, scale=poreDiameter/2, size=net.Nt) # Diameter lognormal distribution
 net['throat.diameter'] = throatDiameter
 Athroat = throatDiameter**2*np.pi/4
@@ -91,8 +93,8 @@ for ti in times:
     c_front = tfd.soln['pore.concentration'](ti)[csBtc] # [outlet]
     q_front = tfd.rate(throats=net.Ts, mode='single')[csBtc] # [outlet]
     cAvg = np.append(cAvg, (q_front*c_front).sum() / q_front.sum())
-btcScalefactor = max(tfd.soln['pore.concentration'](endSim)[csBtc])
-cAvg = cAvg # / btcScalefactor # Normalisation
+btcScalefactor = max(tfd.soln['pore.concentration'](endSim)[csBtc]) # NORMALISATION FACTOR ???
+cAvg = cAvg # / btcScalefactor
 
 # METRICS FOR STEADY STATE #####################################################################
 # rate_inlet = -tfd.rate(pores=outlet)[0] # Fluxes leaving the pores are negative
