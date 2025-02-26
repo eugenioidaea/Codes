@@ -55,7 +55,7 @@ tfd = op.algorithms.TransientFickianDiffusion(network=net, phase=liquid) # Trans
 
 inlet = net.pores(['left'])
 outlet = net.pores(['right'])
-center = np.arange(99, 109, 1)
+center = np.arange(100, 110, 1)
 
 # Boundary conditions
 tfd.set_value_BC(pores=inlet, values=Cin) # Inlet: fixed concentration
@@ -85,12 +85,12 @@ print(f"Elapsed time: {elapsed_time:.4f} seconds")
 times = tfd.soln['pore.concentration'].t # Store the time steps
 
 # Get the flux-averaged concentration at the outlet for every time step
-cAvg = []
+cAvg = np.array([])
 for ti in times:
     c_front = tfd.soln['pore.concentration'](ti)[center] # [outlet]
     q_front = tfd.rate(throats=net.Ts, mode='single')[center] # [outlet]
-    cAvg.append((q_front*c_front).sum() / q_front.sum())
-cAvg = np.array(cAvg)
+    cAvg = np.append(cAvg, (q_front*c_front).sum() / q_front.sum())
+
 
 # METRICS FOR STEADY STATE #####################################################################
 # rate_inlet = -tfd.rate(pores=outlet)[0] # Fluxes leaving the pores are negative
