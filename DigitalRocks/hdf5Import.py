@@ -1,10 +1,43 @@
-from hdf5storage import loadmat
 import matplotlib.pyplot as plt
+import tifffile as tiff
+import porespy as ps
+import numpy as np
+from skimage.transform import resize
+import openpnm as op
+import matplotlib.transforms as transforms
 
-# 'H' is the dictionary key for "hangwall.mat"
-# For footwall*, the dictionary key appears to be 'F'
-# img = loadmat(r'/home/eugenio/ownCloud/IDAEA/Data/15 fractures of granite/srv/www/digrocks/portal/media/projects/472/origin/2594/images/hangwall1_AG1_240.mat')['H']
-img = loadmat('/home/eugenio/ownCloud/IDAEA/Data/3D Collection of Binary Images/srv/www/digrocks/portal/media/projects/374/origin/1736/images/374_01_00_256.mat')['bin']
+ts = 0.70 # Threshold value: above is fracture (0), below is matrix (1)
+xl = 7000
+xr = 7100 # 10000
+yb = 1000
+yt = 1050 # 8000
 
-plt.figure()
-plt.imshow(img)
+image = tiff.imread("/home/eugenio/Downloads/G4.tif") # For 2D images it is a simple matrix with values between 0 (white->solid matrix) and 255 (black->fracture and pores)
+image = image[yb:yt, xl:xr]
+image = resize(image, (image.shape[0], image.shape[1])) # It scales the values between 0 (white) and 1 (black)
+binIm = np.zeros((yt-yb, xr-xl)) # It crops the image
+binIm[image>ts] = 0 # Binary transformation
+binIm[image<ts] = 1 # Binary transformation
+
+grayScale = plt.figure(figsize=(8, 8))
+plt.imshow(image, cmap='gray')
+binary = plt.figure(figsize=(8, 8))
+plt.imshow(binIm, cmap='gray')
+
+net = ps.networks.snow2(binIm) #, voxel_size=1)
+pn = op.io.network_from_porespy(net.network)
+
+# Transpose the pore coordinates (swap X and Y)
+# pn["pore.coords"][:, [0, 1]] = pn["pore.coords"][:, [1, 0]]
+poreNetwork = plt.figure(figsize=(8, 8))
+plt.imshow(binIm.T, cmap=plt.cm.bone)
+op.visualization.plot_coordinates(ax=poreNetwork,
+                                  network=pn,
+                                  size_by=pn["pore.inscribed_diameter"],
+                                  color_by=pn["pore.inscribed_diameter"],
+                                  markersize=100)
+op.visualization.plot_connections(ax=poreNetwork, 
+                                  network=pn,
+                                  size_by=pn['throat.inscribed_diameter'],
+                                  linewidth=10)
+# poreNetwork.axis("off")
