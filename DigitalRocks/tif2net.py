@@ -6,15 +6,15 @@ from skimage.transform import resize
 import openpnm as op
 import matplotlib.transforms as transforms
 
-ts = 0.95 # Threshold value: above is fracture, below is matrix
-xl = 7000 # 1000
-xr = 9000# 1100 # 8000
-yb = 5500
-yt = 6500 # 7200
+ts = 0.999 # Threshold value: above is fracture, below is matrix
+xl = 8500 # 1000
+xr = 9500# 1100 # 8000
+yb = 8000
+yt = 8500 # 7200
 
 imageTif = tiff.imread("/home/eugenio/Downloads/G4.tif") # For 2D images it is a simple matrix with values between 0 (white->solid matrix) and 255 (black->fracture and pores)
 imageTif = np.flipud(imageTif)
-imageComplete = resize(imageTif, (imageTif.shape[0], imageTif.shape[0]))
+imageComplete = resize(imageTif, (imageTif.shape[0], imageTif.shape[1]))
 imageCrop = imageTif[yb:yt, xl:xr]
 imageCrop = resize(imageCrop, (imageCrop.shape[0], imageCrop.shape[1])) # It scales the values between 0 (white) and 1 (black)
 binIm = np.zeros((yt-yb, xr-xl)) # It crops the imageCrop
