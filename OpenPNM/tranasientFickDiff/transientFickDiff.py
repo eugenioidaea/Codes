@@ -11,18 +11,22 @@ import time
 from lmfit import Model
 
 # Sim inputs ###################################################################
-shape = [20, 1, 1]
+shape = [80, 1, 1]
 spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
 # throatDiameter = spacing/10
 poreDiameter = spacing/10
 Dmol = 1e-6 # Molecular Diffusion
 # Boundary & Initial conditions
-Cin = 1
+cs1 = 0.5 # Control section location between 0 and 1
+cs2 = 0.9
 Cout = 0
+Cin = 1/(1-cs1)+Cout
 Qin = 0
 Qout = 0
 endSim = ((shape[0]-1)*spacing)**2/Dmol
 simTime = (0, endSim) # Simulation starting and ending times
+
+D0 = 1e-7 # Initial guess for diff coeff
 
 # Initialisation ################################################################
 net = op.network.Cubic(shape=shape, spacing=spacing) # Shape of the elementary cell of the network: cubic
@@ -36,7 +40,6 @@ net['pore.volume'] = 4/3*np.pi*poreDiameter**3/8
 
 Adomain = (shape[1] * shape[2])*(spacing**2)
 Ldomain = (shape[0]-1)*spacing
-cs = 0.5 # Control section location between 0 and 1
 
 # print(net)
 
@@ -58,7 +61,7 @@ tfd = op.algorithms.TransientFickianDiffusion(network=net, phase=liquid) # Trans
 
 inlet = net.pores(['left'])
 outlet = net.pores(['right'])
-csBtc = np.arange(int(shape[0]*shape[1]*cs), int(shape[0]*shape[1]*cs+shape[1]), 1) # Nodes at Control Section cs for recording the BTC
+csBtc = np.arange(int(shape[0]*shape[1]*cs1), int(shape[0]*shape[1]*cs1+shape[1]), 1) # Nodes for recording the BTC at Control Section cs1
 
 # Boundary conditions
 tfd.set_value_BC(pores=inlet, values=Cin) # Inlet: fixed concentration
@@ -123,7 +126,7 @@ def minMaxNorm(data):
 
 # Analytical solution for semi-infinite domain and continuous injection
 def cdfBTC(t, D):
-    C = (1-spsp.erf(Ldomain*cs/(2*np.sqrt(D*t)))) # / btcScalefactor
+    C = (1-spsp.erf(Ldomain*cs1/(2*np.sqrt(D*t)))) # / btcScalefactor
     return C
 
 # Error function to be minismied
@@ -139,7 +142,6 @@ def errFunc(D, times, cAvg):
 # cAvgNorm = minMaxNorm(cAvg)
 
 # Initial guess
-D0 = 1e-5
 C0 = cdfBTC(times, D0)
 err0 = np.sum((cAvg-C0)**2)
 # Mminimisation constraints
@@ -278,13 +280,13 @@ plt.tight_layout()
 
 NormBTC = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
-interval=100
+interval=1000
 plt.plot(times[::interval], cAvg[::interval], '*-', markerfacecolor='none', label=r"$D_{mol}=$" + f"{Dmol:.4E}")
 plt.plot(times[::interval], C0[::interval], 'o-', markerfacecolor='none', label=r"$D_0=$" + f"{D0:.4E}")
 plt.plot(times[::interval], Copt[::interval], 's-', markerfacecolor='none', label=r"$D_{opt}=$" + f"{DeffOPT:.4E}")
 plt.plot(times[::interval], Cfit[::interval], 'd-', markerfacecolor='none', label=r"$D_{fit}=$" + f"{DeffFIT:.4E}")
 plt.plot(times[::interval], Clsq[::interval], 'p-', markerfacecolor='none', label=r"$D_{lsq}=$" + f"{DeffLSQ:.4E}")
-plt.plot(times[::interval], Cinvgau[::interval], '^-', markerfacecolor='none', label=f"mu={mu:.4f}, lam={lam:.4f}")
+# plt.plot(times[::interval], Cinvgau[::interval], '^-', markerfacecolor='none', label=f"mu={mu:.4f}, lam={lam:.4f}")
 plt.title('Breakthrough curves')
 plt.xlabel('time [s]')
 plt.ylabel('concentration [-]')
