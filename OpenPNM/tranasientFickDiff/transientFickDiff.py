@@ -11,7 +11,7 @@ import time
 from lmfit import Model
 
 # Sim inputs ###################################################################
-shape = [20, 10, 1]
+shape = [20, 1, 1]
 spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
 # throatDiameter = spacing/10
 poreDiameter = spacing/10
@@ -35,7 +35,7 @@ net['pore.diameter'] = poreDiameter
 net['pore.volume'] = 4/3*np.pi*poreDiameter**3/8
 
 Adomain = (shape[1] * shape[2])*(spacing**2)
-Ldomain = (shape[1]-1)*spacing
+Ldomain = (shape[0]-1)*spacing
 cs = 0.5 # Control section location between 0 and 1
 
 # print(net)
@@ -44,9 +44,9 @@ liquid = op.phase.Phase(network=net) # Phase dictionary initialisation
 
 # Conductance
 s = 0.5 # Variance of the conductance
-# throatDiameter = np.ones(net.Nt)*poreDiameter/2
-np.random.seed(42)
-throatDiameter = np.random.lognormal(mean=np.log(poreDiameter/2), sigma=s, size=net.Nt)
+throatDiameter = np.ones(net.Nt)*poreDiameter/2
+# np.random.seed(42)
+# throatDiameter = np.random.lognormal(mean=np.log(poreDiameter/2), sigma=s, size=net.Nt)
 # throatDiameter = spst.lognorm.rvs(s, loc=0, scale=poreDiameter/2, size=net.Nt) # Diameter lognormal distribution
 net['throat.diameter'] = throatDiameter
 Athroat = throatDiameter**2*np.pi/4

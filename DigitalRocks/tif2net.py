@@ -12,7 +12,7 @@ xr = 9500# 1100 # 8000
 yb = 8000
 yt = 8500 # 7200
 
-imageTif = tiff.imread("/home/eugenio/Downloads/G4.tif") # For 2D images it is a simple matrix with values between 0 (white->solid matrix) and 255 (black->fracture and pores)
+imageTif = tiff.imread("/home/eugenio/ownCloud/IDAEA/Data/Vega2022/srv/www/digrocks/portal/media/projects/415/origin/2333/images/G4.tif") # For 2D images it is a simple matrix with values between 0 (white->solid matrix) and 255 (black->fracture and pores)
 imageTif = np.flipud(imageTif)
 imageComplete = resize(imageTif, (imageTif.shape[0], imageTif.shape[1]))
 imageCrop = imageTif[yb:yt, xl:xr]
@@ -23,7 +23,7 @@ binIm[imageCrop<ts] = 1 # Matrix
 
 imageFull = plt.figure(figsize=(8, 8))
 plt.imshow(imageComplete, cmap='gray', origin='lower')
-plt.plot([xl, xr, xr, xl, xl], [yb, yb, yt, yt, yb])
+plt.plot([xl, xr, xr, xl, xl], [yb, yb, yt, yt, yb], linewidth=3)
 grayScale = plt.figure(figsize=(8, 8))
 plt.imshow(imageCrop, cmap='gray', origin='lower')
 binary = plt.figure(figsize=(8, 8))
@@ -45,4 +45,4 @@ op.visualization.plot_connections(ax=poreNetwork,
                                   network=pn,
                                   size_by=pn['throat.inscribed_diameter'],
                                   linewidth=10)
-# poreNetwork.axis("off")
+# _ = plt.axis("off")
