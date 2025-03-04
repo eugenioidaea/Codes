@@ -6,7 +6,7 @@ from skimage.transform import resize
 import openpnm as op
 import matplotlib.transforms as transforms
 
-ts = 0.999 # Threshold value: above is fracture, below is matrix
+ts = 0.5 # Threshold value: above is fracture, below is matrix
 xl = 8500 # 1000
 xr = 9500# 1100 # 8000
 yb = 8000
@@ -18,8 +18,8 @@ imageComplete = resize(imageTif, (imageTif.shape[0], imageTif.shape[1]))
 imageCrop = imageTif[yb:yt, xl:xr]
 imageCrop = resize(imageCrop, (imageCrop.shape[0], imageCrop.shape[1])) # It scales the values between 0 (white) and 1 (black)
 binIm = np.zeros((yt-yb, xr-xl)) # It crops the imageCrop
-binIm[imageCrop>ts] = 0 # Fracture
-binIm[imageCrop<ts] = 1 # Matrix
+binIm[imageCrop>ts] = 0 # Black
+binIm[imageCrop<ts] = 1 # White
 
 imageFull = plt.figure(figsize=(8, 8))
 plt.imshow(imageComplete, cmap='gray', origin='lower')
@@ -35,7 +35,7 @@ pn = op.io.network_from_porespy(net.network)
 # Transpose the pore coordinates (swap X and Y)
 pn["pore.coords"][:, [1, 0]] = pn["pore.coords"][:, [0, 1]]
 poreNetwork = plt.figure(figsize=(8, 8))
-plt.imshow(np.flipud(binIm), cmap=plt.cm.bone)
+plt.imshow(binIm, cmap=plt.cm.bone, origin='lower')
 op.visualization.plot_coordinates(ax=poreNetwork,
                                   network=pn,
                                   size_by=pn["pore.inscribed_diameter"],
