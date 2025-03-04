@@ -11,23 +11,26 @@ import time
 from lmfit import Model
 
 # Sim inputs ###################################################################
-shape = [100, 1, 1]
+shape = [20, 1, 1]
 spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
-# throatDiameter = spacing/10
 poreDiameter = spacing/10
+Adomain = (shape[1] * shape[2])*(spacing**2) # Should the diameters of the pores be considered?
+Ldomain = (shape[0]-1)*spacing+shape[0]*poreDiameter
 Dmol = 1e-6 # Molecular Diffusion
-# Boundary & Initial conditions
-cs = 0.9 # Control section location between 0 and 1
+
+cs = 0.5 # BTC relative control section location (0 is beginning and 1 is the end)
+
+# Boundary & Initial conditions ################################################
 Cout = 0
-Cin = 1/(1-cs)+Cout
+Cin = (Ldomain-Cout*cs*Ldomain)/(Ldomain-cs*Ldomain)
 Qin = 0
 Qout = 0
 endSim = ((shape[0]-1)*spacing)**2/Dmol
 simTime = (0, endSim) # Simulation starting and ending times
 
-D0 = 1e-7 # Initial guess for diff coeff
+D0 = 1e-7 # Initial guess for diffusion coefficient during optimisation
 
-concTime = 1 # Plot the spatial map of the concentration between start (0) or end (1) of the simulation
+concTimePlot = 1 # Plot the spatial map of the concentration between start (0) or end (1) of the simulation
 
 # Initialisation ################################################################
 net = op.network.Cubic(shape=shape, spacing=spacing) # Shape of the elementary cell of the network: cubic
@@ -39,19 +42,23 @@ net['throat.length'] = spacing
 net['pore.diameter'] = poreDiameter
 net['pore.volume'] = 4/3*np.pi*poreDiameter**3/8
 
-Adomain = (shape[1] * shape[2])*(spacing**2)
-Ldomain = (shape[0]-1)*spacing+shape[0]*poreDiameter
-
 # print(net)
 
 liquid = op.phase.Phase(network=net) # Phase dictionary initialisation
 
 # Conductance
 s = 0.5 # Variance of the conductance
+
+# OPTION 1: CONSTANT DIAMETER
 throatDiameter = np.ones(net.Nt)*poreDiameter/2
+
+# OPTION 2: LOGNORMAL DIST DIAMETERS WITH FIXED SEED
 # np.random.seed(42)
 # throatDiameter = np.random.lognormal(mean=np.log(poreDiameter/2), sigma=s, size=net.Nt)
-# throatDiameter = spst.lognorm.rvs(s, loc=0, scale=poreDiameter/2, size=net.Nt) # Diameter lognormal distribution
+
+# OPTION 3: LOGNORMAL DIST DIAMETERS WITH RANDOM SEED
+# throatDiameter = spst.lognorm.rvs(s, loc=0, scale=poreDiameter/2, size=net.Nt)
+
 net['throat.diameter'] = throatDiameter
 Athroat = throatDiameter**2*np.pi/4
 diffCond = Dmol*Athroat/spacing
@@ -62,7 +69,8 @@ tfd = op.algorithms.TransientFickianDiffusion(network=net, phase=liquid) # Trans
 
 inlet = net.pores(['left'])
 outlet = net.pores(['right'])
-csBtc = np.arange(int(shape[0]*shape[1]*cs), int(shape[0]*shape[1]*cs+shape[1]), 1) # Nodes for recording the BTC at Control Section cs
+csBtc = np.arange(int(np.floor((shape[0]*shape[1])*cs-shape[1])), int(np.ceil(shape[0]*shape[1]*cs)), 1) # Nodes for recording the BTC at Control Section cs
+# csBtc = np.arange(int(shape[0]*shape[1]*cs), int(shape[0]*shape[1]*cs+shape[1]), 1) # Nodes for recording the BTC at Control Section cs
 
 # Boundary conditions
 tfd.set_value_BC(pores=inlet, values=Cin) # Inlet: fixed concentration
@@ -97,8 +105,9 @@ for ti in times:
     c_front = tfd.soln['pore.concentration'](ti)[csBtc] # [outlet]
     q_front = tfd.rate(throats=net.Ts, mode='single')[csBtc] # [outlet]
     cAvg = np.append(cAvg, (q_front*c_front).sum() / q_front.sum())
-btcScalefactor = max(tfd.soln['pore.concentration'](endSim)[csBtc]) # NORMALISATION FACTOR ???
-cAvg = cAvg # / btcScalefactor
+    # cAvg = np.append(cAvg, c_front.sum())
+# btcScalefactor = max(tfd.soln['pore.concentration'](endSim)[csBtc]) # NORMALISATION FACTOR ???
+# cAvg = cAvg / btcScalefactor
 
 # METRICS FOR STEADY STATE #####################################################################
 # rate_inlet = -tfd.rate(pores=outlet)[0] # Fluxes leaving the pores are negative
@@ -308,7 +317,7 @@ plt.xlabel('t norm [-]')
 plt.ylabel('lsq residual value [m2/s]')
 plt.show()
 
-pc = tfd.soln['pore.concentration'](endSim*concTime)
+pc = tfd.soln['pore.concentration'](endSim*concTimePlot)
 # tc = tfd.interpolate_data(propname='throat.concentration')
 # tc = tfd.soln['pore.concentration'](1)[throat.all]
 d = net['pore.diameter']
@@ -316,6 +325,6 @@ fig, ax = plt.subplots(figsize=[8, 8])
 ms = 400 # Markersize
 op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=ms, ax=ax)
 # op.visualization.plot_connections(network=net, color_by=tc, linewidth=3, ax=ax)
-ax.plot([csBtc[0]/shape[1]*spacing, csBtc[0]/shape[1]*spacing], [-shape[1]*spacing*ms/100, shape[1]*spacing*ms/100], linewidth=3)
-plt.text(csBtc[0]/shape[1]*spacing, shape[1]*spacing*ms/100, "Control section 2", ha='right', va='bottom')
+ax.plot([(csBtc[0]/shape[1]+0.5)*spacing, (csBtc[0]/shape[1]+0.5)*spacing], [-shape[1]*spacing*ms/100, shape[1]*spacing*ms/100], linewidth=3)
+plt.text((csBtc[0]/shape[1]+0.5)*spacing, shape[1]*spacing*ms/100, "Control section 1", ha='right', va='bottom')
 #_ = plt.axis('off')
