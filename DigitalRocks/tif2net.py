@@ -46,3 +46,31 @@ op.visualization.plot_connections(ax=poreNetwork,
                                   size_by=pn['throat.inscribed_diameter'],
                                   linewidth=10)
 # _ = plt.axis("off")
+
+# TRANSIENT FICKIAN DIFFUSION SIMULATION ################################
+Cin = 1
+Cout = 0
+simTime = (0, 100)
+boundaryLayer = 10
+
+pn['pore.bottom']=pn['pore.coords'][:, 1]<boundaryLayer
+pn['pore.top']=pn['pore.coords'][:, 1]>max(pn['pore.coords'][:, 1])-boundaryLayer
+
+inlet = pn.pores(['bottom'])
+outlet = pn.pores(['top'])
+
+liquid = op.phase.Phase(network=pn) # Phase dictionary initialisation
+
+liquid['throat.diffusive_conductance'] = np.ones(pn.Nt)*1e-3
+
+tfd = op.algorithms.TransientFickianDiffusion(network=pn, phase=liquid) # TransientFickianDiffusion dictionary initialisation
+
+# Boundary conditions
+tfd.set_value_BC(pores=inlet, values=Cin) # Inlet: fixed concentration
+tfd.set_value_BC(pores=outlet, values=Cout) # Inlet: fixed concentration
+
+# Initial conditions
+ic = np.ones(len(pn['pore.coords']))*Cout
+ic[inlet] = Cin
+
+tfd.run(x0=ic, tspan=simTime)
