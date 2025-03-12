@@ -8,10 +8,12 @@ from shapely.geometry import LineString, Point, Polygon
 proj = op.Project()
 
 # Number of fractures
-num_fractures = 30
+num_fractures = 5
 
 # Define domain size
 domain_size = [0.0, 0.0, 1.0, 1.0] # [Xmin, Ymin, Xmax, Ymax]
+# Domain boundaries to polygon object
+boundary = Polygon([(domain_size[0], domain_size[1]), (domain_size[2], domain_size[1]), (domain_size[2], domain_size[3]), (domain_size[0], domain_size[3]), (domain_size[0], domain_size[1])])
 
 # Sample fracture lengths from a distribution:
 # A) Lognormal
@@ -19,7 +21,7 @@ domain_size = [0.0, 0.0, 1.0, 1.0] # [Xmin, Ymin, Xmax, Ymax]
 # std_length = 0.02
 # fracture_lengths = np.random.lognormal(mean=np.log(mean_length), sigma=std_length, size=num_fractures)
 # B) Powerlaw
-l_min = 1e-1 # Minimum fracture length
+l_min = 5e-1 # Minimum fracture length
 l_max = 1 # maximum fracture length
 exponent = -2.58  # Power law exponent
 b = abs(exponent) - 1  # SciPy uses (b+1) where b is positive
@@ -39,32 +41,26 @@ end_y = start_y + fracture_lengths * np.sin(angles)
 
 segments_unclipped = [((start_x[i], start_y[i]), (end_x[i], end_y[i])) for i in range(num_fractures)]
 
-# Clip end points to stay within the domain
-end_x = np.clip(end_x, domain_size[0], domain_size[2])
-end_y = np.clip(end_y, domain_size[1], domain_size[3])
+# Processed list to store clipped segments
+lines = []
 
-# Collect pore coordinates (fracture intersections)
-pore_coords = np.vstack((np.column_stack((start_x, start_y, np.zeros(num_fractures))),
-                         np.column_stack((end_x, end_y, np.zeros(num_fractures)))))
+# Clip each segment to the polygon
+for seg in segments_unclipped:
+    line = LineString([seg[0], seg[1]])  # Create a LineString
+    clipped_line = line.intersection(boundary)  # Clip to bounding box
 
-# Define connections (throats) between start and end points of each fracture
-throat_conns = np.column_stack((np.arange(num_fractures), np.arange(num_fractures, 2 * num_fractures)))
+    # If the intersection is a LineString, add it to results
+    if clipped_line.geom_type == "LineString":
+        lines.append(LineString(clipped_line.coords))
 
-fractureNetwork = plt.figure(figsize=(8, 8))
-# for i in range(len(start_x)):
-#     plt.plot([start_x[i], end_x[i]], [start_y[i], end_y[i]])
-# # plt.title('Powerlaw length fracture network')
-# plt.title('Powerlaw length fracture network')
-# plt.xlabel('x [m]')
-# plt.ylabel('y [m]')
-
-segments = [((start_x[i], start_y[i]), (end_x[i], end_y[i])) for i in range(num_fractures)]
-
-# Convert to LineString objects
-lines = [LineString(seg) for seg in segments]
-
-# Boundary to polygon object
-boundary = Polygon([(domain_size[0], domain_size[1]), (domain_size[2], domain_size[1]), (domain_size[2], domain_size[3]), (domain_size[0], domain_size[3]), (domain_size[0], domain_size[1])])
+# # Clip end points to stay within the domain
+# end_x = np.clip(end_x, domain_size[0], domain_size[2])
+# end_y = np.clip(end_y, domain_size[1], domain_size[3])
+# 
+# segments = [((start_x[i], start_y[i]), (end_x[i], end_y[i])) for i in range(num_fractures)]
+# 
+# # Convert to LineString objects
+# lines = [LineString(seg) for seg in segments]
 
 # Find the intersections of a fracture with other fractures
 intersections = set()
@@ -94,8 +90,8 @@ for line in lines:
     points = list(line.coords)  # Start with original endpoints
     for inter in intersections:
         inter_point = Point(inter)
-        if line.distance(inter_point) < 1e-9:  # Check if intersection is on segment
-            points.append(inter)
+        if (line.distance(inter_point) < 1e-9) and (all(inter_point.distance(Point(p)) > 1e-9 for p in points)):  # Check if intersection is on segment AND if the intersection is not on the boundary (to avoid the generation of 0 length segments)
+            points.append(inter)  # Add the intersection coordinates to the original endpoints
     points = sorted(points)  # Sort along the segment
     new_segments.extend([(points[i], points[i + 1]) for i in range(len(points) - 1)])
 
@@ -112,6 +108,8 @@ ax.fill(x, y, color='lightblue', alpha=0.5)  # Fill with transparency
 for seg in segments_unclipped:
     x, y = zip(*seg)
     ax.plot(x, y, 'k--', alpha=0.5)
+# ax.set_xlim(domain_size[0], domain_size[2])
+# ax.set_ylim(domain_size[1], domain_size[3])
 
 fig, ax = plt.subplots(figsize=(8, 8))
 # Plot new segments
@@ -120,10 +118,12 @@ for seg in new_segments:
     ax.plot(x, y, 'b', linewidth=2)
 # Plot intersection points
 for inter in intersections:
-    ax.scatter(*inter, color='red', zorder=3, s=10, edgecolor='black')
+    ax.scatter(*inter, color='red', zorder=3, s=20, edgecolor='black')
 ax.set_title("Segment Intersection and Splitting")
 ax.set_xlabel("X")
 ax.set_ylabel("Y")
+ax.set_xlim(domain_size[0], domain_size[2])
+ax.set_ylim(domain_size[1], domain_size[3])
 ax.grid(True)
 
 fig, ax = plt.subplots(figsize=(8, 8))
@@ -133,10 +133,12 @@ for seg in filtered_segments:
     ax.plot(x, y, 'b', linewidth=2)
 # Plot intersection points
 for inter in intersections:
-    ax.scatter(*inter, color='red', zorder=3, s=10, edgecolor='black')
+    ax.scatter(*inter, color='red', zorder=3, s=20, edgecolor='black')
 ax.set_title("Segment Intersection Filtered")
 ax.set_xlabel("X")
 ax.set_ylabel("Y")
+ax.set_xlim(domain_size[0], domain_size[2])
+ax.set_ylim(domain_size[1], domain_size[3])
 ax.grid(True)
 
 
