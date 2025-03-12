@@ -131,13 +131,6 @@ ax.grid(True)
 fig, ax = plt.subplots(figsize=(8, 8))
 for (x1, y1), (x2, y2) in filtered_segments:
     ax.plot([x1, x2], [y1, y2], marker='o', linestyle='-', color='b')
-# # Plot new segments
-# for seg in filtered_segments:
-#     x, y = zip(*seg)
-#     ax.plot(x, y, 'b', linewidth=2)
-# # Plot intersection points
-# for inter in set(filtered_segments):
-#     ax.scatter(*inter, color='red', zorder=3, s=20, edgecolor='black')
 ax.set_title("Segment Intersection Filtered")
 ax.set_xlabel("X")
 ax.set_ylabel("Y")
