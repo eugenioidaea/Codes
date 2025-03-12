@@ -8,7 +8,7 @@ from shapely.geometry import LineString, Point, Polygon
 proj = op.Project()
 
 # Number of fractures
-num_fractures = 5
+num_fractures = 10
 
 # Define domain size
 domain_size = [0.0, 0.0, 1.0, 1.0] # [Xmin, Ymin, Xmax, Ymax]
@@ -21,7 +21,7 @@ boundary = Polygon([(domain_size[0], domain_size[1]), (domain_size[2], domain_si
 # std_length = 0.02
 # fracture_lengths = np.random.lognormal(mean=np.log(mean_length), sigma=std_length, size=num_fractures)
 # B) Powerlaw
-l_min = 5e-1 # Minimum fracture length
+l_min = 1e-1 # Minimum fracture length
 l_max = 1 # maximum fracture length
 exponent = -2.58  # Power law exponent
 b = abs(exponent) - 1  # SciPy uses (b+1) where b is positive
@@ -90,7 +90,9 @@ for line in lines:
     points = list(line.coords)  # Start with original endpoints
     for inter in intersections:
         inter_point = Point(inter)
-        if (line.distance(inter_point) < 1e-9) and (all(inter_point.distance(Point(p)) > 1e-9 for p in points)):  # Check if intersection is on segment AND if the intersection is not on the boundary (to avoid the generation of 0 length segments)
+        # if line.distance(inter_point) < 1e-9 and all(elem not in domain_size for elem in tuple(inter)):
+        if line.distance(inter_point) < 1e-9 and all(inter_point.distance(Point(p)) > 1e-9 for p in points):  # Check if intersection is on segment AND if the intersection is not on the boundary (to avoid the generation of 0 length segments)
+        # if inter_point.within(line) and not any(inter_point.equals(Point(p)) for p in points):
             points.append(inter)  # Add the intersection coordinates to the original endpoints
     points = sorted(points)  # Sort along the segment
     new_segments.extend([(points[i], points[i + 1]) for i in range(len(points) - 1)])
@@ -127,13 +129,15 @@ ax.set_ylim(domain_size[1], domain_size[3])
 ax.grid(True)
 
 fig, ax = plt.subplots(figsize=(8, 8))
-# Plot new segments
-for seg in filtered_segments:
-    x, y = zip(*seg)
-    ax.plot(x, y, 'b', linewidth=2)
-# Plot intersection points
-for inter in intersections:
-    ax.scatter(*inter, color='red', zorder=3, s=20, edgecolor='black')
+for (x1, y1), (x2, y2) in filtered_segments:
+    ax.plot([x1, x2], [y1, y2], marker='o', linestyle='-', color='b')
+# # Plot new segments
+# for seg in filtered_segments:
+#     x, y = zip(*seg)
+#     ax.plot(x, y, 'b', linewidth=2)
+# # Plot intersection points
+# for inter in set(filtered_segments):
+#     ax.scatter(*inter, color='red', zorder=3, s=20, edgecolor='black')
 ax.set_title("Segment Intersection Filtered")
 ax.set_xlabel("X")
 ax.set_ylabel("Y")
