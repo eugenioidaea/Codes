@@ -48,7 +48,7 @@ net['pore.volume'] = 4/3*np.pi*poreDiameter**3/8
 liquid = op.phase.Phase(network=net) # Phase dictionary initialisation
 
 # Conductance
-s = 0.8 # Variance of the conductance
+s = 0.8 # Variance of the throat diameters
 
 # OPTION 1: CONSTANT DIAMETER
 # throatDiameter = np.ones(net.Nt)*poreDiameter/2
@@ -322,7 +322,6 @@ pc = tfd.soln['pore.concentration'](endSim*concTimePlot)
 # tc = tfd.interpolate_data(propname='throat.concentration')
 # tc = tfd.soln['pore.concentration'](1)[throat.all]
 d = net['pore.diameter']
-
 ms = 100 # Markersize
 if shape[2]==1:
     fig, ax = plt.subplots(figsize=[8, 8])
@@ -341,5 +340,4 @@ else:
     Xcs = np.ones(len(ycs))*cs*Ldomain
     ax.plot_surface(Xcs, Ycs, Zcs)
     ax.text(Xcs[-1], Ycs[-1][-1], Zcs[-1][-1], "Control plane 1")
-
 #_ = plt.axis('off')

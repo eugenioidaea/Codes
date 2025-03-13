@@ -12,7 +12,8 @@ from lmfit import Model
 from mpl_toolkits.mplot3d import Axes3D
 
 # Sim inputs ###################################################################
-shape = [20, 4, 4]
+numSim = 3
+shape = [10, 3, 3]
 spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
 poreDiameter = spacing/10
 Adomain = (shape[1] * shape[2])*(spacing**2) # Should the diameters of the pores be considered?
@@ -20,6 +21,9 @@ Ldomain = (shape[0]-1)*spacing+shape[0]*poreDiameter
 Dmol = 1e-6 # Molecular Diffusion
 
 cs = 0.5 # BTC relative control section location (0 is beginning and 1 is the end)
+
+# Conductance
+s = np.linspace(0.4, 0.8, numSim) # Variance of the diameters of the throats
 
 # Boundary & Initial conditions ################################################
 Cout = 0
@@ -43,72 +47,133 @@ net['throat.length'] = spacing
 net['pore.diameter'] = poreDiameter
 net['pore.volume'] = 4/3*np.pi*poreDiameter**3/8
 
+cAvg = []
+tAvg = []
+
 # print(net)
 
 liquid = op.phase.Phase(network=net) # Phase dictionary initialisation
 
-# Conductance
-s = 0.8 # Variance of the conductance
+for i in range(numSim):
+    # OPTION 1: CONSTANT DIAMETER
+    # throatDiameter = np.ones(net.Nt)*poreDiameter/2
 
-# OPTION 1: CONSTANT DIAMETER
-# throatDiameter = np.ones(net.Nt)*poreDiameter/2
+    # OPTION 2: LOGNORMAL DIST DIAMETERS WITH FIXED SEED
+    # np.random.seed(42)
+    # throatDiameter = np.random.lognormal(mean=np.log(poreDiameter/2), sigma=s, size=net.Nt)
 
-# OPTION 2: LOGNORMAL DIST DIAMETERS WITH FIXED SEED
-# np.random.seed(42)
-# throatDiameter = np.random.lognormal(mean=np.log(poreDiameter/2), sigma=s, size=net.Nt)
+    # OPTION 3: LOGNORMAL DIST DIAMETERS WITH RANDOM SEED
+    throatDiameter = spst.lognorm.rvs(s[i], loc=0, scale=poreDiameter/2, size=net.Nt)
 
-# OPTION 3: LOGNORMAL DIST DIAMETERS WITH RANDOM SEED
-throatDiameter = spst.lognorm.rvs(s, loc=0, scale=poreDiameter/2, size=net.Nt)
+    net['throat.diameter'] = throatDiameter
+    Athroat = throatDiameter**2*np.pi/4
+    diffCond = Dmol*Athroat/spacing
+    liquid['throat.diffusive_conductance'] = diffCond
+    net['throat.volume'] = Athroat*spacing
 
-net['throat.diameter'] = throatDiameter
-Athroat = throatDiameter**2*np.pi/4
-diffCond = Dmol*Athroat/spacing
-liquid['throat.diffusive_conductance'] = diffCond
-net['throat.volume'] = Athroat*spacing
+    tfd = op.algorithms.TransientFickianDiffusion(network=net, phase=liquid) # TransientFickianDiffusion dictionary initialisation
 
-tfd = op.algorithms.TransientFickianDiffusion(network=net, phase=liquid) # TransientFickianDiffusion dictionary initialisation
+    inlet = net.pores(['left'])
+    outlet = net.pores(['right'])
+    csBtc = np.arange(int(np.floor((shape[0]*shape[1])*cs-shape[1])), int(np.ceil(shape[0]*shape[1]*cs)), 1) # Nodes for recording the BTC at Control Section cs
+    # csBtc = np.arange(int(shape[0]*shape[1]*cs), int(shape[0]*shape[1]*cs+shape[1]), 1) # Nodes for recording the BTC at Control Section cs
 
-inlet = net.pores(['left'])
-outlet = net.pores(['right'])
-csBtc = np.arange(int(np.floor((shape[0]*shape[1])*cs-shape[1])), int(np.ceil(shape[0]*shape[1]*cs)), 1) # Nodes for recording the BTC at Control Section cs
-# csBtc = np.arange(int(shape[0]*shape[1]*cs), int(shape[0]*shape[1]*cs+shape[1]), 1) # Nodes for recording the BTC at Control Section cs
+    # Boundary conditions
+    tfd.set_value_BC(pores=inlet, values=Cin) # Inlet: fixed concentration
+    tfd.set_value_BC(pores=outlet, values=Cout) # Inlet: fixed concentration
+    # tfd.set_rate_BC(pores=inlet, rates=Qin) # Outlet: fixed rate
+    # tfd.set_rate_BC(pores=outlet, rates=Qout) # Outlet: fixed rate
 
-# Boundary conditions
-tfd.set_value_BC(pores=inlet, values=Cin) # Inlet: fixed concentration
-tfd.set_value_BC(pores=outlet, values=Cout) # Inlet: fixed concentration
-# tfd.set_rate_BC(pores=inlet, rates=Qin) # Outlet: fixed rate
-# tfd.set_rate_BC(pores=outlet, rates=Qout) # Outlet: fixed rate
+    # Initial conditions
+    ic = np.concatenate((np.ones(shape[1]*shape[2])*Cin, np.ones((shape[0]-1)*shape[1]*shape[2])*Cout)) # Initial Concentration: shape[1] represents the first column of pores and (shape[0]-1)*shape[1] are all the rest of the pores in the domain
 
-# Initial conditions
-ic = np.concatenate((np.ones(shape[1]*shape[2])*Cin, np.ones((shape[0]-1)*shape[1]*shape[2])*Cout)) # Initial Concentration: shape[1] represents the first column of pores and (shape[0]-1)*shape[1] are all the rest of the pores in the domain
+    # Algorithm settings
+    # tfd.setup(t_scheme='cranknicolson', t_final=100, t_output=5, t_step=1, t_tolerance=1e-12)
+    print(tfd.settings)
 
-# Algorithm settings
-# tfd.setup(t_scheme='cranknicolson', t_final=100, t_output=5, t_step=1, t_tolerance=1e-12)
-print(tfd.settings)
+    start_time = time.time()
 
-start_time = time.time()
+    # Run the simulation
+    # solSetting = op.integrators.ScipyRK45(atol=1e-06, rtol=1e-06, verbose=False, linsolver=None)
+    # tfd.run(x0=ic, tspan=simTime, saveat=endSim/2, integrator=solSetting)
+    tfd.run(x0=ic, tspan=simTime)
 
-# Run the simulation
-# solSetting = op.integrators.ScipyRK45(atol=1e-06, rtol=1e-06, verbose=False, linsolver=None)
-# tfd.run(x0=ic, tspan=simTime, saveat=endSim/2, integrator=solSetting)
-tfd.run(x0=ic, tspan=simTime)
+    end_time = time.time()
+    elapsed_time = end_time - start_time # Compute elapsed time
+    print(f"Elapsed time: {elapsed_time:.4f} seconds")
 
-end_time = time.time()
-elapsed_time = end_time - start_time # Compute elapsed time
-print(f"Elapsed time: {elapsed_time:.4f} seconds")
+    # liquid.update(tfd.soln)
+    times = tfd.soln['pore.concentration'].t # Store the time steps
 
-# liquid.update(tfd.soln)
-times = tfd.soln['pore.concentration'].t # Store the time steps
+    cAvg1sim = np.empty(len(times))
+    # Get the flux-averaged concentration at the outlet for every time step
+    for j, ti in enumerate(times):
+        c_front = tfd.soln['pore.concentration'](ti)[csBtc] # [outlet]
+        q_front = tfd.rate(throats=net.Ts, mode='single')[csBtc] # [outlet]
+        cAvg1sim[int(j)] = (q_front*c_front).sum() / q_front.sum()
+        # cAvg = np.append(cAvg, c_front.sum())
+    cAvg.append(cAvg1sim)
+    tAvg.append(times)
+    # btcScalefactor = max(tfd.soln['pore.concentration'](endSim)[csBtc]) # NORMALISATION FACTOR ???
+    # cAvg = cAvg / btcScalefactor
 
-# Get the flux-averaged concentration at the outlet for every time step
-cAvg = np.array([])
-for ti in times:
-    c_front = tfd.soln['pore.concentration'](ti)[csBtc] # [outlet]
-    q_front = tfd.rate(throats=net.Ts, mode='single')[csBtc] # [outlet]
-    cAvg = np.append(cAvg, (q_front*c_front).sum() / q_front.sum())
-    # cAvg = np.append(cAvg, c_front.sum())
-# btcScalefactor = max(tfd.soln['pore.concentration'](endSim)[csBtc]) # NORMALISATION FACTOR ???
-# cAvg = cAvg / btcScalefactor
+BtcVsVar = plt.figure(figsize=(8, 8))
+plt.rcParams.update({'font.size': 20})
+interval=int(len(times)//1000)
+for i in range(numSim):
+    plt.plot(tAvg[i][::interval], cAvg[i][::interval], '*-', markerfacecolor='none', label=f"s = {s[i]:.2f}")
+plt.title('Breakthrough curves')
+plt.xlabel('time [s]')
+plt.ylabel('concentration [-]')
+plt.xscale('log')
+plt.yscale('log')
+plt.legend(loc='best')
+
+pc = tfd.soln['pore.concentration'](endSim*concTimePlot)
+# tc = tfd.interpolate_data(propname='throat.concentration')
+# tc = tfd.soln['pore.concentration'](1)[throat.all]
+d = net['pore.diameter']
+ms = 100 # Markersize
+if shape[2]==1:
+    fig, ax = plt.subplots(figsize=[8, 8])
+    op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=ms, ax=ax)
+    # op.visualization.plot_connections(network=net, color_by=tc, linewidth=3, ax=ax)
+    ax.plot([(csBtc[0]/shape[1]+0.5)*spacing, (csBtc[0]/shape[1]+0.5)*spacing], [-shape[1]*spacing*ms/100, shape[1]*spacing*ms/100], linewidth=3)
+    ax.text((csBtc[0]/shape[1]+0.5)*spacing, shape[1]*spacing*ms/100, "Control section 1", ha='right', va='bottom')
+else:
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_subplot(111, projection='3d')
+    op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=ms, ax=ax)
+    offset = Ldomain*0.1
+    ycs = np.linspace(0-offset, shape[1]*spacing+offset, 10)
+    zcs = np.linspace(0-offset, shape[2]*spacing+offset, 10)
+    Ycs, Zcs = np.meshgrid(ycs, zcs)
+    Xcs = np.ones(len(ycs))*cs*Ldomain
+    ax.plot_surface(Xcs, Ycs, Zcs)
+    ax.text(Xcs[-1], Ycs[-1][-1], Zcs[-1][-1], "Control plane 1")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # METRICS FOR STEADY STATE #####################################################################
 # rate_inlet = -tfd.rate(pores=outlet)[0] # Fluxes leaving the pores are negative
@@ -317,29 +382,3 @@ plt.title('Residuals of least square fitting')
 plt.xlabel('t norm [-]')
 plt.ylabel('lsq residual value [m2/s]')
 plt.show()
-
-pc = tfd.soln['pore.concentration'](endSim*concTimePlot)
-# tc = tfd.interpolate_data(propname='throat.concentration')
-# tc = tfd.soln['pore.concentration'](1)[throat.all]
-d = net['pore.diameter']
-
-ms = 100 # Markersize
-if shape[2]==1:
-    fig, ax = plt.subplots(figsize=[8, 8])
-    op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=ms, ax=ax)
-    # op.visualization.plot_connections(network=net, color_by=tc, linewidth=3, ax=ax)
-    ax.plot([(csBtc[0]/shape[1]+0.5)*spacing, (csBtc[0]/shape[1]+0.5)*spacing], [-shape[1]*spacing*ms/100, shape[1]*spacing*ms/100], linewidth=3)
-    ax.text((csBtc[0]/shape[1]+0.5)*spacing, shape[1]*spacing*ms/100, "Control section 1", ha='right', va='bottom')
-else:
-    fig = plt.figure(figsize=(8, 8))
-    ax = fig.add_subplot(111, projection='3d')
-    op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=ms, ax=ax)
-    offset = Ldomain*0.1
-    ycs = np.linspace(0-offset, shape[1]*spacing+offset, 10)
-    zcs = np.linspace(0-offset, shape[2]*spacing+offset, 10)
-    Ycs, Zcs = np.meshgrid(ycs, zcs)
-    Xcs = np.ones(len(ycs))*cs*Ldomain
-    ax.plot_surface(Xcs, Ycs, Zcs)
-    ax.text(Xcs[-1], Ycs[-1][-1], Zcs[-1][-1], "Control plane 1")
-
-#_ = plt.axis('off')
