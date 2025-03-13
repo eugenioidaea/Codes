@@ -8,7 +8,7 @@ from shapely.geometry import LineString, Point, Polygon
 proj = op.Project()
 
 # Number of fractures
-num_fractures = 10
+num_fractures = 30
 
 # Define domain size
 domain_size = [0.0, 0.0, 1.0, 1.0] # [Xmin, Ymin, Xmax, Ymax]

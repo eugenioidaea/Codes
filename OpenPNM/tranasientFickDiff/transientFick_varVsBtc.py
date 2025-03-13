@@ -9,23 +9,17 @@ import scipy.optimize as opt
 import scipy.special as spsp
 import time
 from lmfit import Model
+from mpl_toolkits.mplot3d import Axes3D
 
 # Sim inputs ###################################################################
-shape = [20, 10, 1]
+shape = [20, 4, 4]
 spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
-fracAperture = 1e-4 # From M2 in Vega2022
-poreDiameter = fracAperture
+poreDiameter = spacing/10
 Adomain = (shape[1] * shape[2])*(spacing**2) # Should the diameters of the pores be considered?
 Ldomain = (shape[0]-1)*spacing+shape[0]*poreDiameter
 Dmol = 1e-6 # Molecular Diffusion
 
 cs = 0.5 # BTC relative control section location (0 is beginning and 1 is the end)
-
-l_min = 1e-2 # Minimum fracture length
-l_max = 1e-1 # maximum fracture length
-exponent = -2.58  # Power law exponent
-
-s = 0.5 # Variance of the diameters of the throats
 
 # Boundary & Initial conditions ################################################
 Cout = 0
@@ -45,37 +39,32 @@ net = op.network.Cubic(shape=shape, spacing=spacing) # Shape of the elementary c
 # net.add_model_collection(geo, domain='all') # Assign the shape of pores and throats to the network
 net.regenerate_models() # Compute geometric properties such as pore volume
 
-# OPTION L.1: CONSTANT LENGTH
-# throatLength = np.ones(net.Nt)*spacing
-
-# OPTION L.2: POWER LAW DISTRIBUTED FRACTURE LENGTHS
-N = net.Nt # Number of fractures
-b = abs(exponent) - 1  # SciPy uses (b+1) where b is positive
-throatLength = spst.powerlaw.rvs(b, size=N) # Generate power-law samples
-throatLength = l_min + (l_max - l_min) * throatLength # Rescale to the desired range [l_min, l_max]
-
-net['throat.length'] = throatLength
+net['throat.length'] = spacing
 net['pore.diameter'] = poreDiameter
 net['pore.volume'] = 4/3*np.pi*poreDiameter**3/8
 
+# print(net)
+
 liquid = op.phase.Phase(network=net) # Phase dictionary initialisation
 
-# OPTION D.1: CONSTANT DIAMETER
-# throatDiameter = np.ones(net.Nt)*fracAperture
+# Conductance
+s = 0.8 # Variance of the conductance
 
-# OPTION D.2: LOGNORMAL DISTRIBUTED DIAMETERS WITH FIXED SEED
-np.random.seed(42)
-throatDiameter = np.random.lognormal(mean=np.log(fracAperture), sigma=s, size=net.Nt)
-# throatDiameter = np.random.normal(loc=fracAperture, scale=s, size=net.Nt)
+# OPTION 1: CONSTANT DIAMETER
+# throatDiameter = np.ones(net.Nt)*poreDiameter/2
 
-# OPTION D.3: LOGNORMAL DISTRIBUTED DIAMETERS WITH RANDOM SEED
-# throatDiameter = spst.lognorm.rvs(s, loc=0, scale=fracAperture, size=net.Nt)
+# OPTION 2: LOGNORMAL DIST DIAMETERS WITH FIXED SEED
+# np.random.seed(42)
+# throatDiameter = np.random.lognormal(mean=np.log(poreDiameter/2), sigma=s, size=net.Nt)
+
+# OPTION 3: LOGNORMAL DIST DIAMETERS WITH RANDOM SEED
+throatDiameter = spst.lognorm.rvs(s, loc=0, scale=poreDiameter/2, size=net.Nt)
 
 net['throat.diameter'] = throatDiameter
 Athroat = throatDiameter**2*np.pi/4
-diffCond = Dmol*Athroat/throatLength
+diffCond = Dmol*Athroat/spacing
 liquid['throat.diffusive_conductance'] = diffCond
-net['throat.volume'] = Athroat*throatLength
+net['throat.volume'] = Athroat*spacing
 
 tfd = op.algorithms.TransientFickianDiffusion(network=net, phase=liquid) # TransientFickianDiffusion dictionary initialisation
 
@@ -91,7 +80,7 @@ tfd.set_value_BC(pores=outlet, values=Cout) # Inlet: fixed concentration
 # tfd.set_rate_BC(pores=outlet, rates=Qout) # Outlet: fixed rate
 
 # Initial conditions
-ic = np.concatenate((np.ones(shape[1])*Cin, np.ones((shape[0]-1)*shape[1])*Cout)) # Initial Concentration: shape[1] represents the first column of pores and (shape[0]-1)*shape[1] are all the rest of the pores in the domain
+ic = np.concatenate((np.ones(shape[1]*shape[2])*Cin, np.ones((shape[0]-1)*shape[1]*shape[2])*Cout)) # Initial Concentration: shape[1] represents the first column of pores and (shape[0]-1)*shape[1] are all the rest of the pores in the domain
 
 # Algorithm settings
 # tfd.setup(t_scheme='cranknicolson', t_final=100, t_output=5, t_step=1, t_tolerance=1e-12)
@@ -135,7 +124,7 @@ for ti in times:
 
 # V_p = net['pore.volume'].sum()
 # V_t = net['throat.volume'].sum()
-# V_bulk = np.prod(shape)*(throatLength**3)
+# V_bulk = np.prod(shape)*(spacing**3)
 # e = (V_p + V_t) / V_bulk
 # print('The porosity is: ', "{0:.6E}".format(e))
 # tau = e * Dmol / DeffQ
@@ -244,38 +233,12 @@ poreNetwork = plt.figure(figsize=(8, 8))
 poreNetwork = op.visualization.plot_coordinates(net)
 poreNetwork = op.visualization.plot_connections(net, size_by=liquid['throat.diffusive_conductance'], ax=poreNetwork)
 
-powerlawDist = plt.figure(figsize=(8, 8))
-length = np.arange(l_min, l_max, (l_max-l_min)/net.Nt)
-cdfLength = np.sum(throatLength[:, None]>length, axis=0)/net.Nt
-plt.scatter(np.sort(throatLength), cdfLength, s=5, label="Empirical CDF", color='b')
-plt.xscale("linear")  # Log scale for better visualization
-plt.yscale("log")
-plt.xlabel("Fracture length [m]")
-plt.ylabel("Cumulative Probability")
-plt.title("CDF of the Power Law Distributed lengths of fractures")
-# plt.legend()
-plt.grid(True)
-plt.show()
-
-lognormalDist = plt.figure(figsize=(8, 8))
-bins = np.logspace(np.log10(min(Athroat)), np.log10(max(Athroat)), 20)
-plt.hist(Athroat, bins=bins, edgecolor='k')
-plt.title('Lognormal distribution of fractures diameters')
-plt.xlabel(r'$mm [m]$')
-plt.ylabel(r'$Probability [-]$')
-plt.xscale("log")
-# plt.legend()
-plt.grid(True)
-plt.show()
-
-conductanceDist = plt.figure(figsize=(8, 8))
-bins = np.logspace(np.log10(min(diffCond)), np.log10(max(diffCond)), 20)
+lognormDist = plt.figure(figsize=(8, 8))
 if 'diffCond' in globals():
-    plt.hist(diffCond, bins=bins, edgecolor='k')
-    plt.title('Distribution of diffusive conductances')
+    plt.hist(diffCond, edgecolor='k')
+    plt.title('Lognormal distribution of diffusive conductances')
     plt.xlabel(r'$k_D [m^3/s]$')
     plt.ylabel(r'$Number of throats [-]$')
-    plt.xscale("log")
 
 breakthrough = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
@@ -359,10 +322,24 @@ pc = tfd.soln['pore.concentration'](endSim*concTimePlot)
 # tc = tfd.interpolate_data(propname='throat.concentration')
 # tc = tfd.soln['pore.concentration'](1)[throat.all]
 d = net['pore.diameter']
-fig, ax = plt.subplots(figsize=[8, 8])
-ms = 400 # Markersize
-op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=ms, ax=ax)
-# op.visualization.plot_connections(network=net, color_by=tc, linewidth=3, ax=ax)
-ax.plot([(csBtc[0]/shape[1]+0.5)*spacing, (csBtc[0]/shape[1]+0.5)*spacing], [-shape[1]*spacing*ms/100, shape[1]*spacing*ms/100], linewidth=3)
-plt.text((csBtc[0]/shape[1]+0.5)*spacing, shape[1]*spacing*ms/100, "Control section 1", ha='right', va='bottom')
+
+ms = 100 # Markersize
+if shape[2]==1:
+    fig, ax = plt.subplots(figsize=[8, 8])
+    op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=ms, ax=ax)
+    # op.visualization.plot_connections(network=net, color_by=tc, linewidth=3, ax=ax)
+    ax.plot([(csBtc[0]/shape[1]+0.5)*spacing, (csBtc[0]/shape[1]+0.5)*spacing], [-shape[1]*spacing*ms/100, shape[1]*spacing*ms/100], linewidth=3)
+    ax.text((csBtc[0]/shape[1]+0.5)*spacing, shape[1]*spacing*ms/100, "Control section 1", ha='right', va='bottom')
+else:
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_subplot(111, projection='3d')
+    op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=ms, ax=ax)
+    offset = Ldomain*0.1
+    ycs = np.linspace(0-offset, shape[1]*spacing+offset, 10)
+    zcs = np.linspace(0-offset, shape[2]*spacing+offset, 10)
+    Ycs, Zcs = np.meshgrid(ycs, zcs)
+    Xcs = np.ones(len(ycs))*cs*Ldomain
+    ax.plot_surface(Xcs, Ycs, Zcs)
+    ax.text(Xcs[-1], Ycs[-1][-1], Zcs[-1][-1], "Control plane 1")
+
 #_ = plt.axis('off')

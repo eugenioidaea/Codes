@@ -1,3 +1,5 @@
+################################# ERROR: steady state Fickian diffusion cannot produce a BTC! ##################################
+
 import openpnm as op
 import matplotlib.pyplot as plt
 import numpy as np
@@ -6,7 +8,8 @@ op.visualization.set_mpl_style()
 np.set_printoptions(precision=5)
 from sklearn.linear_model import LinearRegression
 
-numSim = 10
+numSim = 1
+cs = 0.5 # BTC relative control section location (0 is beginning and 1 is the end)
 spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
 # throatDiameter = spacing/10
 poreDiameter = spacing/10
@@ -50,6 +53,15 @@ for i in range(len(throatVariance)):
 
     rate_inlet = fd.rate(pores=inlet)[0]
     print(f'Flow rate: {rate_inlet:.5e} m3/s')
+
+    csBtc = np.arange(int(np.floor((shape[0]*shape[1])*cs-shape[1])), int(np.ceil(shape[0]*shape[1]*cs)), 1) # Nodes for recording the BTC at Control Section cs
+    times = fd.soln['pore.concentration'].t # Store the time steps
+    # Get the flux-averaged concentration at the outlet for every time step
+    cAvg = np.array([])
+    for ti in times:
+        c_front = fd.soln['pore.concentration'](ti)[csBtc] # [outlet]
+        q_front = fd.rate(throats=net.Ts, mode='single')[csBtc] # [outlet]
+        cAvg = np.append(cAvg, (q_front*c_front).sum() / q_front.sum())
 
     Adomain = ((shape[1]-1) * (shape[2]-1))*(spacing**2)
     Ldomain = net.Nt*spacing
