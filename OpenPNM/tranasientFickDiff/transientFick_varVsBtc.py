@@ -14,7 +14,7 @@ from mpl_toolkits.mplot3d import Axes3D
 # Sim inputs ###################################################################
 numSim = 3
 shape = [10, 3, 3]
-spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
+spacing = 1e-2 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
 poreDiameter = spacing/10
 Adomain = (shape[1] * shape[2])*(spacing**2) # Should the diameters of the pores be considered?
 Ldomain = (shape[0]-1)*spacing+shape[0]*poreDiameter
@@ -22,12 +22,12 @@ Dmol = 1e-6 # Molecular Diffusion
 
 cs = 0.5 # BTC relative control section location (0 is beginning and 1 is the end)
 
-# Conductance
-s = np.linspace(0.4, 0.8, numSim) # Variance of the diameters of the throats
+s = np.linspace(0.4, 1.2, numSim) # Conductance: variance of the diameters of the throats
 
 # Boundary & Initial conditions ################################################
 Cout = 0
-Cin = (Ldomain-Cout*cs*Ldomain)/(Ldomain-cs*Ldomain)
+Cin = 1
+# Cin = (Ldomain-Cout*cs*Ldomain)/(Ldomain-cs*Ldomain) # This condition forces the max conc at the control section to be 1
 Qin = 0
 Qout = 0
 endSim = ((shape[0]-1)*spacing)**2/Dmol
@@ -75,13 +75,13 @@ for i in range(numSim):
 
     inlet = net.pores(['left'])
     outlet = net.pores(['right'])
-    csBtc = np.arange(int(np.floor((shape[0]*shape[1])*cs-shape[1])), int(np.ceil(shape[0]*shape[1]*cs)), 1) # Nodes for recording the BTC at Control Section cs
+    csBtc = np.arange(int(np.floor((shape[0]*shape[1]*shape[2])*cs-shape[1]*shape[2])), int(np.ceil(shape[0]*shape[1]*shape[2]*cs)), 1) # Nodes for recording the BTC at Control Section cs
     # csBtc = np.arange(int(shape[0]*shape[1]*cs), int(shape[0]*shape[1]*cs+shape[1]), 1) # Nodes for recording the BTC at Control Section cs
 
     # Boundary conditions
     tfd.set_value_BC(pores=inlet, values=Cin) # Inlet: fixed concentration
-    tfd.set_value_BC(pores=outlet, values=Cout) # Inlet: fixed concentration
-    # tfd.set_rate_BC(pores=inlet, rates=Qin) # Outlet: fixed rate
+    tfd.set_value_BC(pores=outlet, values=Cout) # Outlet: fixed concentration
+    # tfd.set_rate_BC(pores=inlet, rates=Qin) # Inlet: fixed rate
     # tfd.set_rate_BC(pores=outlet, rates=Qout) # Outlet: fixed rate
 
     # Initial conditions
@@ -119,39 +119,46 @@ for i in range(numSim):
 
 BtcVsVar = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
-interval=int(len(times)//1000)
+everyNtimes = 1000 # Print solution every N times
 for i in range(numSim):
-    plt.plot(tAvg[i][::interval], cAvg[i][::interval], '*-', markerfacecolor='none', label=f"s = {s[i]:.2f}")
+    plt.plot(tAvg[i], cAvg[i], '*-', markerfacecolor='none', label=f"s = {s[i]:.2f}")
+    # interval=int(len(tAvg[i])//everyNtimes)
+    # plt.plot(tAvg[i][::interval], cAvg[i][::interval], '*-', markerfacecolor='none', label=f"s = {s[i]:.2f}")
 plt.title('Breakthrough curves')
 plt.xlabel('time [s]')
 plt.ylabel('concentration [-]')
 plt.xscale('log')
-plt.yscale('log')
+# plt.yscale('log')
 plt.legend(loc='best')
 
+
+highlightCoords = net['pore.coords'][csBtc]
 pc = tfd.soln['pore.concentration'](endSim*concTimePlot)
 # tc = tfd.interpolate_data(propname='throat.concentration')
 # tc = tfd.soln['pore.concentration'](1)[throat.all]
 d = net['pore.diameter']
-ms = 100 # Markersize
+ms = 50 # Markersize
 if shape[2]==1:
     fig, ax = plt.subplots(figsize=[8, 8])
     op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=ms, ax=ax)
-    # op.visualization.plot_connections(network=net, color_by=tc, linewidth=3, ax=ax)
+    op.visualization.plot_connections(network=net, size_by=throatDiameter, linewidth=3, ax=ax)
     ax.plot([(csBtc[0]/shape[1]+0.5)*spacing, (csBtc[0]/shape[1]+0.5)*spacing], [-shape[1]*spacing*ms/100, shape[1]*spacing*ms/100], linewidth=3)
     ax.text((csBtc[0]/shape[1]+0.5)*spacing, shape[1]*spacing*ms/100, "Control section 1", ha='right', va='bottom')
 else:
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111, projection='3d')
-    op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=ms, ax=ax)
-    offset = Ldomain*0.1
-    ycs = np.linspace(0-offset, shape[1]*spacing+offset, 10)
-    zcs = np.linspace(0-offset, shape[2]*spacing+offset, 10)
+    op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=10, ax=ax)
+    op.visualization.plot_connections(network=net, size_by=throatDiameter, linewidth=3, ax=ax)
+    ax.scatter(highlightCoords[:, 0], highlightCoords[:, 1], highlightCoords[:, 2], color='black', s=ms, label="Highlighted Pores")
+    ycs = np.linspace(0, shape[1]*spacing, 10)
+    zcs = np.linspace(0, shape[2]*spacing, 10)
     Ycs, Zcs = np.meshgrid(ycs, zcs)
-    Xcs = np.ones(len(ycs))*cs*Ldomain
+    Xcs = np.ones(len(ycs))*highlightCoords[0, 0]
     ax.plot_surface(Xcs, Ycs, Zcs)
     ax.text(Xcs[-1], Ycs[-1][-1], Zcs[-1][-1], "Control plane 1")
-
+    # ax.set_ylim(-0.01, 0.06)
+    # ax.set_zlim(-0.01, 0.06)
+    plt.tight_layout()
 
 
 
