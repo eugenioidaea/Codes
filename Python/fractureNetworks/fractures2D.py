@@ -8,7 +8,7 @@ from shapely.geometry import LineString, Point, Polygon
 proj = op.Project()
 
 # Number of fractures
-num_fractures = 30
+num_fractures = 100
 
 # Define domain size
 domain_size = [0.0, 0.0, 1.0, 1.0] # [Xmin, Ymin, Xmax, Ymax]
@@ -141,12 +141,30 @@ ax.grid(True)
 
 
 
-# # Create an OpenPNM network
-# net = op.network.GenericNetwork(project=proj)
-# net.update({'pore.coords': pore_coords, 'throat.conns': throat_conns})
-# 
-# # Visualize the network
-# fig, ax = plt.subplots()
-# ax.plot([start_x, end_x], [start_y, end_y], 'k-', alpha=0.5)
-# ax.set_aspect('equal')
-# plt.show()
+def create_openpnm_network(throat_list):
+    # Flatten the throat list into a set of unique points
+    all_points = np.array([point for throat in throat_list for point in throat])
+    unique_points, unique_indices = np.unique(all_points, axis=0, return_inverse=True)
+    
+    # Map the original points to unique indices
+    throat_conns = unique_indices.reshape(-1, 2)  # Reshape into (N,2) pairs
+    
+    # Create OpenPNM network dictionary
+    network_dict = {
+        "pore.coords": np.column_stack((unique_points, np.zeros(len(unique_points)))),  # Add z=0
+        "throat.conns": throat_conns
+    }
+    
+    return network_dict
+
+# Convert to OpenPNM format
+network = create_openpnm_network(filtered_segments)
+
+# Convert to OpenPNM network
+pn = op.network.Network(conns=network['throat.conns'], coords=network['pore.coords'])
+
+boundaryLayer = 0.01
+pn['pore.left']=pn['pore.coords'][:, 0]<boundaryLayer
+pn['pore.right']=pn['pore.coords'][:, 0]>max(pn['pore.coords'][:, 0])-boundaryLayer
+
+print(pn)

@@ -20,7 +20,7 @@ Adomain = (shape[1] * shape[2])*(spacing**2) # Should the diameters of the pores
 Ldomain = (shape[0]-1)*spacing+shape[0]*poreDiameter
 Dmol = 1e-6 # Molecular Diffusion
 
-cs = 0.5 # BTC relative control section location (0 is beginning and 1 is the end)
+cs = 0.9 # BTC relative control section location (0 is beginning and 1 is the end)
 
 s = np.linspace(0.4, 1.2, numSim) # Conductance: variance of the diameters of the throats
 
@@ -109,7 +109,7 @@ for i in range(numSim):
     # Get the flux-averaged concentration at the outlet for every time step
     for j, ti in enumerate(times):
         c_front = tfd.soln['pore.concentration'](ti)[csBtc] # [outlet]
-        q_front = tfd.rate(throats=net.Ts, mode='single')[csBtc] # [outlet]
+        q_front = tfd.rate(throats=net.Ts, mode='single')[csBtc]*Athroat[csBtc] # [outlet]
         cAvg1sim[int(j)] = (q_front*c_front).sum() / q_front.sum()
         # cAvg = np.append(cAvg, c_front.sum())
     cAvg.append(cAvg1sim)
