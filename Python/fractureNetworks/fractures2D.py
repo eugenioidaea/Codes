@@ -179,6 +179,9 @@ simTime = (0, endSim) # Simulation starting and ending times
 Cin = 10
 Cout = 0
 s = 0.5 # Conductance: variance of the diameters of the throats
+csLeft = 0.7 # Left BTC boundary
+csRight = 0.72 # Right BTC boundary
+csBtc=(pn['pore.coords'][:, 0]>csLeft) & (pn['pore.coords'][:, 0]<csRight)
 concTimePlot = 1 # Plot the spatial map of the concentration between start (0) or end (1) of the simulation
 
 liquid = op.phase.Phase(network=pn) # Phase dictionary initialisation
@@ -195,8 +198,9 @@ pn.add_model(propname="throat.length", model=euclidean_throat_length)
 # Compute throat lengths
 throatLength = pn["throat.length"] # l_max/10
 
-# BIG QUESTION: WHEN THROATS WITH DIFFERENT DIAMETERS CONVERGE TO THE SAME PORE, WHAT IS THE DIAMETER OF THE PORE?
+####### BIG QUESTION: WHEN THROATS WITH DIFFERENT DIAMETERS CONVERGE TO THE SAME PORE, WHAT IS THE DIAMETER OF THE PORE?
 poreDiameter = l_min/2
+################################
 
 # throatDiameter = np.ones(pn.Nt)*poreDiameter/2 # Constant throat diameters
 throatDiameter = spst.lognorm.rvs(s, loc=0, scale=poreDiameter/2, size=pn.Nt) # Lognormal throat diameter
@@ -225,6 +229,13 @@ tfd.set_value_BC(pores=pn.pores(['pore.right']), values=Cout) # Outlet: fixed co
 ic = np.concatenate((np.ones(sum(pn['pore.left']))*Cin, np.ones(len(pn['pore.coords'])-sum(pn['pore.left']))*Cout)) # Initial Concentration
 
 tfd.run(x0=ic, tspan=simTime)
+times = tfd.soln['pore.concentration'].t # Store the time steps
+
+cAvg = np.array([])
+for ti in times:
+    c_front = tfd.soln['pore.concentration'](ti)[csBtc] # [outlet]
+    q_front = tfd.rate(throats=csBtc, mode='single') # [outlet]
+    cAvg = np.append(cAvg, (q_front*c_front).sum() / q_front.sum())
 
 pc = tfd.soln['pore.concentration'](endSim*concTimePlot)
 d = pn['pore.diameter']
@@ -232,3 +243,18 @@ ms = 100 # Markersize
 fig, ax = plt.subplots(figsize=[8, 8])
 op.visualization.plot_coordinates(network=pn, color_by=pc, size_by=d, markersize=ms, ax=ax)
 op.visualization.plot_connections(network=pn, size_by=throatDiameter, linewidth=3, ax=ax)
+ax.vlines(csLeft, domain_size[1], domain_size[3], colors='black', linestyles='solid')
+ax.vlines(csRight, domain_size[1], domain_size[3], colors='black', linestyles='solid')
+
+BtcVsVar = plt.figure(figsize=(8, 8))
+plt.rcParams.update({'font.size': 20})
+everyNtimes = 1000 # Print solution every N times
+plt.plot(times, cAvg, '*-')
+# interval=int(len(tAvg[i])//everyNtimes)
+# plt.plot(tAvg[i][::interval], cAvg[i][::interval], '*-', markerfacecolor='none', label=f"s = {s[i]:.2f}")
+plt.title('Breakthrough curves')
+plt.xlabel('time [s]')
+plt.ylabel('concentration [-]')
+# plt.xscale('log')
+# plt.yscale('log')
+plt.legend(loc='best')

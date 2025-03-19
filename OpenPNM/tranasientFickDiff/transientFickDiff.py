@@ -104,7 +104,7 @@ times = tfd.soln['pore.concentration'].t # Store the time steps
 cAvg = np.array([])
 for ti in times:
     c_front = tfd.soln['pore.concentration'](ti)[csBtc] # [outlet]
-    q_front = tfd.rate(throats=net.Ts, mode='single')[csBtc] # [outlet]
+    q_front = tfd.rate(throats=net.Ts, mode='single')[csBtc]*Athroat[csBtc] # [outlet]
     cAvg = np.append(cAvg, (q_front*c_front).sum() / q_front.sum())
     # cAvg = np.append(cAvg, c_front.sum())
 # btcScalefactor = max(tfd.soln['pore.concentration'](endSim)[csBtc]) # NORMALISATION FACTOR ???

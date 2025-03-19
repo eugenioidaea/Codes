@@ -109,7 +109,7 @@ for i in range(numSim):
     # Get the flux-averaged concentration at the outlet for every time step
     for j, ti in enumerate(times):
         c_front = tfd.soln['pore.concentration'](ti)[csBtc] # [outlet]
-        q_front = tfd.rate(throats=net.Ts, mode='single')[csBtc]*Athroat[csBtc] # [outlet]
+        q_front = tfd.rate(throats=csBtc, mode='single')*Athroat[csBtc] # [outlet]
         cAvg1sim[int(j)] = (q_front*c_front).sum() / q_front.sum()
         # cAvg = np.append(cAvg, c_front.sum())
     cAvg.append(cAvg1sim)
