@@ -162,9 +162,73 @@ network = create_openpnm_network(filtered_segments)
 
 # Convert to OpenPNM network
 pn = op.network.Network(conns=network['throat.conns'], coords=network['pore.coords'])
+pn.regenerate_models() # Compute geometric properties such as pore volume
 
 boundaryLayer = 0.01
 pn['pore.left']=pn['pore.coords'][:, 0]<boundaryLayer
 pn['pore.right']=pn['pore.coords'][:, 0]>max(pn['pore.coords'][:, 0])-boundaryLayer
 
 print(pn)
+
+####################################################################################
+# SIM SETUP
+####################################################################################
+Dmol = 1e-4 # Molecular Diffusion
+endSim = (domain_size[2])**2/Dmol
+simTime = (0, endSim) # Simulation starting and ending times
+Cin = 10
+Cout = 0
+s = 0.5 # Conductance: variance of the diameters of the throats
+concTimePlot = 1 # Plot the spatial map of the concentration between start (0) or end (1) of the simulation
+
+liquid = op.phase.Phase(network=pn) # Phase dictionary initialisation
+
+# Define Euclidean length model manually
+def euclidean_throat_length(target):
+    conns = target["throat.conns"]
+    coords = target["pore.coords"]
+    return np.linalg.norm(coords[conns[:, 0]] - coords[conns[:, 1]], axis=1)
+
+# Add the throat length model
+pn.add_model(propname="throat.length", model=euclidean_throat_length)
+
+# Compute throat lengths
+throatLength = pn["throat.length"] # l_max/10
+
+# BIG QUESTION: WHEN THROATS WITH DIFFERENT DIAMETERS CONVERGE TO THE SAME PORE, WHAT IS THE DIAMETER OF THE PORE?
+poreDiameter = l_min/2
+
+# throatDiameter = np.ones(pn.Nt)*poreDiameter/2 # Constant throat diameters
+throatDiameter = spst.lognorm.rvs(s, loc=0, scale=poreDiameter/2, size=pn.Nt) # Lognormal throat diameter
+
+pn['throat.diameter'] = throatDiameter
+Athroat = throatDiameter**2*np.pi/4
+diffCond = Dmol*Athroat/throatLength
+
+# CHECK ON SMALL/BIG THROATS: AFTER CLIPPING, THE LENGTH OF SOME SEGMENTS MAY BE VERY SMALL AND CONDUCTANCE VERY HIGH
+diffCond[diffCond>1e-5] = 1e-5
+diffCond[diffCond<1e-8] = 1e-8
+
+liquid['throat.diffusive_conductance'] = diffCond
+pn['pore.diameter'] = poreDiameter
+pn['pore.volume'] = 4/3*np.pi*poreDiameter**3/8
+
+tfd = op.algorithms.TransientFickianDiffusion(network=pn, phase=liquid) # TransientFickianDiffusion dictionary initialisation
+
+# Boundary conditions
+tfd.set_value_BC(pores=pn.pores(['pore.left']), values=Cin) # Inlet: fixed concentration
+tfd.set_value_BC(pores=pn.pores(['pore.right']), values=Cout) # Outlet: fixed concentration
+# tfd.set_rate_BC(pores=inlet, rates=Qin) # Inlet: fixed rate
+# tfd.set_rate_BC(pores=outlet, rates=Qout) # Outlet: fixed rate
+
+# Initial conditions
+ic = np.concatenate((np.ones(sum(pn['pore.left']))*Cin, np.ones(len(pn['pore.coords'])-sum(pn['pore.left']))*Cout)) # Initial Concentration
+
+tfd.run(x0=ic, tspan=simTime)
+
+pc = tfd.soln['pore.concentration'](endSim*concTimePlot)
+d = pn['pore.diameter']
+ms = 100 # Markersize
+fig, ax = plt.subplots(figsize=[8, 8])
+op.visualization.plot_coordinates(network=pn, color_by=pc, size_by=d, markersize=ms, ax=ax)
+op.visualization.plot_connections(network=pn, size_by=throatDiameter, linewidth=3, ax=ax)
