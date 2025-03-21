@@ -67,7 +67,7 @@ for i in range(numSim):
 
     net['throat.diameter'] = throatDiameter
     Athroat = throatDiameter**2*np.pi/4
-    diffCond = Dmol*Athroat/spacing
+    diffCond = Dmol*Athroat/spacing # Dmol[m2/s]*Athroat[m2]/spacing[m] = diffCond[m3/s]
     liquid['throat.diffusive_conductance'] = diffCond
     net['throat.volume'] = Athroat*spacing
 
@@ -107,9 +107,11 @@ for i in range(numSim):
 
     cAvg1sim = np.empty(len(times))
     # Get the flux-averaged concentration at the outlet for every time step
+    q_front = diffCond[csBtc]
+    # q_front = tfd.rate(throats=csBtc, mode='single')*Athroat[csBtc] # [outlet]
+    # pore_throats = net.find_neighbor_throats(pores=[csBtc]) # Find the indexes of the throats connected to the pores
     for j, ti in enumerate(times):
         c_front = tfd.soln['pore.concentration'](ti)[csBtc] # [outlet]
-        q_front = tfd.rate(throats=csBtc, mode='single')*Athroat[csBtc] # [outlet]
         cAvg1sim[int(j)] = (q_front*c_front).sum() / q_front.sum()
         # cAvg = np.append(cAvg, c_front.sum())
     cAvg.append(cAvg1sim)
@@ -119,10 +121,9 @@ for i in range(numSim):
 
 BtcVsVar = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
-everyNtimes = 1000 # Print solution every N times
+interval = 10 # Print solution every N times
 for i in range(numSim):
     plt.plot(tAvg[i], cAvg[i], '*-', markerfacecolor='none', label=f"s = {s[i]:.2f}")
-    # interval=int(len(tAvg[i])//everyNtimes)
     # plt.plot(tAvg[i][::interval], cAvg[i][::interval], '*-', markerfacecolor='none', label=f"s = {s[i]:.2f}")
 plt.title('Breakthrough curves')
 plt.xlabel('time [s]')

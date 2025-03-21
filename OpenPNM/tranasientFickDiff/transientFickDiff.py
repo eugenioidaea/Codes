@@ -12,12 +12,12 @@ from lmfit import Model
 from mpl_toolkits.mplot3d import Axes3D
 
 # Sim inputs ###################################################################
-shape = [20, 4, 4]
-spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
+shape = [11, 3, 3]
+spacing = 1e-4 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
 poreDiameter = spacing/10
 Adomain = (shape[1] * shape[2])*(spacing**2) # Should the diameters of the pores be considered?
 Ldomain = (shape[0]-1)*spacing+shape[0]*poreDiameter
-Dmol = 1e-6 # Molecular Diffusion
+Dmol = 1e-5 # Molecular Diffusion
 
 cs = 0.5 # BTC relative control section location (0 is beginning and 1 is the end)
 
@@ -29,7 +29,7 @@ Qout = 0
 endSim = ((shape[0]-1)*spacing)**2/Dmol
 simTime = (0, endSim) # Simulation starting and ending times
 
-D0 = 1e-7 # Initial guess for diffusion coefficient during optimisation
+D0 = 1e-5 # Initial guess for diffusion coefficient during optimisation
 
 concTimePlot = 1 # Plot the spatial map of the concentration between start (0) or end (1) of the simulation
 
@@ -51,14 +51,14 @@ liquid = op.phase.Phase(network=net) # Phase dictionary initialisation
 s = 0.8 # Variance of the throat diameters
 
 # OPTION 1: CONSTANT DIAMETER
-# throatDiameter = np.ones(net.Nt)*poreDiameter/2
+throatDiameter = np.ones(net.Nt)*poreDiameter/2
 
 # OPTION 2: LOGNORMAL DIST DIAMETERS WITH FIXED SEED
 # np.random.seed(42)
 # throatDiameter = np.random.lognormal(mean=np.log(poreDiameter/2), sigma=s, size=net.Nt)
 
 # OPTION 3: LOGNORMAL DIST DIAMETERS WITH RANDOM SEED
-throatDiameter = spst.lognorm.rvs(s, loc=0, scale=poreDiameter/2, size=net.Nt)
+# throatDiameter = spst.lognorm.rvs(s, loc=0, scale=poreDiameter/2, size=net.Nt)
 
 net['throat.diameter'] = throatDiameter
 Athroat = throatDiameter**2*np.pi/4
@@ -70,7 +70,9 @@ tfd = op.algorithms.TransientFickianDiffusion(network=net, phase=liquid) # Trans
 
 inlet = net.pores(['left'])
 outlet = net.pores(['right'])
-csBtc = np.arange(int(np.floor((shape[0]*shape[1])*cs-shape[1])), int(np.ceil(shape[0]*shape[1]*cs)), 1) # Nodes for recording the BTC at Control Section cs
+CS = (cs*(Ldomain-spacing/2), cs*(Ldomain+spacing/2))
+csBtc=np.where((net['pore.coords'][:, 0]>CS[0]) & (net['pore.coords'][:, 0]<CS[1]))[0]
+# csBtc = np.arange(int(np.floor((shape[0]*shape[1]*shape[2])*cs-shape[1]*shape[2])), int(np.ceil(shape[0]*shape[1]*shape[2]*cs)), 1) # Nodes for recording the BTC at Control Section cs
 # csBtc = np.arange(int(shape[0]*shape[1]*cs), int(shape[0]*shape[1]*cs+shape[1]), 1) # Nodes for recording the BTC at Control Section cs
 
 # Boundary conditions
@@ -100,11 +102,12 @@ print(f"Elapsed time: {elapsed_time:.4f} seconds")
 # liquid.update(tfd.soln)
 times = tfd.soln['pore.concentration'].t # Store the time steps
 
+q_front = diffCond[csBtc]
+# q_front = tfd.rate(throats=net.Ts, mode='single')[csBtc]*Athroat[csBtc] # [outlet]
 # Get the flux-averaged concentration at the outlet for every time step
 cAvg = np.array([])
 for ti in times:
     c_front = tfd.soln['pore.concentration'](ti)[csBtc] # [outlet]
-    q_front = tfd.rate(throats=net.Ts, mode='single')[csBtc]*Athroat[csBtc] # [outlet]
     cAvg = np.append(cAvg, (q_front*c_front).sum() / q_front.sum())
     # cAvg = np.append(cAvg, c_front.sum())
 # btcScalefactor = max(tfd.soln['pore.concentration'](endSim)[csBtc]) # NORMALISATION FACTOR ???
@@ -290,7 +293,8 @@ plt.tight_layout()
 
 NormBTC = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
-interval=int(endSim//10)
+# interval=int(endSim//10)
+interval=100
 plt.plot(times[::interval], cAvg[::interval], '*-', markerfacecolor='none', label=r"$D_{mol}=$" + f"{Dmol:.4E}")
 plt.plot(times[::interval], C0[::interval], 'o-', markerfacecolor='none', label=r"$D_0=$" + f"{D0:.4E}")
 plt.plot(times[::interval], Copt[::interval], 's-', markerfacecolor='none', label=r"$D_{opt}=$" + f"{DeffOPT:.4E}")
@@ -318,6 +322,7 @@ plt.xlabel('t norm [-]')
 plt.ylabel('lsq residual value [m2/s]')
 plt.show()
 
+highlightCoords = net['pore.coords'][csBtc]
 pc = tfd.soln['pore.concentration'](endSim*concTimePlot)
 # tc = tfd.interpolate_data(propname='throat.concentration')
 # tc = tfd.soln['pore.concentration'](1)[throat.all]
@@ -332,12 +337,14 @@ if shape[2]==1:
 else:
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111, projection='3d')
-    op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=ms, ax=ax)
+    # op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=ms, ax=ax)
+    op.visualization.plot_connections(network=net, size_by=throatDiameter, linewidth=3, ax=ax)
+    ax.scatter(highlightCoords[:, 0], highlightCoords[:, 1], highlightCoords[:, 2], color='black', s=ms, label="Highlighted Pores")
     offset = Ldomain*0.1
     ycs = np.linspace(0-offset, shape[1]*spacing+offset, 10)
     zcs = np.linspace(0-offset, shape[2]*spacing+offset, 10)
     Ycs, Zcs = np.meshgrid(ycs, zcs)
     Xcs = np.ones(len(ycs))*cs*Ldomain
-    ax.plot_surface(Xcs, Ycs, Zcs)
-    ax.text(Xcs[-1], Ycs[-1][-1], Zcs[-1][-1], "Control plane 1")
+    # ax.plot_surface(Xcs, Ycs, Zcs)
+    # ax.text(Xcs[-1], Ycs[-1][-1], Zcs[-1][-1], "Control plane 1")
 #_ = plt.axis('off')

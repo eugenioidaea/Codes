@@ -179,9 +179,10 @@ simTime = (0, endSim) # Simulation starting and ending times
 Cin = 10
 Cout = 0
 s = 0.5 # Conductance: variance of the diameters of the throats
-csLeft = 0.7 # Left BTC boundary
-csRight = 0.72 # Right BTC boundary
-csBtc=(pn['pore.coords'][:, 0]>csLeft) & (pn['pore.coords'][:, 0]<csRight)
+cs = 0.5 # BTC relative control section location (0 is beginning and 1 is the end)
+csWidth = 0.01 # Relative width of the control section
+CS = (domain_size[2]*(cs-csWidth), domain_size[2]*(cs+csWidth))
+csBtc=(pn['pore.coords'][:, 0]>CS[0]) & (pn['pore.coords'][:, 0]<CS[1])
 concTimePlot = 1 # Plot the spatial map of the concentration between start (0) or end (1) of the simulation
 
 liquid = op.phase.Phase(network=pn) # Phase dictionary initialisation
@@ -231,10 +232,11 @@ ic = np.concatenate((np.ones(sum(pn['pore.left']))*Cin, np.ones(len(pn['pore.coo
 tfd.run(x0=ic, tspan=simTime)
 times = tfd.soln['pore.concentration'].t # Store the time steps
 
+q_front = diffCond[csBtc]
+# q_front = tfd.rate(throats=csBtc, mode='single') # [outlet]
 cAvg = np.array([])
 for ti in times:
     c_front = tfd.soln['pore.concentration'](ti)[csBtc] # [outlet]
-    q_front = tfd.rate(throats=csBtc, mode='single') # [outlet]
     cAvg = np.append(cAvg, (q_front*c_front).sum() / q_front.sum())
 
 pc = tfd.soln['pore.concentration'](endSim*concTimePlot)
