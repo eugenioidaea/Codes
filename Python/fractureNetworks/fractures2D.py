@@ -182,7 +182,7 @@ s = 0.5 # Conductance: variance of the diameters of the throats
 cs = 0.5 # BTC relative control section location (0 is beginning and 1 is the end)
 csWidth = 0.01 # Relative width of the control section
 CS = (domain_size[2]*(cs-csWidth), domain_size[2]*(cs+csWidth))
-csBtc=(pn['pore.coords'][:, 0]>CS[0]) & (pn['pore.coords'][:, 0]<CS[1])
+csBtc=np.where((pn['pore.coords'][:, 0]>CS[0]) & (pn['pore.coords'][:, 0]<CS[1]))[0]
 concTimePlot = 1 # Plot the spatial map of the concentration between start (0) or end (1) of the simulation
 
 liquid = op.phase.Phase(network=pn) # Phase dictionary initialisation
@@ -245,8 +245,8 @@ ms = 100 # Markersize
 fig, ax = plt.subplots(figsize=[8, 8])
 op.visualization.plot_coordinates(network=pn, color_by=pc, size_by=d, markersize=ms, ax=ax)
 op.visualization.plot_connections(network=pn, size_by=throatDiameter, linewidth=3, ax=ax)
-ax.vlines(csLeft, domain_size[1], domain_size[3], colors='black', linestyles='solid')
-ax.vlines(csRight, domain_size[1], domain_size[3], colors='black', linestyles='solid')
+ax.vlines(CS[0], domain_size[1], domain_size[3], colors='black', linestyles='solid')
+ax.vlines(CS[1], domain_size[1], domain_size[3], colors='black', linestyles='solid')
 
 BtcVsVar = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
