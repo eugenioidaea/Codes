@@ -12,24 +12,24 @@ from lmfit import Model
 from mpl_toolkits.mplot3d import Axes3D
 
 # Sim inputs ###################################################################
-shape = [11, 3, 3]
-spacing = 1e-4 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
+shape = [2000, 1, 1]
+spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
 poreDiameter = spacing/10
 Adomain = (shape[1] * shape[2])*(spacing**2) # Should the diameters of the pores be considered?
 Ldomain = (shape[0]-1)*spacing+shape[0]*poreDiameter
-Dmol = 1e-5 # Molecular Diffusion
+Dmol = 1e-4 # Molecular Diffusion
 
-cs = 0.5 # BTC relative control section location (0 is beginning and 1 is the end)
+cs = 0.9 # BTC relative control section location (0 is beginning and 1 is the end)
 
 # Boundary & Initial conditions ################################################
 Cout = 0
-Cin = (Ldomain-Cout*cs*Ldomain)/(Ldomain-cs*Ldomain)
+Cin = (1-Cout)/(1-cs)+Cout
 Qin = 0
 Qout = 0
-endSim = ((shape[0]-1)*spacing)**2/Dmol
+endSim = 100 # Ldomain*cs/Dmol # (Ldomain*cs)**2/Dmol
 simTime = (0, endSim) # Simulation starting and ending times
 
-D0 = 1e-5 # Initial guess for diffusion coefficient during optimisation
+D0 = 1e-4 # Initial guess for diffusion coefficient during optimisation
 
 concTimePlot = 1 # Plot the spatial map of the concentration between start (0) or end (1) of the simulation
 
@@ -51,7 +51,7 @@ liquid = op.phase.Phase(network=net) # Phase dictionary initialisation
 s = 0.8 # Variance of the throat diameters
 
 # OPTION 1: CONSTANT DIAMETER
-throatDiameter = np.ones(net.Nt)*poreDiameter/2
+throatDiameter = np.ones(net.Nt)*poreDiameter
 
 # OPTION 2: LOGNORMAL DIST DIAMETERS WITH FIXED SEED
 # np.random.seed(42)
@@ -70,8 +70,10 @@ tfd = op.algorithms.TransientFickianDiffusion(network=net, phase=liquid) # Trans
 
 inlet = net.pores(['left'])
 outlet = net.pores(['right'])
-CS = (cs*(Ldomain-spacing/2), cs*(Ldomain+spacing/2))
-csBtc=np.where((net['pore.coords'][:, 0]>CS[0]) & (net['pore.coords'][:, 0]<CS[1]))[0]
+# CS = (cs*Ldomain-spacing/2, cs*Ldomain+spacing/2)
+# csBtc=np.where((net['pore.coords'][:, 0]>CS[0]) & (net['pore.coords'][:, 0]<CS[1]))[0]
+diff = np.abs(net['pore.coords'][:, 0] - cs*max(net['pore.coords'][:, 0]))
+csBtc = [np.argmin(diff)]
 # csBtc = np.arange(int(np.floor((shape[0]*shape[1]*shape[2])*cs-shape[1]*shape[2])), int(np.ceil(shape[0]*shape[1]*shape[2]*cs)), 1) # Nodes for recording the BTC at Control Section cs
 # csBtc = np.arange(int(shape[0]*shape[1]*cs), int(shape[0]*shape[1]*cs+shape[1]), 1) # Nodes for recording the BTC at Control Section cs
 
@@ -108,7 +110,8 @@ q_front = diffCond[csBtc]
 cAvg = np.array([])
 for ti in times:
     c_front = tfd.soln['pore.concentration'](ti)[csBtc] # [outlet]
-    cAvg = np.append(cAvg, (q_front*c_front).sum() / q_front.sum())
+    # cAvg = np.append(cAvg, (q_front*c_front).sum() / q_front.sum())
+    cAvg = np.append(cAvg, c_front)
     # cAvg = np.append(cAvg, c_front.sum())
 # btcScalefactor = max(tfd.soln['pore.concentration'](endSim)[csBtc]) # NORMALISATION FACTOR ???
 # cAvg = cAvg / btcScalefactor
@@ -304,6 +307,8 @@ plt.plot(times[::interval], Clsq[::interval], 'p-', markerfacecolor='none', labe
 plt.title('Breakthrough curves')
 plt.xlabel('time [s]')
 plt.ylabel('concentration [-]')
+plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
 plt.legend(loc='best')
 
 BTCs = plt.figure(figsize=(8, 8))
@@ -331,7 +336,7 @@ ms = 100 # Markersize
 if shape[2]==1:
     fig, ax = plt.subplots(figsize=[8, 8])
     op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=ms, ax=ax)
-    # op.visualization.plot_connections(network=net, color_by=tc, linewidth=3, ax=ax)
+    op.visualization.plot_connections(network=net, size_by=throatDiameter, linewidth=3, ax=ax)
     ax.plot([(csBtc[0]/shape[1]+0.5)*spacing, (csBtc[0]/shape[1]+0.5)*spacing], [-shape[1]*spacing*ms/100, shape[1]*spacing*ms/100], linewidth=3)
     ax.text((csBtc[0]/shape[1]+0.5)*spacing, shape[1]*spacing*ms/100, "Control section 1", ha='right', va='bottom')
 else:
