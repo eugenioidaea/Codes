@@ -12,21 +12,21 @@ from lmfit import Model
 from mpl_toolkits.mplot3d import Axes3D
 
 # Sim inputs ###################################################################
-shape = [2000, 1, 1]
+shape = [10, 3, 3]
 spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
 poreDiameter = spacing/10
 Adomain = (shape[1] * shape[2])*(spacing**2) # Should the diameters of the pores be considered?
 Ldomain = (shape[0]-1)*spacing+shape[0]*poreDiameter
 Dmol = 1e-4 # Molecular Diffusion
 
-cs = 0.9 # BTC relative control section location (0 is beginning and 1 is the end)
+cs = 0.6 # BTC relative control section location (0 is beginning and 1 is the end)
 
 # Boundary & Initial conditions ################################################
 Cout = 0
 Cin = (1-Cout)/(1-cs)+Cout
 Qin = 0
 Qout = 0
-endSim = 100 # Ldomain*cs/Dmol # (Ldomain*cs)**2/Dmol
+endSim = (Ldomain*cs)**2/Dmol # Characteristic time
 simTime = (0, endSim) # Simulation starting and ending times
 
 D0 = 1e-4 # Initial guess for diffusion coefficient during optimisation
@@ -72,8 +72,9 @@ inlet = net.pores(['left'])
 outlet = net.pores(['right'])
 # CS = (cs*Ldomain-spacing/2, cs*Ldomain+spacing/2)
 # csBtc=np.where((net['pore.coords'][:, 0]>CS[0]) & (net['pore.coords'][:, 0]<CS[1]))[0]
-diff = np.abs(net['pore.coords'][:, 0] - cs*max(net['pore.coords'][:, 0]))
-csBtc = [np.argmin(diff)]
+controlSectionPores = np.abs(net['pore.coords'][:, 0] - cs*max(net['pore.coords'][:, 0]))
+csBtc = list(np.where(net['pore.coords'][:, 0]==net['pore.coords'][np.argmin(controlSectionPores)][0])[0])
+secondLastPores = list(np.where(net['pore.coords'][:, 0]==net['pore.coords'][shape[0]*shape[1]*shape[2]-shape[1]*shape[2]-1, 0])[0])
 # csBtc = np.arange(int(np.floor((shape[0]*shape[1]*shape[2])*cs-shape[1]*shape[2])), int(np.ceil(shape[0]*shape[1]*shape[2]*cs)), 1) # Nodes for recording the BTC at Control Section cs
 # csBtc = np.arange(int(shape[0]*shape[1]*cs), int(shape[0]*shape[1]*cs+shape[1]), 1) # Nodes for recording the BTC at Control Section cs
 
@@ -108,11 +109,13 @@ q_front = diffCond[csBtc]
 # q_front = tfd.rate(throats=net.Ts, mode='single')[csBtc]*Athroat[csBtc] # [outlet]
 # Get the flux-averaged concentration at the outlet for every time step
 cAvg = np.array([])
+diffFlux = np.array([])
 for ti in times:
-    c_front = tfd.soln['pore.concentration'](ti)[csBtc] # [outlet]
-    # cAvg = np.append(cAvg, (q_front*c_front).sum() / q_front.sum())
-    cAvg = np.append(cAvg, c_front)
-    # cAvg = np.append(cAvg, c_front.sum())
+    cCS = tfd.soln['pore.concentration'](ti)[csBtc] # [concentration at the Control Section]
+    cSecondLast = tfd.soln['pore.concentration'](ti)[secondLastPores] # [concentration at the second last pore]
+    # cAvg = np.append(cAvg, (q_front*cCS).sum() / q_front.sum())
+    cAvg = np.append(cAvg, cCS.mean())
+    diffFlux = np.append(diffFlux, Dmol*cSecondLast.mean()/spacing)
 # btcScalefactor = max(tfd.soln['pore.concentration'](endSim)[csBtc]) # NORMALISATION FACTOR ???
 # cAvg = cAvg / btcScalefactor
 
@@ -312,22 +315,31 @@ plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
 plt.legend(loc='best')
 
 BTCs = plt.figure(figsize=(8, 8))
-plt.rcParams.update({'font.size': 20})
+plt.title('Flux averaged concentration at the control section')
 plt.plot(times, cAvg, label='CopenPNM')
 # plt.plot(times, C0, label='C0norm')
 # plt.plot(times, Copt, label='CoptNorm')
 # plt.plot(times, Cfit, label='CoptFit')
 # plt.plot(times, Clsq, label='ClsqNorm')
-# plt.legend(loc='best')
+plt.xlabel('t [s]')
+plt.ylabel('c [-]')
+plt.legend(loc='best')
+
+DiffusiveFlux = plt.figure(figsize=(8, 8))
+plt.title('Diffusive flux through second last pore')
+plt.plot(times, diffFlux, label='diff flux')
+plt.xlabel('t [s]')
+plt.ylabel('j [m/s]')
+plt.legend(loc='best')
 
 residuals = plt.figure(figsize=(8, 8))
 plt.plot(times, result.residual, 'o')  # Check if residuals are randomly distributed
 plt.title('Residuals of least square fitting')
 plt.xlabel('t norm [-]')
 plt.ylabel('lsq residual value [m2/s]')
-plt.show()
 
-highlightCoords = net['pore.coords'][csBtc]
+csPores = net['pore.coords'][csBtc]
+slPores = net['pore.coords'][secondLastPores]
 pc = tfd.soln['pore.concentration'](endSim*concTimePlot)
 # tc = tfd.interpolate_data(propname='throat.concentration')
 # tc = tfd.soln['pore.concentration'](1)[throat.all]
@@ -344,12 +356,14 @@ else:
     ax = fig.add_subplot(111, projection='3d')
     # op.visualization.plot_coordinates(network=net, color_by=pc, size_by=d, markersize=ms, ax=ax)
     op.visualization.plot_connections(network=net, size_by=throatDiameter, linewidth=3, ax=ax)
-    ax.scatter(highlightCoords[:, 0], highlightCoords[:, 1], highlightCoords[:, 2], color='black', s=ms, label="Highlighted Pores")
+    ax.scatter(csPores[:, 0], csPores[:, 1], csPores[:, 2], color='black', s=ms, label="Control sec")
+    ax.scatter(slPores[:, 0], slPores[:, 1], slPores[:, 2], color='green', s=ms, label="Diff flux")
     offset = Ldomain*0.1
     ycs = np.linspace(0-offset, shape[1]*spacing+offset, 10)
     zcs = np.linspace(0-offset, shape[2]*spacing+offset, 10)
     Ycs, Zcs = np.meshgrid(ycs, zcs)
     Xcs = np.ones(len(ycs))*cs*Ldomain
+    plt.legend(loc='best')
     # ax.plot_surface(Xcs, Ycs, Zcs)
     # ax.text(Xcs[-1], Ycs[-1][-1], Zcs[-1][-1], "Control plane 1")
-#_ = plt.axis('off')
+    #_ = plt.axis('off')
