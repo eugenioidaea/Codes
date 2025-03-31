@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../../../../anaconda3/envs/dfnConda"
+		},
+		{
+			"path": "."
 		}
 	]
 }
