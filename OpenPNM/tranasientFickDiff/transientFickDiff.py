@@ -12,7 +12,7 @@ from lmfit import Model
 from mpl_toolkits.mplot3d import Axes3D
 
 # Sim inputs ###################################################################
-shape = [10, 3, 3]
+shape = [100, 1, 1]
 spacing = 1e-3 # It is the distance between pores that it does not necessarily correspond to the length of the throats because of the tortuosity
 poreDiameter = spacing/10
 Adomain = (shape[1] * shape[2])*(spacing**2) # Should the diameters of the pores be considered?
@@ -23,7 +23,7 @@ cs = 0.6 # BTC relative control section location (0 is beginning and 1 is the en
 
 # Boundary & Initial conditions ################################################
 Cout = 0
-Cin = (1-Cout)/(1-cs)+Cout
+# Cin = (1-Cout)/(1-cs)+Cout
 Qin = 0
 Qout = 0
 endSim = (Ldomain*cs)**2/Dmol # Characteristic time
@@ -77,6 +77,9 @@ csBtc = list(np.where(net['pore.coords'][:, 0]==net['pore.coords'][np.argmin(con
 secondLastPores = list(np.where(net['pore.coords'][:, 0]==net['pore.coords'][shape[0]*shape[1]*shape[2]-shape[1]*shape[2]-1, 0])[0])
 # csBtc = np.arange(int(np.floor((shape[0]*shape[1]*shape[2])*cs-shape[1]*shape[2])), int(np.ceil(shape[0]*shape[1]*shape[2]*cs)), 1) # Nodes for recording the BTC at Control Section cs
 # csBtc = np.arange(int(shape[0]*shape[1]*cs), int(shape[0]*shape[1]*cs+shape[1]), 1) # Nodes for recording the BTC at Control Section cs
+
+csPoreX = csBtc[0]/(shape[1]*shape[2]) # Get the control section position along the X axis
+Cin = (1-Cout)/(1-csPoreX/(shape[0]-1))+Cout # Set the concentration at the inlet boundary such that the concentration at the control section is one
 
 # Boundary conditions
 tfd.set_value_BC(pores=inlet, values=Cin) # Inlet: fixed concentration
@@ -323,6 +326,10 @@ plt.plot(times, cAvg, label='CopenPNM')
 # plt.plot(times, Clsq, label='ClsqNorm')
 plt.xlabel('t [s]')
 plt.ylabel('c [-]')
+plt.xscale('log')
+# plt.yscale('log')
+plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
 plt.legend(loc='best')
 
 DiffusiveFlux = plt.figure(figsize=(8, 8))
@@ -330,6 +337,11 @@ plt.title('Diffusive flux through second last pore')
 plt.plot(times, diffFlux, label='diff flux')
 plt.xlabel('t [s]')
 plt.ylabel('j [m/s]')
+plt.legend(loc='best')
+plt.xscale('log')
+# plt.yscale('log')
+plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
+plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
 plt.legend(loc='best')
 
 residuals = plt.figure(figsize=(8, 8))
