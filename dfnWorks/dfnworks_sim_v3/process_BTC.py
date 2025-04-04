@@ -36,7 +36,7 @@ plt.show()
 
 # cNorm = -1*df['OUTFLOW TRACER [mol/y]']/np.sum(-1*df['OUTFLOW TRACER [mol/y]'])
 cPlateau1 = np.array(-1*df['OUTFLOW TRACER [mol/y]']/np.max(-1*df['OUTFLOW TRACER [mol/y]']))
-time = df['Time [y]']
+time = np.array(df['Time [y]'])
 fig,ax = plt.subplots(figsize = (8,6))
 ax.plot(time, cPlateau1)
 plt.title('Plateau normalised BTC')
@@ -46,9 +46,17 @@ plt.xscale('log')
 plt.grid(True)
 plt.show()
 
-m1 = np.sum(np.diff(time)/np.max(time)*(cPlateau1[:-1]+cPlateau1[1:])/2)
-m2 = np.sum(np.diff(time)/np.max(time)*((cPlateau1[:-1]+cPlateau1[1:])/2)**2)
+cc = (cPlateau1[:-1]+cPlateau1[1:])/2
+dt = np.diff(time)/np.max(time)
+tt = (time[:-1]+time[1:])/2
+m1 = np.sum(cc*dt)
+m2 = np.sum((cc)**2*dt)
 Var = m2-m1**2
+mrt = np.sum(tt*cc*dt)/np.sum(cc*dt)
+mrtVar = np.sum((tt-mrt)**2*cc*dt)/np.sum(cc*dt)
+
+Ddisp = mrtVar/2*mrt
+# Deff = Ddisp/advVel
 
 fig,ax = plt.subplots(figsize = (8,6))
 ax.plot(df['Time [y]'], 1-cPlateau1)
