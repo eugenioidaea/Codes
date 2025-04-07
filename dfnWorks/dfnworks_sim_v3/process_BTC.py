@@ -49,13 +49,15 @@ plt.show()
 cc = (cPlateau1[:-1]+cPlateau1[1:])/2
 dt = np.diff(time)/np.max(time)
 tt = (time[:-1]+time[1:])/2
-m1 = np.sum(cc*dt)
-m2 = np.sum((cc)**2*dt)
-Var = m2-m1**2
-mrt = np.sum(tt*cc*dt)/np.sum(cc*dt)
-mrtVar = np.sum((tt-mrt)**2*cc*dt)/np.sum(cc*dt)
+m1c = np.sum(cc*dt)
+m2c = np.sum((cc)**2*dt)
+VarC = m2c-m1c**2
+m1t = np.sum(tt*cc*dt)/np.sum(cc*dt)
+m2t = np.sum(tt**2*cc*dt)/np.sum(cc*dt)
+VarT = m2t - m1t**2
+# mrtVar = np.sum((tt-m1t)**2*cc*dt)/np.sum(cc*dt)
 
-Ddisp = mrtVar/2*mrt
+Ddisp = m2t/(2*m1t)
 # Deff = Ddisp/advVel
 
 fig,ax = plt.subplots(figsize = (8,6))
