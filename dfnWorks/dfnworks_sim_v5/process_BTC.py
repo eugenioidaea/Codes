@@ -58,8 +58,7 @@ VarT = m2t - m1t**2
 # mrtVar = np.sum((tt-m1t)**2*cc*dt)/np.sum(cc*dt)
 
 Ddisp = m2t/(2*m1t)
-DeffM1T = 5**2/m1t
-DeffM2T = 2*5**2/m2t
+# Deff = Ddisp/advVel
 
 fig,ax = plt.subplots(figsize = (8,6))
 ax.plot(df['Time [y]'], 1-cPlateau1)
