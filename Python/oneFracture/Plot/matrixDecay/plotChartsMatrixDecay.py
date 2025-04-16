@@ -9,8 +9,8 @@ from scipy.interpolate import CubicSpline
 
 # Choose what should be plotted #############################################################
 
-plotMatrixDecay = False # Radioactive decay in the matrix for different values of radioactive decay (kDecay)
-plotMatrixDecayDm = True # Radioactive decay in the matrix for different values of molecular diffusion (Dm)
+plotMatrixDecay = True # Decay in the matrix for different values of radioactive decay (kDecay)
+plotMatrixDecayDm = False # Effective decay for values of molecular diffusion different between the fracture and the matrix
 
 save = False
 
@@ -289,13 +289,13 @@ if plotMatrixDecay:
     kDecay = np.array([kDecay01, kDecay001, kDecay004, kDecay007, kDecay0001])
     effVsDecayRates = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
-    plt.plot(kDecay[0], abs(interpSemilogK01.coef_[0]), 'o', markerfacecolor='blue', markeredgecolor='blue', markersize='10')
-    plt.plot(kDecay[1], abs(interpSemilogK001.coef_[0]), 'o', markerfacecolor='red', markeredgecolor='red', markersize='10')
-    plt.plot(kDecay[2], abs(interpSemilogK004.coef_[0]), 'o', markerfacecolor='purple', markeredgecolor='purple', markersize='10')
-    plt.plot(kDecay[3], abs(interpSemilogK007.coef_[0]), 'o', markerfacecolor='orange', markeredgecolor='orange', markersize='10')
-    plt.plot(kDecay[4], abs(interpSemilogK0001.coef_[0]), 'o', markerfacecolor='green', markeredgecolor='green', markersize='10')
-    plt.title("Effective rates vs radioactive decays")
-    plt.xlabel(r'$k_{matrixDecay}$')
+    plt.plot(kDecay[0], abs(interpSemilogK01.coef_[0]), 'o', markerfacecolor='blue', markeredgecolor='blue', markersize='10', label=r'$k_{m}=%g$' % (kDecay[0]))
+    plt.plot(kDecay[1], abs(interpSemilogK001.coef_[0]), 'o', markerfacecolor='red', markeredgecolor='red', markersize='10', label=r'$k_{m}=%g$' % (kDecay[1]))
+    plt.plot(kDecay[2], abs(interpSemilogK004.coef_[0]), 'o', markerfacecolor='purple', markeredgecolor='purple', markersize='10', label=r'$k_{m}=%g$' % (kDecay[2]))
+    plt.plot(kDecay[3], abs(interpSemilogK007.coef_[0]), 'o', markerfacecolor='orange', markeredgecolor='orange', markersize='10', label=r'$k_{m}=%g$' % (kDecay[3]))
+    plt.plot(kDecay[4], abs(interpSemilogK0001.coef_[0]), 'o', markerfacecolor='green', markeredgecolor='green', markersize='10', label=r'$k_{m}=%g$' % (kDecay[4]))
+    # plt.title("Effective rates vs radioactive decays")
+    plt.xlabel(r'$k_m$')
     plt.ylabel(r'$k_{eff}$')
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
     plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
@@ -310,7 +310,7 @@ if plotMatrixDecay:
     points = np.log(kDecay)
     effDecayVsMolDiff = np.exp(interpKdecay.intercept_+interpKdecay.coef_*points)
     plt.plot(np.exp(points), effDecayVsMolDiff, color='black', linewidth='4')
-    plt.text(kDecayReshaped[1], effDecayVsMolDiff[1], f"y={interpKdecay.coef_[0]:.5f}x{interpKdecay.intercept_:.5f}", fontsize=18, ha='left', va='top')
+    plt.text(kDecayReshaped[1], effDecayVsMolDiff[1], r'$k_{eff}=k_m^{%g} e^{%g}$' % (interpKdecay.coef_[0], interpKdecay.intercept_), fontsize=18, ha='left', va='top')
 
     if plotMatrixDecay & save:
         finalPositionMatrixDecay.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositionMatrixDecay.png", format="png", bbox_inches="tight")
@@ -379,21 +379,17 @@ if plotMatrixDecayDm:
     plt.rcParams.update({'font.size': 20})
     plt.plot(dm001/df001, abs(interpSemilogDm001.coef_[0]), 'o', markerfacecolor='blue', markeredgecolor='blue', markersize='10', label=r'$D_m/D_f = 1.0$')
     plt.plot(dm0001/df0001, abs(interpSemilogDm0001.coef_[0]), 'o', markerfacecolor='red', markeredgecolor='red', markersize='10', label=r'$D_m/D_f = 0.1$')
-    plt.plot(dm00005/df00005, abs(interpSemilogDm00005.coef_[0]), 'o', markerfacecolor='purple', markeredgecolor='purple', markersize='10', label=r'$D_m/D_f = 0.05$')
     plt.plot(dm00001/df00001, abs(interpSemilogDm00001.coef_[0]), 'o', markerfacecolor='green', markeredgecolor='green', markersize='10', label=r'$D_m/D_f = 0.01$')
+    plt.plot(dm00005/df00005, abs(interpSemilogDm00005.coef_[0]), 'o', markerfacecolor='purple', markeredgecolor='purple', markersize='10', label=r'$D_m/D_f = 0.05$')
     plt.plot(dm000001/df000001, abs(interpSemilogDm000001.coef_[0]), 'o', markerfacecolor='orange', markeredgecolor='orange', markersize='10', label=r'$D_m/D_f = 0.001$')
 
-    ratiosDmDf = np.array([dm000001/df000001, dm00005/df00005, dm00001/df00001, dm0001/df0001, dm001/df001])
+    ratiosDmDf = np.array([dm000001/df000001, dm00001/df00001, dm00005/df00005, dm0001/df0001, dm001/df001])
     ratiosDmDfReshaped = (ratiosDmDf).reshape(-1, 1)
     kEffInterp = np.array([abs(interpSemilogDm000001.coef_[0]), abs(interpSemilogDm00001.coef_[0]), abs(interpSemilogDm00005.coef_[0]), abs(interpSemilogDm0001.coef_[0]), abs(interpSemilogDm001.coef_[0])])
     interpRatiosDmDf = LinearRegression().fit(np.log(ratiosDmDfReshaped), np.log(kEffInterp))
-    # points = np.linspace(np.log(min(ratiosDmDf)), np.log(max(ratiosDmDf)), 10)
-    points = np.log(ratiosDmDf)
-    effDecayVsMolDiff = np.exp(interpRatiosDmDf.intercept_+interpRatiosDmDf.coef_*points)
-    plt.plot(np.exp(points), effDecayVsMolDiff, color='black', linewidth='4')
-    plt.text(ratiosDmDfReshaped[3], effDecayVsMolDiff[3], f"y={interpRatiosDmDf.coef_[0]:.5f}x{interpRatiosDmDf.intercept_:.5f}", fontsize=18, ha='left', va='top')
-
-    plt.title("Effective decay vs mol diff in matrix")
+    effDecayVsMolDiff = np.exp(interpRatiosDmDf.intercept_)*ratiosDmDf**interpRatiosDmDf.coef_
+    plt.plot(ratiosDmDf, effDecayVsMolDiff, color='black', linewidth='4')
+    plt.text(ratiosDmDfReshaped[1], effDecayVsMolDiff[1], r'$k_{eff}=(D_m/D_f)^{%g} e^{%g}$' % (interpRatiosDmDf.coef_[0], interpRatiosDmDf.intercept_), fontsize=18, ha='left', va='top')
     plt.xlabel(r'$D_m/D_f$')
     plt.ylabel(r'$k_{eff}$')
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
