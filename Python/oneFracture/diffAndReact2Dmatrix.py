@@ -25,8 +25,8 @@ if plotCharts:
 
 # Parameters #################################################################
 num_particles = int(1e6) # Number of particles in the simulation
-sim_time = int(8e3)
-dt = 1 # Time step
+sim_time = int(8e4)
+dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 1 # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
