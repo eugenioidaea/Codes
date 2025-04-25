@@ -236,14 +236,19 @@ plt.xlabel(r'$p_{ads}$')
 plt.ylabel(r'$k(t)$')
 plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
 plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
-plt.legend(loc='best')
-plt.tight_layout()
 pAdsReshaped = np.array([0.2, 0.4, 0.6, 0.8]).reshape(-1, 1)
 yKfit = LinearRegression().fit(pAdsReshaped, kt)
 xInterp = np.linspace(min(pAdsReshaped), max(pAdsReshaped), 10)
 yInterp = xInterp*yKfit.coef_[0]+yKfit.intercept_
 plt.plot(xInterp, yInterp, color="black")
 plt.text(xInterp[len(xInterp)//2], yInterp[len(yInterp)//2], f"y={yKfit.coef_[0]:.5f}x+{yKfit.intercept_:.5f}", fontsize=18, ha='left', va='top')
+
+coefficients = np.polyfit([0.2, 0.4, 0.6, 0.8], kt, 2)
+poly = np.poly1d(coefficients)
+yInterp2 = poly(xInterp)
+plt.plot(xInterp, yInterp2, label='2nd order polynomial', color='blue')
+plt.legend(loc='best')
+plt.tight_layout()
 
 if save:
     survTimeDistCompareProb.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistCompareProb.png", format="png", bbox_inches="tight")

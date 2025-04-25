@@ -40,7 +40,7 @@ def check_parameters(h, domainSize, min_radius):
     return warnings
 
 h = 1
-domainSize = [50, 25, 25]
+domainSize = [10, 10, 20]
 min_radius = 1.0
 
 warnings = check_parameters(h, domainSize, min_radius)

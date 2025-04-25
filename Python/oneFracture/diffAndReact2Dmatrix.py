@@ -7,10 +7,10 @@ import time
 
 # Features ###################################################################
 plotCharts =                True # It controls graphical features (disable when run on HPC)
-matrixDecay =               True # It activates the radioactive decay only in the porous matrix
-domainDecay =               False # Switch for the radioactive (exponential) decay of the particles in the whole domain
-partialReflection =         True # Depending on the value of the boundary conditions (Semra 1993), particles can be reflected or partially diffuse into the porou matrix
-partialAdsorption =         False # Particles' adsorption probability (ap) sets the fraction of impacts that are adsorbed on average at every time step
+matrixDecay =               False # It activates the radioactive decay only in the porous matrix
+domainDecay =               True # Switch for the radioactive (exponential) decay of the particles in the whole domain
+partialReflection =         False # Depending on the value of the boundary conditions (Semra 1993), particles can be reflected or partially diffuse into the porou matrix
+partialAdsorption =         True # Particles' adsorption probability (ap) sets the fraction of impacts that are adsorbed on average at every time step
 matrixDiffVerification =    False # It activates the matrix-diffusion verification testcase
 lbxOn =                     False # It controls the position of the left boundary
 lbxAdsorption =             False # It controls whether the particles get adsorpted or reflected on the left boundary 
@@ -25,13 +25,13 @@ if plotCharts:
 
 # Parameters #################################################################
 num_particles = int(1e6) # Number of particles in the simulation
-sim_time = int(1e4)
-dt = 1 # Time step
+sim_time = int(8e3)
+dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-Df = 0.01 # Diffusion for particles moving in the fracture
-Dm = 0.0005  # Diffusion for particles moving in the porous matrix
-ap = 1 # Adsorption probability
-kDecay = 0.01 # Degradation kinetic constant
+Df = 0.1 # Diffusion for particles moving in the fracture
+Dm = 0.001  # Diffusion for particles moving in the porous matrix
+ap = 0.1 # Adsorption probability
+kDecay = 0.05 # Degradation kinetic constant
 xInit = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
@@ -51,7 +51,7 @@ probReflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
 probReflectedOutward = np.sqrt(Dm)/(np.sqrt(Df)+np.sqrt(Dm))
 recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
-k_ads = 0.1 # Adsorption constant
+k_ads = 0.1 # Adsorption constant (currently not used since the probability of adsorption is a random variable from a UNIFORM distribution and not EXPONENTIAL)
 binsXinterval = 10 # Extension of the region where spatial concentration is recorded
 binsTime = int(num_steps) # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
@@ -393,6 +393,7 @@ if save.upper()=="Y":
     # np.savez('compareAdsP60.npz', **variablesToSave)
     # np.savez('compareAdsP40.npz', **variablesToSave)
     # np.savez('compareAdsP20.npz', **variablesToSave)
+    np.savez('compareAdsP10.npz', **variablesToSave)
     # np.savez('compareTau4.npz', **variablesToSave)
     # np.savez('compareTau40.npz', **variablesToSave)
     # np.savez('compareTau400.npz', **variablesToSave)
