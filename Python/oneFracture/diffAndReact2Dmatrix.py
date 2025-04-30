@@ -28,9 +28,9 @@ num_particles = int(1e6) # Number of particles in the simulation
 sim_time = int(8e4)
 dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-Df = 1 # Diffusion for particles moving in the fracture
+Df = 0.1 # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
-ap = 0.8 # Adsorption probability
+ap = 0.1 # Adsorption probability
 kDecay = 0.05 # Degradation kinetic constant
 xInit = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
@@ -187,7 +187,7 @@ if matrixDecay:
 # Time loop ###########################################################################
 start_time = time.time() # Start timing the while loop
 
-while t<sim_time and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any()):
+while t<sim_time and (not(numOfLivePart) or numOfLivePart[-1]>0) and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any()):
 
     liveParticle = np.array(survivalTimeDist>t) # Particles which are not degradeted
     if matrixDecay:
@@ -389,11 +389,11 @@ if save.upper()=="Y":
     # np.savez('compareAp2.npz', **variablesToSave)
     # np.savez('compareAp4.npz', **variablesToSave)
     # np.savez('compareAp6.npz', **variablesToSave)
-    np.savez('compareAdsP80.npz', **variablesToSave)
+    # np.savez('compareAdsP80.npz', **variablesToSave)
     # np.savez('compareAdsP60.npz', **variablesToSave)
     # np.savez('compareAdsP40.npz', **variablesToSave)
     # np.savez('compareAdsP20.npz', **variablesToSave)
-    # np.savez('compareAdsP10.npz', **variablesToSave)
+    np.savez('compareAdsP10.npz', **variablesToSave)
     # np.savez('compareTau4.npz', **variablesToSave)
     # np.savez('compareTau40.npz', **variablesToSave)
     # np.savez('compareTau400.npz', **variablesToSave)
