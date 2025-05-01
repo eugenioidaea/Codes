@@ -10,7 +10,7 @@ plotCharts =                True # It controls graphical features (disable when 
 matrixDecay =               False # It activates the radioactive decay only in the porous matrix
 domainDecay =               True # Switch for the radioactive (exponential) decay of the particles in the whole domain
 diffuseIntoMatrix =         False # Depending on the value of the boundary conditions (Semra 1993), particles can be reflected or partially diffuse into the porou matrix
-partialAdsorption =         True # Particles' adsorption probability (ap) sets the fraction of impacts that are adsorbed on average at every time step
+partialAdsorption =         False # Particles' adsorption probability (ap) sets the fraction of impacts that are adsorbed on average at every time step
 matrixDiffVerification =    False # It activates the matrix-diffusion verification testcase
 lbxOn =                     False # It controls the position of the left boundary
 lbxAdsorption =             False # It controls whether the particles get adsorpted or reflected on the left boundary 
@@ -25,12 +25,12 @@ if plotCharts:
 
 # Parameters #################################################################
 num_particles = int(1e6) # Number of particles in the simulation
-sim_time = int(8e4)
+sim_time = int(8e2)
 dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-Df = 0.1 # Diffusion for particles moving in the fracture
+Df = 0.001 # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
-ap = 0.9 # Adsorption probability
+ap = 1 # Adsorption probability
 kDecay = 0.05 # Degradation kinetic constant
 xInit = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
@@ -389,7 +389,7 @@ if save.upper()=="Y":
     # np.savez('compareAp2.npz', **variablesToSave)
     # np.savez('compareAp4.npz', **variablesToSave)
     # np.savez('compareAp6.npz', **variablesToSave)
-    np.savez('compareAdsP90.npz', **variablesToSave)
+    # np.savez('compareAdsP90.npz', **variablesToSave)
     # np.savez('compareAdsP80.npz', **variablesToSave)
     # np.savez('compareAdsP60.npz', **variablesToSave)
     # np.savez('compareAdsP40.npz', **variablesToSave)
@@ -398,7 +398,7 @@ if save.upper()=="Y":
     # np.savez('compareTau4.npz', **variablesToSave)
     # np.savez('compareTau40.npz', **variablesToSave)
     # np.savez('compareTau400.npz', **variablesToSave)
-    # np.savez('compareTau4000.npz', **variablesToSave)
+    np.savez('compareTau4000.npz', **variablesToSave)
     # np.savez('compareP80.npz', **variablesToSave)
     # np.savez('compareP60.npz', **variablesToSave)
     # np.savez('compareP40.npz', **variablesToSave)

@@ -9,7 +9,7 @@ import time
 plotCharts =                True # It controls graphical features (disable when run on HPC)
 matrixDecay =               False # It activates the radioactive decay only in the porous matrix
 domainDecay =               True # Switch for the radioactive (exponential) decay of the particles in the whole domain
-partialReflection =         False # Depending on the value of the boundary conditions (Semra 1993), particles can be reflected or partially diffuse into the porou matrix
+diffuseIntoMatrix =         False # Depending on the value of the boundary conditions (Semra 1993), particles can be reflected or partially diffuse into the porou matrix
 partialAdsorption =         True # Particles' adsorption probability (ap) sets the fraction of impacts that are adsorbed on average at every time step
 matrixDiffVerification =    False # It activates the matrix-diffusion verification testcase
 lbxOn =                     False # It controls the position of the left boundary
@@ -240,7 +240,7 @@ while t<sim_time and (not(numOfLivePart) or numOfLivePart[-1]>0) and bool(livePa
         pdf_lbxOn[int(t/dt)] = sum(crossOutLeft)
 
     # Decide what happens to the particles which hit the fracture's walls: all get reflected, some get reflected some manage to escape, all get absorbed by the fracture's walls
-    if partialReflection:
+    if diffuseIntoMatrix:
         # Update the reflected particles' positions according to an elastic reflection dynamic
         x, y = apply_reflection(x, y, crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, lbxOn)
     if partialAdsorption:
