@@ -10,7 +10,7 @@ plotCharts =                True # It controls graphical features (disable when 
 matrixDecay =               False # It activates the radioactive decay only in the porous matrix
 domainDecay =               True # Switch for the radioactive (exponential) decay of the particles in the whole domain
 diffuseIntoMatrix =         False # Depending on the value of the boundary conditions (Semra 1993), particles can be reflected or partially diffuse into the porou matrix
-partialAdsorption =         True # Particles' adsorption probability (ap) sets the fraction of impacts that are adsorbed on average at every time step
+adsorptionProbability =         True # Particles' adsorption probability (ap) sets the fraction of impacts that are adsorbed on average at every time step
 matrixDiffVerification =    False # It activates the matrix-diffusion verification testcase
 lbxOn =                     False # It controls the position of the left boundary
 lbxAdsorption =             False # It controls whether the particles get adsorpted or reflected on the left boundary 
@@ -243,7 +243,7 @@ while t<sim_time and (not(numOfLivePart) or numOfLivePart[-1]>0) and bool(livePa
     if diffuseIntoMatrix:
         # Update the reflected particles' positions according to an elastic reflection dynamic
         x, y = apply_reflection(x, y, crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, lbxOn)
-    if partialAdsorption:
+    if adsorptionProbability:
         # adsDist = adsorption_dist(k_ads) # Exponential distribution
         adsDist = np.random.uniform(0, 1, num_particles) # Uniform distribution
         x, y, impacts = apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist, impacts)
@@ -311,7 +311,7 @@ else:
     yAnalytical = analytical_inf(binCenterSpace, recordSpatialConc, Df)
 
 # Compute the number of particles at a given time over the whole domain extension
-if partialAdsorption:
+if adsorptionProbability:
     # Average concentration in X and Y
     recordTdist = int(timeStep[-2]) # Final time step
     vInterval = np.array([xInit-0.1, xInit+0.1])
@@ -330,7 +330,7 @@ if partialAdsorption:
     hDistAll, hBinsAll = np.histogram(xDistAll, np.linspace(-binsXinterval, binsXinterval, binsSpace))
 
 # Compute the number of particles at a given time within a vertical and a horizontal stripe
-if recordTrajectories and partialAdsorption:
+if recordTrajectories and adsorptionProbability:
     # Average concentration in X and Y
     recordTdist = int(timeStep[-2])
     vInterval = np.array([xInit-0.1, xInit+0.1])
@@ -356,7 +356,7 @@ if recordTrajectories and partialAdsorption:
 print(f"Execution time: {execution_time:.6f} seconds")
 print(f"<t>: {meanTstep:.6f} s")
 print(f"sigmat: {stdTstep:.6f} s")
-if partialAdsorption:
+if adsorptionProbability:
     print(f"# adsorbed particles/# impacts: {num_particles/impacts}")
 if recordSpatialConc>t:
     print("WARNING! The simulation time is smaller than the specified time for recording the spatial distribution of the concentration")

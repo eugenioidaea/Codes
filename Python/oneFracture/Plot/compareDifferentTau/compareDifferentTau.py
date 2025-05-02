@@ -23,12 +23,26 @@ numOfLivePartTau40 = numOfLivePart.copy()
 Time40 = Time.copy()
 tau40 = (uby-lby)**2/Df
 
+loadCompareTau100 = np.load('compareTau100.npz')
+for name, value in (loadCompareTau100.items()):
+    globals()[name] = value
+numOfLivePartTau100 = numOfLivePart.copy()
+Time100 = Time.copy()
+tau100 = (uby-lby)**2/Df
+
 loadCompareTau400 = np.load('compareTau400.npz')
 for name, value in (loadCompareTau400.items()):
     globals()[name] = value
 numOfLivePartTau400 = numOfLivePart.copy()
 Time400 = Time.copy()
 tau400 = (uby-lby)**2/Df
+
+loadCompareTau1000 = np.load('compareTau1000.npz')
+for name, value in (loadCompareTau1000.items()):
+    globals()[name] = value
+numOfLivePartTau1000 = numOfLivePart.copy()
+Time1000 = Time.copy()
+tau1000 = (uby-lby)**2/Df
 
 loadCompareTau4000 = np.load('compareTau4000.npz')
 for name, value in (loadCompareTau4000.items()):
@@ -128,7 +142,9 @@ survTimeDistSemilogTau = plt.figure(figsize=(8, 8), dpi=300)
 plt.rcParams.update({'font.size': 20})
 plt.plot(Time4, np.log(numOfLivePartTau4/num_particles), 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$\tau_d = 4$')
 plt.plot(Time40[::10], np.log(numOfLivePartTau40[::10]/num_particles), 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$\tau_d = 40$')
+plt.plot(Time100[::10], np.log(numOfLivePartTau100[::10]/num_particles), 'o', markerfacecolor='none', markeredgecolor='pink', markersize='5', label=r'$\tau_d = 100$')
 plt.plot(Time400[::20], np.log(numOfLivePartTau400[::20]/num_particles), 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$\tau_d = 400$')
+plt.plot(Time1000[::10], np.log(numOfLivePartTau1000[::10]/num_particles), 'o', markerfacecolor='none', markeredgecolor='orange', markersize='5', label=r'$\tau_d = 1000$')
 plt.plot(Time4000[::20], np.log(numOfLivePartTau4000[::20]/num_particles), 'o', markerfacecolor='none', markeredgecolor='purple', markersize='5', label=r'$\tau_d = 4000$')
 # plt.title("Survival time distributions")
 # plt.xscale('log')
@@ -143,15 +159,21 @@ plt.ylim(-12, 0.1)
 plt.tight_layout()
 sliceSemilogTau4 = slice(0, np.count_nonzero(numOfLivePartTau4)-1)
 sliceSemilogTau40 = slice(0, np.count_nonzero(numOfLivePartTau40)-1)
+sliceSemilogTau100 = slice(0, np.count_nonzero(numOfLivePartTau100)-1)
 sliceSemilogTau400 = slice(0, np.count_nonzero(numOfLivePartTau400)-1)
+sliceSemilogTau1000 = slice(0, np.count_nonzero(numOfLivePartTau1000)-1)
 sliceSemilogTau4000 = slice(0, np.count_nonzero(numOfLivePartTau4000)-1)
 timeReshapedSemilogTau4 = (Time4[sliceSemilogTau4]).reshape(-1, 1)
 timeReshapedSemilogTau40 = (Time40[sliceSemilogTau40]).reshape(-1, 1)
+timeReshapedSemilogTau100 = (Time100[sliceSemilogTau100]).reshape(-1, 1)
 timeReshapedSemilogTau400 = (Time400[sliceSemilogTau400]).reshape(-1, 1)
+timeReshapedSemilogTau1000 = (Time1000[sliceSemilogTau1000]).reshape(-1, 1)
 timeReshapedSemilogTau4000 = (Time4000[sliceSemilogTau4000]).reshape(-1, 1)
 interpSemilogTau4 = LinearRegression().fit(timeReshapedSemilogTau4, np.log(numOfLivePartTau4[sliceSemilogTau4]/num_particles))
 interpSemilogTau40 = LinearRegression().fit(timeReshapedSemilogTau40, np.log(numOfLivePartTau40[sliceSemilogTau40]/num_particles))
+interpSemilogTau100 = LinearRegression().fit(timeReshapedSemilogTau100, np.log(numOfLivePartTau100[sliceSemilogTau100]/num_particles))
 interpSemilogTau400 = LinearRegression().fit(timeReshapedSemilogTau400, np.log(numOfLivePartTau400[sliceSemilogTau400]/num_particles))
+interpSemilogTau1000 = LinearRegression().fit(timeReshapedSemilogTau1000, np.log(numOfLivePartTau1000[sliceSemilogTau1000]/num_particles))
 interpSemilogTau4000 = LinearRegression().fit(timeReshapedSemilogTau4000, np.log(numOfLivePartTau4000[sliceSemilogTau4000]/num_particles))
 kInterpSemilogTau4 = np.exp(interpSemilogTau4.intercept_+interpSemilogTau4.coef_*timeReshapedSemilogTau4)
 plt.plot(timeReshapedSemilogTau4, np.log(kInterpSemilogTau4), color='blue', linewidth='2')
@@ -159,9 +181,15 @@ plt.text(timeReshapedSemilogTau4[len(timeReshapedSemilogTau4)//2], np.log(kInter
 kInterpSemilogTau40 = np.exp(interpSemilogTau40.intercept_+interpSemilogTau40.coef_*timeReshapedSemilogTau40)
 plt.plot(timeReshapedSemilogTau40, np.log(kInterpSemilogTau40), color='red', linewidth='2')
 plt.text(timeReshapedSemilogTau40[len(timeReshapedSemilogTau40)//2], np.log(kInterpSemilogTau40)[len(kInterpSemilogTau40)//2], r'$p_s = %g e^{%g t}$' % (round(1/np.exp(-interpSemilogTau40.intercept_), 2), round(interpSemilogTau40.coef_[0], 3)), fontsize=18, ha='left', va='bottom')
+kInterpSemilogTau100 = np.exp(interpSemilogTau100.intercept_+interpSemilogTau100.coef_*timeReshapedSemilogTau100)
+plt.plot(timeReshapedSemilogTau100, np.log(kInterpSemilogTau100), color='pink', linewidth='2')
+plt.text(timeReshapedSemilogTau100[len(timeReshapedSemilogTau100)//2+300], np.log(kInterpSemilogTau100)[len(kInterpSemilogTau100)//2+300], r'$p_s = %g e^{%g t}$' % (round(1/np.exp(-interpSemilogTau100.intercept_), 2), round(interpSemilogTau100.coef_[0], 3)), fontsize=18, ha='left', va='bottom')
 kInterpSemilogTau400 = np.exp(interpSemilogTau400.intercept_+interpSemilogTau400.coef_*timeReshapedSemilogTau400)
 plt.plot(timeReshapedSemilogTau400, np.log(kInterpSemilogTau400), color='green', linewidth='2')
 plt.text(timeReshapedSemilogTau400[len(timeReshapedSemilogTau400)//2], np.log(kInterpSemilogTau400)[len(kInterpSemilogTau400)//2], r'$p_s = %g e^{%g t}$' % (round(1/np.exp(-interpSemilogTau400.intercept_), 2), round(interpSemilogTau400.coef_[0], 3)), fontsize=18, ha='left', va='bottom')
+kInterpSemilogTau1000 = np.exp(interpSemilogTau1000.intercept_+interpSemilogTau1000.coef_*timeReshapedSemilogTau1000)
+plt.plot(timeReshapedSemilogTau1000, np.log(kInterpSemilogTau1000), color='orange', linewidth='2')
+plt.text(timeReshapedSemilogTau1000[len(timeReshapedSemilogTau1000)//2+300], np.log(kInterpSemilogTau1000)[len(kInterpSemilogTau1000)//2+300], r'$p_s = %g e^{%g t}$' % (round(1/np.exp(-interpSemilogTau1000.intercept_), 2), round(interpSemilogTau1000.coef_[0], 3)), fontsize=18, ha='left', va='bottom')
 kInterpSemilogTau4000 = np.exp(interpSemilogTau4000.intercept_+interpSemilogTau4000.coef_*timeReshapedSemilogTau4000)
 plt.plot(timeReshapedSemilogTau4000, np.log(kInterpSemilogTau4000), color='purple', linewidth='2')
 plt.text(timeReshapedSemilogTau4000[len(timeReshapedSemilogTau4000)//2], np.log(kInterpSemilogTau4000)[len(kInterpSemilogTau4000)//2], r'$p_s = %g e^{%g t}$' % (round(1/np.exp(-interpSemilogTau4000.intercept_), 2), round(interpSemilogTau4000.coef_[0], 3)), fontsize=18, ha='left', va='bottom')
@@ -169,7 +197,9 @@ plt.text(timeReshapedSemilogTau4000[len(timeReshapedSemilogTau4000)//2], np.log(
 reactionVsTau = plt.figure(figsize=(8, 8), dpi=300)
 plt.plot(tau4, -interpSemilogTau4.coef_[0], 'o', markerfacecolor='blue', markeredgecolor='blue', markersize='10', label=r'$k(\tau_d)=%g$' % (round(-interpSemilogTau4.coef_[0], 3)))
 plt.plot(tau40, -interpSemilogTau40.coef_[0], 'o', markerfacecolor='red', markeredgecolor='red', markersize='10', label=r'$k(\tau_d)=%g$' % (round(-interpSemilogTau40.coef_[0], 3)))
+plt.plot(tau100, -interpSemilogTau100.coef_[0], 'o', markerfacecolor='pink', markeredgecolor='pink', markersize='10', label=r'$k(\tau_d)=%g$' % (round(-interpSemilogTau100.coef_[0], 3)))
 plt.plot(tau400, -interpSemilogTau400.coef_[0], 'o', markerfacecolor='green', markeredgecolor='green', markersize='10', label=r'$k(\tau_d)=%g$' % (round(-interpSemilogTau400.coef_[0], 3)))
+plt.plot(tau1000, -interpSemilogTau1000.coef_[0], 'o', markerfacecolor='orange', markeredgecolor='orange', markersize='10', label=r'$k(\tau_d)=%g$' % (round(-interpSemilogTau1000.coef_[0], 3)))
 plt.plot(tau4000, -interpSemilogTau4000.coef_[0], 'o', markerfacecolor='purple', markeredgecolor='purple', markersize='10', label=r'$k(\tau_d)=%g$' % (round(-interpSemilogTau4000.coef_[0], 3)))
 # plt.title("Reaction rates vs characteristic times")
 # plt.xscale('log')
