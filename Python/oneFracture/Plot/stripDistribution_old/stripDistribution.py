@@ -9,32 +9,26 @@ from sklearn.linear_model import LinearRegression
 
 save = False
 
-# loadFinalPositions = np.load('stripDistribution.npz')
-# for name, value in (loadFinalPositions.items()):
-#     globals()[name] = value
+loadFinalPositions = np.load('stripDistribution.npz')
+for name, value in (loadFinalPositions.items()):
+    globals()[name] = value
 
 # loadFinalPositions = np.load('stripDistribution1e5.npz')
 # for name, value in (loadFinalPositions.items()):
 #     globals()[name] = value
 
-loadFinalPositions = np.load('stripDistribution1e6.npz')
-for name, value in (loadFinalPositions.items()):
-    globals()[name] = value
-
 # Vertical distribution of all particles
-finalPositionVertAll = plt.figure(figsize=(8, 8))
-plt.rcParams.update({'font.size': 20})
+finalPositionVertAll = plt.figure(figsize=(8, 8), dpi=300)
 plt.bar(vBinsAll[:-1], vDistAll, width=np.diff(vBinsAll), edgecolor="black", align="edge")
-# plt.title('Particles distribution at the end of the simulation')
+plt.title('Particles distribution at the end of the simulation')
 plt.xlabel('Distance along Y')
 plt.ylabel('Number of particles')
 plt.tight_layout()
 
 # Horizontal distribution of all particles
-finalPositionHorAll = plt.figure(figsize=(8, 8))
-plt.rcParams.update({'font.size': 20})
+finalPositionHorAll = plt.figure(figsize=(8, 8), dpi=300)
 plt.bar(hBinsAll[:-1], hDistAll, width=np.diff(hBinsAll), edgecolor="black", align="edge")
-# plt.title('Particles distribution at the end of the simulation')
+plt.title('Particles distribution at the end of the simulation')
 plt.xlabel('Distance along X')
 plt.ylabel('Number of particles')
 plt.tight_layout()

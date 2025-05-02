@@ -28,7 +28,7 @@ num_particles = int(1e6) # Number of particles in the simulation
 sim_time = int(8e2)
 dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-Df = 1.0 # Diffusion for particles moving in the fracture
+Df = 0.1 # Diffusion for particles moving in the fracture
 Dm = 0.001  # Diffusion for particles moving in the porous matrix
 ap = 1 # Adsorption probability
 kDecay = 0.05 # Degradation kinetic constant
@@ -52,7 +52,7 @@ probReflectedOutward = np.sqrt(Dm)/(np.sqrt(Df)+np.sqrt(Dm))
 recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_ads = 0.1 # Adsorption constant (currently not used since the probability of adsorption is a random variable from a UNIFORM distribution and not EXPONENTIAL)
-binsXinterval = 10 # Extension of the region where spatial concentration is recorded
+binsXinterval = 5 # Extension of the region where spatial concentration is recorded
 binsTime = int(num_steps) # Number of temporal bins for the logarithmic plot
 binsSpace = 50 # Number of spatial bins for the concentration profile
 init_shift = 0 # It aggregates the initial positions of the particles around the centre of the domain
@@ -395,7 +395,7 @@ if save.upper()=="Y":
     # np.savez('compareAdsP40.npz', **variablesToSave)
     # np.savez('compareAdsP20.npz', **variablesToSave)
     # np.savez('compareAdsP10.npz', **variablesToSave)
-    np.savez('compareTau4.npz', **variablesToSave)
+    # np.savez('compareTau4.npz', **variablesToSave)
     # np.savez('compareTau40.npz', **variablesToSave)
     # np.savez('compareTau400.npz', **variablesToSave)
     # np.savez('compareTau4000.npz', **variablesToSave)
@@ -414,6 +414,7 @@ if save.upper()=="Y":
     # np.savez('Dm5e-4matrixK1e-2.npz', **variablesToSave)
     # np.savez('Dm1e-4matrixK1e-2.npz', **variablesToSave)
     # np.savez('Dm1e-5matrixK1e-2.npz', **variablesToSave)
+    np.savez('stripDistribution1e6.npz', **variablesToSave)
     if variablesToSave:
         print("\n RESULTS SAVED")
 else:
