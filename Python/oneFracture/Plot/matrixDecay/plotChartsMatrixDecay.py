@@ -9,13 +9,33 @@ from scipy.interpolate import CubicSpline
 
 # Choose what should be plotted #############################################################
 
-plotMatrixDecay = True # Decay in the matrix for different values of radioactive decay (kDecay)
-plotMatrixDecayDm = False # Effective decay for values of molecular diffusion different between the fracture and the matrix
+plotDomainDecay = False # Effective decay for different kDecay values when decay happens in the whole domain
+plotMatrixDecayK = False # Effective decay for different kDecay values when decay only happens in the porous matrix
+plotMatrixDecayDm = True # Effective decay for different values of porous matrix molecular diffusion when decay only happens in the porous matrix
 
 save = False
 
 # Load simulation results from .npz files ###################################################
-if plotMatrixDecay:
+if plotDomainDecay:
+    loadDomainDecayK01 = np.load('domainDecayK01.npz')
+    for name, value in (loadDomainDecayK01.items()):
+        globals()[name] = value
+    numOfLivePartDomainK01 = numOfLivePart.copy()
+    timeDomainK01 = Time.copy()
+
+    loadDomainDecayK001 = np.load('domainDecayK001.npz')
+    for name, value in (loadDomainDecayK001.items()):
+        globals()[name] = value
+    numOfLivePartDomainK001 = numOfLivePart.copy()
+    timeDomainK001 = Time.copy()
+
+    loadDomainDecayK0001 = np.load('domainDecayK0001.npz')
+    for name, value in (loadDomainDecayK0001.items()):
+        globals()[name] = value
+    numOfLivePartDomainK0001 = numOfLivePart.copy()
+    timeDomainK0001 = Time.copy()
+
+if plotMatrixDecayK:
     loadMatrixDecayK01 = np.load('matrixDecayK01.npz')
     for name, value in (loadMatrixDecayK01.items()):
         globals()[name] = value
@@ -61,34 +81,49 @@ if plotMatrixDecay:
     yK0001 = y.copy()
     kDecay0001 = kDecay.copy()
 
-    loadDomainDecayK01 = np.load('domainDecayK01.npz')
-    for name, value in (loadDomainDecayK01.items()):
+if plotMatrixDecayDm:
+    loadMatrixDecayDm001 = np.load('Dm1e-2matrixK1e-2.npz')
+    for name, value in (loadMatrixDecayDm001.items()):
         globals()[name] = value
-    numOfLivePartDomainK01 = numOfLivePart.copy()
-    timeDomainK01 = Time.copy()
+    numOfLivePartDm001 = numOfLivePart.copy()
+    timeDm001 = Time.copy()
+    dm001 = Dm.copy()
+    df001 = Df.copy()
 
-    loadDomainDecayK001 = np.load('domainDecayK001.npz')
-    for name, value in (loadDomainDecayK001.items()):
+    loadMatrixDecayDm0001 = np.load('Dm1e-3matrixK1e-2.npz')
+    for name, value in (loadMatrixDecayDm0001.items()):
         globals()[name] = value
-    numOfLivePartDomainK001 = numOfLivePart.copy()
-    timeDomainK001 = Time.copy()
+    numOfLivePartDm0001 = numOfLivePart.copy()
+    timeDm0001 = Time.copy()
+    dm0001 = Dm.copy()
+    df0001 = Df.copy()
 
-    loadDomainDecayK0001 = np.load('domainDecayK0001.npz')
-    for name, value in (loadDomainDecayK0001.items()):
+    loadMatrixDecayDm00005 = np.load('Dm5e-4matrixK1e-2.npz')
+    for name, value in (loadMatrixDecayDm00005.items()):
         globals()[name] = value
-    numOfLivePartDomainK0001 = numOfLivePart.copy()
-    timeDomainK0001 = Time.copy()
+    numOfLivePartDm00005 = numOfLivePart.copy()
+    timeDm00005 = Time.copy()
+    dm00005 = Dm.copy()
+    df00005 = Df.copy()
 
-    # Plot section #########################################################################
-    finalPositionMatrixDecay = plt.figure(figsize=(8, 8))
-    plt.rcParams.update({'font.size': 20})
-    plt.plot(xK0001, yK0001, 'g*')
-    plt.plot(xK001, yK001, 'r*')
-    plt.plot(xK01, yK01, 'b*')
-    plt.plot([xInit, xInit], [lby, uby], color='yellow', linewidth=2)
-    plt.axhline(y=uby, color='r', linestyle='--', linewidth=1)
-    plt.axhline(y=lby, color='r', linestyle='--', linewidth=1)
+    loadMatrixDecayDm00001 = np.load('Dm1e-4matrixK1e-2.npz')
+    for name, value in (loadMatrixDecayDm00001.items()):
+        globals()[name] = value
+    numOfLivePartDm00001 = numOfLivePart.copy()
+    timeDm00001 = Time.copy()
+    dm00001 = Dm.copy()
+    df00001 = Df.copy()
 
+    loadMatrixDecayDm000001 = np.load('Dm1e-5matrixK1e-2.npz')
+    for name, value in (loadMatrixDecayDm000001.items()):
+        globals()[name] = value
+    numOfLivePartDm000001 = numOfLivePart.copy()
+    timeDm000001 = Time.copy()
+    dm000001 = Dm.copy()
+    df000001 = Df.copy()
+
+# Plot section #########################################################################
+if plotDomainDecay & plotMatrixDecayK:
     survTimeDistMatrixDecay = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
     plt.plot(timeK01, numOfLivePartK01/num_particles, 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$k_{matrixDecay} = 0.1$')
@@ -112,6 +147,19 @@ if plotMatrixDecay:
     # numOfLivePartLog = np.array([numOfLivePartK01[binIndeces == i].mean() for i in range(0, len(timeK01))])
     # plt.rcParams.update({'font.size': 20})
     # plt.plot(logBins, numOfLivePartLog/num_particles, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$\tau_d = 40$')
+
+    if save:
+        survTimeDistMatrixDecay.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistMatrixDecay.png", format="png", bbox_inches="tight")
+
+if plotMatrixDecayK:
+    finalPositionMatrixDecay = plt.figure(figsize=(8, 8))
+    plt.rcParams.update({'font.size': 20})
+    plt.plot(xK0001, yK0001, 'g*')
+    plt.plot(xK001, yK001, 'r*')
+    plt.plot(xK01, yK01, 'b*')
+    plt.plot([xInit, xInit], [lby, uby], color='yellow', linewidth=2)
+    plt.axhline(y=uby, color='r', linestyle='--', linewidth=1)
+    plt.axhline(y=lby, color='r', linestyle='--', linewidth=1)
 
     derStep = 10
     ratesMatrixDecay = plt.figure(figsize=(8, 8))
@@ -310,11 +358,10 @@ if plotMatrixDecay:
     points = np.log(kDecay)
     effDecayVsMolDiff = np.exp(interpKdecay.intercept_+interpKdecay.coef_*points)
     plt.plot(np.exp(points), effDecayVsMolDiff, color='black', linewidth='4')
-    plt.text(kDecayReshaped[1], effDecayVsMolDiff[1], r'$k_{eff}=k_m^{%g} e^{%g}$' % (interpKdecay.coef_[0], interpKdecay.intercept_), fontsize=18, ha='left', va='top')
+    plt.text(kDecayReshaped[1], effDecayVsMolDiff[1], r'$k_{eff} = %g k_m^{%g}$' % (round(np.exp(interpKdecay.intercept_), 3), round(interpKdecay.coef_[0], 3)), fontsize=18, ha='left', va='top')
 
-    if plotMatrixDecay & save:
+    if save:
         finalPositionMatrixDecay.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/finalPositionMatrixDecay.png", format="png", bbox_inches="tight")
-        survTimeDistMatrixDecay.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistMatrixDecay.png", format="png", bbox_inches="tight")
         ratesMatrixDecay.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/ratesMatrixDecay.png", format="png", bbox_inches="tight")
         survTimeDistSemilogMatrixdecay.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/survTimeDistSemilogMatrixdecay.png", format="png", bbox_inches="tight")
         ratesMatrixDecaySpline.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/ratesMatrixDecaySpline.png", format="png", bbox_inches="tight")
@@ -322,48 +369,7 @@ if plotMatrixDecay:
         ratesMatrixDecayLog.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/ratesMatrixDecayLog.png", format="png", bbox_inches="tight")
         effVsDecayRates.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/effVsDecayRates.png", format="png", bbox_inches="tight")
 
-    # Load simulation results from .npz files for different Dm #############################
 if plotMatrixDecayDm:
-    loadMatrixDecayDm001 = np.load('Dm1e-2matrixK1e-2.npz')
-    for name, value in (loadMatrixDecayDm001.items()):
-        globals()[name] = value
-    numOfLivePartDm001 = numOfLivePart.copy()
-    timeDm001 = Time.copy()
-    dm001 = Dm.copy()
-    df001 = Df.copy()
-
-    loadMatrixDecayDm0001 = np.load('Dm1e-3matrixK1e-2.npz')
-    for name, value in (loadMatrixDecayDm0001.items()):
-        globals()[name] = value
-    numOfLivePartDm0001 = numOfLivePart.copy()
-    timeDm0001 = Time.copy()
-    dm0001 = Dm.copy()
-    df0001 = Df.copy()
-
-    loadMatrixDecayDm00005 = np.load('Dm5e-4matrixK1e-2.npz')
-    for name, value in (loadMatrixDecayDm00005.items()):
-        globals()[name] = value
-    numOfLivePartDm00005 = numOfLivePart.copy()
-    timeDm00005 = Time.copy()
-    dm00005 = Dm.copy()
-    df00005 = Df.copy()
-
-    loadMatrixDecayDm00001 = np.load('Dm1e-4matrixK1e-2.npz')
-    for name, value in (loadMatrixDecayDm00001.items()):
-        globals()[name] = value
-    numOfLivePartDm00001 = numOfLivePart.copy()
-    timeDm00001 = Time.copy()
-    dm00001 = Dm.copy()
-    df00001 = Df.copy()
-
-    loadMatrixDecayDm000001 = np.load('Dm1e-5matrixK1e-2.npz')
-    for name, value in (loadMatrixDecayDm000001.items()):
-        globals()[name] = value
-    numOfLivePartDm000001 = numOfLivePart.copy()
-    timeDm000001 = Time.copy()
-    dm000001 = Dm.copy()
-    df000001 = Df.copy()
-
     timeReshapedSemilogDm001 = (timeDm001[slice(500, 1000)]).reshape(-1, 1)
     interpSemilogDm001 = LinearRegression().fit(timeReshapedSemilogDm001, np.log(numOfLivePartDm001[slice(500, 1000)]/num_particles))
     timeReshapedSemilogDm0001 = (timeDm0001[slice(500, 1000)]).reshape(-1, 1)
@@ -389,7 +395,7 @@ if plotMatrixDecayDm:
     interpRatiosDmDf = LinearRegression().fit(np.log(ratiosDmDfReshaped), np.log(kEffInterp))
     effDecayVsMolDiff = np.exp(interpRatiosDmDf.intercept_)*ratiosDmDf**interpRatiosDmDf.coef_
     plt.plot(ratiosDmDf, effDecayVsMolDiff, color='black', linewidth='4')
-    plt.text(ratiosDmDfReshaped[1], effDecayVsMolDiff[1], r'$k_{eff}=(D_m/D_f)^{%g} e^{%g}$' % (interpRatiosDmDf.coef_[0], interpRatiosDmDf.intercept_), fontsize=18, ha='left', va='top')
+    plt.text(ratiosDmDfReshaped[1], effDecayVsMolDiff[1], r'$k_{eff} = %g (D_m/D_f)^{%g}$' % (round(np.exp(interpRatiosDmDf.intercept_), 3), round(interpRatiosDmDf.coef_[0], 3)), fontsize=18, ha='left', va='top')
     plt.xlabel(r'$D_m/D_f$')
     plt.ylabel(r'$k_{eff}$')
     plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
@@ -399,5 +405,5 @@ if plotMatrixDecayDm:
     plt.legend(loc='best')
     plt.tight_layout()
 
-    if plotMatrixDecayDm & save:
+    if save:
         kEffVsDfDmRatio.savefig("/home/eugenio/Github/IDAEA/Overleaf/WeeklyMeetingNotes/images/kEffVsDfDmRatio.png", format="png", bbox_inches="tight")
