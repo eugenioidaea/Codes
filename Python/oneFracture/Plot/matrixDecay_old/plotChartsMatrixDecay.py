@@ -45,41 +45,41 @@ if plotMatrixDecayK:
     yK01 = y.copy()
     kDecay01 = kDecay.copy()
 
-#    loadMatrixDecayK001 = np.load('matrixDecayK001.npz')
-#    for name, value in (loadMatrixDecayK001.items()):
-#        globals()[name] = value
-#    numOfLivePartK001 = numOfLivePart.copy()
-#    timeK001 = Time.copy()
-#    xK001 = x.copy()
-#    yK001 = y.copy()
-#    kDecay001 = kDecay.copy()
-#
-#    loadMatrixDecayK004 = np.load('matrixDecayK004.npz')
-#    for name, value in (loadMatrixDecayK004.items()):
-#        globals()[name] = value
-#    numOfLivePartK004 = numOfLivePart.copy()
-#    timeK004 = Time.copy()
-#    xK004 = x.copy()
-#    yK004 = y.copy()
-#    kDecay004 = kDecay.copy()
-#
-#    loadMatrixDecayK007 = np.load('matrixDecayK007.npz')
-#    for name, value in (loadMatrixDecayK007.items()):
-#        globals()[name] = value
-#    numOfLivePartK007 = numOfLivePart.copy()
-#    timeK007 = Time.copy()
-#    xK007 = x.copy()
-#    yK007 = y.copy()
-#    kDecay007 = kDecay.copy()
-#
-#    loadMatrixDecayK0001 = np.load('matrixDecayK0001.npz')
-#    for name, value in (loadMatrixDecayK0001.items()):
-#        globals()[name] = value
-#    numOfLivePartK0001 = numOfLivePart.copy()
-#    timeK0001 = Time.copy()
-#    xK0001 = x.copy()
-#    yK0001 = y.copy()
-#    kDecay0001 = kDecay.copy()
+    loadMatrixDecayK001 = np.load('matrixDecayK001.npz')
+    for name, value in (loadMatrixDecayK001.items()):
+        globals()[name] = value
+    numOfLivePartK001 = numOfLivePart.copy()
+    timeK001 = Time.copy()
+    xK001 = x.copy()
+    yK001 = y.copy()
+    kDecay001 = kDecay.copy()
+
+    loadMatrixDecayK004 = np.load('matrixDecayK004.npz')
+    for name, value in (loadMatrixDecayK004.items()):
+        globals()[name] = value
+    numOfLivePartK004 = numOfLivePart.copy()
+    timeK004 = Time.copy()
+    xK004 = x.copy()
+    yK004 = y.copy()
+    kDecay004 = kDecay.copy()
+
+    loadMatrixDecayK007 = np.load('matrixDecayK007.npz')
+    for name, value in (loadMatrixDecayK007.items()):
+        globals()[name] = value
+    numOfLivePartK007 = numOfLivePart.copy()
+    timeK007 = Time.copy()
+    xK007 = x.copy()
+    yK007 = y.copy()
+    kDecay007 = kDecay.copy()
+
+    loadMatrixDecayK0001 = np.load('matrixDecayK0001.npz')
+    for name, value in (loadMatrixDecayK0001.items()):
+        globals()[name] = value
+    numOfLivePartK0001 = numOfLivePart.copy()
+    timeK0001 = Time.copy()
+    xK0001 = x.copy()
+    yK0001 = y.copy()
+    kDecay0001 = kDecay.copy()
 
 if plotMatrixDecayDm:
     loadMatrixDecayDm001 = np.load('Dm1e-2matrixK1e-2.npz')
@@ -154,8 +154,8 @@ if plotDomainDecay & plotMatrixDecayK:
 if plotMatrixDecayK:
     finalPositionMatrixDecay = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
-#    plt.plot(xK0001, yK0001, 'g*')
-#    plt.plot(xK001, yK001, 'r*')
+    plt.plot(xK0001, yK0001, 'g*')
+    plt.plot(xK001, yK001, 'r*')
     plt.plot(xK01, yK01, 'b*')
     plt.plot([xInit, xInit], [lby, uby], color='yellow', linewidth=2)
     plt.axhline(y=uby, color='r', linestyle='--', linewidth=1)

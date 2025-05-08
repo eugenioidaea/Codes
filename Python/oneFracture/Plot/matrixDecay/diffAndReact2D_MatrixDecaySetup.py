@@ -7,10 +7,10 @@ import time
 
 # Features ###################################################################
 plotCharts =                True # It controls graphical features (disable when run on HPC)
-matrixDecay =               False # It activates the radioactive decay only in the porous matrix
-domainDecay =               True # Switch for the radioactive (exponential) decay of the particles in the whole domain
-diffuseIntoMatrix =         False # Depending on the value of the boundary conditions (Semra 1993), particles can be reflected or partially diffuse into the porou matrix
-adsorptionProbability =     True # Particles' adsorption probability (ap) sets the fraction of impacts that are adsorbed on average at every time step
+matrixDecay =               True # It activates the radioactive decay only in the porous matrix
+domainDecay =               False # Switch for the radioactive (exponential) decay of the particles in the whole domain
+diffuseIntoMatrix =         True # Depending on the value of the boundary conditions (Semra 1993), particles can be reflected or partially diffuse into the porou matrix
+adsorptionProbability =     False # Particles' adsorption probability (ap) sets the fraction of impacts that are adsorbed on average at every time step
 matrixDiffVerification =    False # It activates the matrix-diffusion verification testcase
 lbxOn =                     False # It controls the position of the left boundary
 lbxAdsorption =             False # It controls whether the particles get adsorpted or reflected on the left boundary 
@@ -24,14 +24,14 @@ if plotCharts:
     from matplotlib.animation import FuncAnimation
 
 # Parameters #################################################################
-num_particles = int(1e6) # Number of particles in the simulation
-sim_time = int(8e4)
+num_particles = int(1e4) # Number of particles in the simulation
+sim_time = int(8e3)
 dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1 # Diffusion for particles moving in the fracture
-Dm = 0.001  # Diffusion for particles moving in the porous matrix
+Dm = 0.01  # Diffusion for particles moving in the porous matrix
 ap = 0.9 # Adsorption probability
-kDecay = 0.05 # Degradation kinetic constant
+kDecay = 0.1 # Degradation kinetic constant
 xInit = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
@@ -390,7 +390,7 @@ if save.upper()=="Y":
     # np.savez('compareAp2.npz', **variablesToSave)
     # np.savez('compareAp4.npz', **variablesToSave)
     # np.savez('compareAp6.npz', **variablesToSave)
-    np.savez('compareAdsP90.npz', **variablesToSave)
+    # np.savez('compareAdsP90.npz', **variablesToSave)
     # np.savez('compareAdsP80.npz', **variablesToSave)
     # np.savez('compareAdsP60.npz', **variablesToSave)
     # np.savez('compareAdsP40.npz', **variablesToSave)
@@ -403,7 +403,7 @@ if save.upper()=="Y":
     # np.savez('compareP80.npz', **variablesToSave)
     # np.savez('compareP60.npz', **variablesToSave)
     # np.savez('compareP40.npz', **variablesToSave)
-    # np.savez('matrixDecayK01.npz', **variablesToSave)
+    np.savez('matrixDecayK01.npz', **variablesToSave)
     # np.savez('matrixDecayK001.npz', **variablesToSave)
     # np.savez('matrixDecayK004.npz', **variablesToSave)
     # np.savez('matrixDecayK007.npz', **variablesToSave)
