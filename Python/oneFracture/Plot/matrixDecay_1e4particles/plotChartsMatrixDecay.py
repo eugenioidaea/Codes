@@ -10,8 +10,8 @@ from scipy.interpolate import CubicSpline
 # Choose what should be plotted #############################################################
 
 plotDomainDecay = False # Effective decay for different kDecay values when decay happens in the whole domain
-plotMatrixDecayK = True # Effective decay for different kDecay values when decay only happens in the porous matrix
-plotMatrixDecayDm = False # Effective decay for different values of porous matrix molecular diffusion when decay only happens in the porous matrix
+plotMatrixDecayK = False # Effective decay for different kDecay values when decay only happens in the porous matrix
+plotMatrixDecayDm = True # Effective decay for different values of porous matrix molecular diffusion when decay only happens in the porous matrix
 
 save = False
 
