@@ -9,6 +9,12 @@ from sklearn.linear_model import LinearRegression
 
 save = False
 
+loadCompareAdsP100 = np.load('compareAdsP100.npz')
+for name, value in (loadCompareAdsP100.items()):
+    globals()[name] = value
+liveParticlesInTimeNormP100 = np.sort(numOfLivePart/num_particles)[::-1].copy()
+TimeP100 = Time
+
 loadCompareAdsP90 = np.load('compareAdsP90.npz')
 for name, value in (loadCompareAdsP90.items()):
     globals()[name] = value
@@ -110,6 +116,9 @@ tauP = (uby-lby)**2/Df
 # Normalised distribution of live particles in time and interpolation of the tail
 survTimeDistCompareDiffNorm = plt.figure(figsize=(8, 8), dpi=300)
 plt.rcParams.update({'font.size': 20})
+sliceP100 = slice(0, sum(np.log(liveParticlesInTimeNormP100)>-10))
+timeReshapedP100 = (TimeP100[sliceP100]).reshape(-1, 1)
+yP100fit = LinearRegression().fit(timeReshapedP100, np.log(liveParticlesInTimeNormP100[sliceP100]))
 sliceP90 = slice(0, sum(np.log(liveParticlesInTimeNormP90)>-10))
 timeReshapedP90 = (TimeP90[sliceP90]).reshape(-1, 1)
 yP90fit = LinearRegression().fit(timeReshapedP90, np.log(liveParticlesInTimeNormP90[sliceP90]))
@@ -128,12 +137,16 @@ yP20fit = LinearRegression().fit(timeReshapedP20, np.log(liveParticlesInTimeNorm
 sliceP10 = slice(0, sum(np.log(liveParticlesInTimeNormP10)>-10))
 timeReshapedP10 = (TimeP10[sliceP10]).reshape(-1, 1)
 yP10fit = LinearRegression().fit(timeReshapedP10, np.log(liveParticlesInTimeNormP10[sliceP10]))
+plt.plot(TimeP100[::10], np.log(liveParticlesInTimeNormP100)[::10], 'o', markerfacecolor='none', markeredgecolor='magenta', markersize='5', label=r'$p_{ads} = 1.0$')
 plt.plot(TimeP90[::10], np.log(liveParticlesInTimeNormP90)[::10], 'o', markerfacecolor='none', markeredgecolor='pink', markersize='5', label=r'$p_{ads} = 0.9$')
 plt.plot(TimeP80[::10], np.log(liveParticlesInTimeNormP80)[::10], 'o', markerfacecolor='none', markeredgecolor='blue', markersize='5', label=r'$p_{ads} = 0.8$')
 plt.plot(TimeP60[::10], np.log(liveParticlesInTimeNormP60)[::10], 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label=r'$p_{ads} = 0.6$')
 plt.plot(TimeP40[::10], np.log(liveParticlesInTimeNormP40)[::10], 'o', markerfacecolor='none', markeredgecolor='green', markersize='5', label=r'$p_{ads} = 0.4$')
 plt.plot(TimeP20[::10], np.log(liveParticlesInTimeNormP20)[::10], 'o', markerfacecolor='none', markeredgecolor='purple', markersize='5', label=r'$p_{ads} = 0.2$')
 plt.plot(TimeP10[::10], np.log(liveParticlesInTimeNormP10)[::10], 'o', markerfacecolor='none', markeredgecolor='orange', markersize='5', label=r'$p_{ads} = 0.1$')
+yP100 = np.exp(yP100fit.intercept_+yP100fit.coef_[0]*(TimeP100))
+plt.plot(TimeP100, np.log(yP100), color='pink')
+plt.text(TimeP100[len(TimeP100)//2], np.log(yP100)[len(yP100)//2], r'$p_s = %g e^{%g t}$' % (round(np.exp(-yP100fit.intercept_), 2), round(yP100fit.coef_[0], 3)), fontsize=18, ha='left', va='bottom')
 yP90 = np.exp(yP90fit.intercept_+yP90fit.coef_[0]*(TimeP90))
 plt.plot(TimeP90, np.log(yP90), color='pink')
 plt.text(TimeP90[len(TimeP90)//2], np.log(yP90)[len(yP90)//2], r'$p_s = %g e^{%g t}$' % (round(np.exp(-yP90fit.intercept_), 2), round(yP90fit.coef_[0], 3)), fontsize=18, ha='left', va='bottom')
@@ -155,7 +168,7 @@ plt.text(TimeP10[len(TimeP10)//2+120], np.log(yP10)[len(yP10)//2+120], r'$p_s = 
 # plt.title("Normalised survival time distribution")
 # plt.xscale('log')
 # plt.yscale('log')
-plt.xlim(0, max(np.max(arr) for arr in [TimeP10, TimeP20, TimeP40, TimeP60, TimeP80, TimeP90]))
+plt.xlim(0, max(np.max(arr) for arr in [TimeP10, TimeP20, TimeP40, TimeP60, TimeP80, TimeP90, TimeP100]))
 # plt.xlim(0, 250)
 plt.ylim(-10, 0.1)
 # plt.ylim(min(np.min(arr[~np.isneginf(arr)]) for arr in [np.log(liveParticlesInTimeNormP10), np.log(liveParticlesInTimeNormP20), np.log(liveParticlesInTimeNormP40), np.log(liveParticlesInTimeNormP60), np.log(liveParticlesInTimeNormP80), np.log(liveParticlesInTimeNormP90)]), 0.1)
@@ -238,8 +251,9 @@ plt.tight_layout()
 # plt.legend(loc='best')
 # plt.tight_layout()
 
-kt = np.abs([yP10fit.coef_[0], yP20fit.coef_[0], yP40fit.coef_[0], yP60fit.coef_[0], yP80fit.coef_[0], yP90fit.coef_[0]])
+kt = np.abs([yP10fit.coef_[0], yP20fit.coef_[0], yP40fit.coef_[0], yP60fit.coef_[0], yP80fit.coef_[0], yP90fit.coef_[0], yP100fit.coef_[0]])
 reactionVsDifferentP = plt.figure(figsize=(8, 8), dpi=300)
+plt.plot([1.0], kt[5], 'o', markerfacecolor='magenta', markeredgecolor='magenta', markersize='10', label=r'$k(p_{ads})=%g$' % (-yP100fit.coef_[0]))
 plt.plot([0.9], kt[5], 'o', markerfacecolor='pink', markeredgecolor='pink', markersize='10', label=r'$k(p_{ads})=%g$' % (-yP90fit.coef_[0]))
 plt.plot([0.8], kt[4], 'o', markerfacecolor='blue', markeredgecolor='blue', markersize='10', label=r'$k(p_{ads})=%g$' % (-yP80fit.coef_[0]))
 plt.plot([0.6], kt[3], 'o', markerfacecolor='red', markeredgecolor='red', markersize='10', label=r'$k(p_{ads})=%g$' % (-yP60fit.coef_[0]))
@@ -256,14 +270,14 @@ plt.xlabel(r'$p_{ads}$')
 plt.ylabel(r'$k(t)$')
 plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
 plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
-pAdsReshaped = np.array([0.1, 0.2, 0.4, 0.6, 0.8, 0.9]).reshape(-1, 1)
+pAdsReshaped = np.array([0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 1.0]).reshape(-1, 1)
 yKfit = LinearRegression().fit(pAdsReshaped, kt)
 xInterp = np.linspace(min(pAdsReshaped), max(pAdsReshaped), 10)
 yInterp = xInterp*yKfit.coef_[0]+yKfit.intercept_
 plt.plot(xInterp, yInterp, color="black")
 plt.text(xInterp[len(xInterp)//2], yInterp[len(yInterp)//2], f"y={yKfit.coef_[0]:.5f}x+{yKfit.intercept_:.5f}", fontsize=18, ha='left', va='top')
 
-# coefficients = np.polyfit([0.1, 0.2, 0.4, 0.6, 0.8], kt, 2)
+# coefficients = np.polyfit([0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 1.0], kt, 2)
 # poly = np.poly1d(coefficients)
 # yInterp2 = poly(xInterp)
 # plt.plot(xInterp, yInterp2, label='2nd order polynomial', color='blue')
