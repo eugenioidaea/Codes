@@ -25,23 +25,20 @@ if plotCharts:
 
 # Setups #####################################################################
 # Dm/Df SETUP:
-# Df = 1e-2
-# Dm = 1e-2, 1e-3, 5e-4, 1e-4, 1e-5
+# Df = 1e-2 # Diffusion for particles moving in the fracture
+# Dm = 1e-2, 1e-3, 5e-4, 1e-4, 1e-5 # Diffusion for particles moving in the porous matrix
 # kDecay = 1e-2
 # matrixDecay SETUP:
-# Df = 1e-1
-# Dm = 1e-2
-# kDecay = 1e-1, 7e-2, 4e-2, 1e-2, 1e-3
+Df = 1e-1 # Diffusion for particles moving in the fracture
+Dm = 1e-2 # Diffusion for particles moving in the porous matrix
+kDecay = 5e-3 # 1e-1, 7e-2, 4e-2, 1e-2, 1e-3
 
 # Parameters #################################################################
 num_particles = int(1e6) # Number of particles in the simulation
 sim_time = int(8e3)
 dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
-Df = 0.1 # Diffusion for particles moving in the fracture
-Dm = 0.01  # Diffusion for particles moving in the porous matrix
 ap = 0.9 # Adsorption probability
-kDecay = 0.001 # Degradation kinetic constant
 xInit = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
@@ -417,7 +414,8 @@ if save.upper()=="Y":
     # np.savez('matrixDecayK001.npz', **variablesToSave)
     # np.savez('matrixDecayK004.npz', **variablesToSave)
     # np.savez('matrixDecayK007.npz', **variablesToSave)
-    np.savez('matrixDecayK0001.npz', **variablesToSave)
+    # np.savez('matrixDecayK0001.npz', **variablesToSave)
+    np.savez('matrixDecayK0005.npz', **variablesToSave)
     # np.savez('domainDecayK01.npz', **variablesToSave)
     # np.savez('domainDecayK001.npz', **variablesToSave)
     # np.savez('domainDecayK0001.npz', **variablesToSave)

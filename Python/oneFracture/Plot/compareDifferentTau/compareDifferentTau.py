@@ -202,7 +202,7 @@ plt.plot(tau400, -interpSemilogTau400.coef_[0], 'o', markerfacecolor='green', ma
 plt.plot(tau1000, -interpSemilogTau1000.coef_[0], 'o', markerfacecolor='orange', markeredgecolor='orange', markersize='10', label=r'$k(\tau_d)=%g$' % (round(-interpSemilogTau1000.coef_[0], 3)))
 plt.plot(tau4000, -interpSemilogTau4000.coef_[0], 'o', markerfacecolor='purple', markeredgecolor='purple', markersize='10', label=r'$k(\tau_d)=%g$' % (round(-interpSemilogTau4000.coef_[0], 3)))
 # plt.title("Reaction rates vs characteristic times")
-# plt.xscale('log')
+plt.xscale('log')
 plt.yscale('log')
 # plt.xlim(0, 20)
 # plt.ylim(-10, 1)
