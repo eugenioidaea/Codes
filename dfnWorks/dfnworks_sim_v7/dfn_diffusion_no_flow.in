@@ -71,7 +71,7 @@ END
 
 #=========================== output options ===================================
 OUTPUT
-  PERIODIC TIME 10 y ## Comment this out if you don't want to visualize the results
+  PERIODIC TIME 100 y ## Comment this out if you don't want to visualize the results
 #  FORMAT TECPLOT BLOCK
   PRINT_PRIMAL_GRID
   FORMAT VTK
@@ -90,7 +90,7 @@ END
 TIME
   INITIAL_TIMESTEP_SIZE  1.d-1 y
   FINAL_TIME 1.d3 y
-  MAXIMUM_TIMESTEP_SIZE 1.d1 y
+  MAXIMUM_TIMESTEP_SIZE 1.d2 y
   #STEADY_STATE
 END
 

@@ -26,6 +26,7 @@ mas_filename = "output/dfn_diffusion_no_flow-mas.dat"
 df = load_mas_file(mas_filename)
 
 fig,ax = plt.subplots(figsize = (8,6))
+plt.rcParams.update({'font.size': 20})
 ax.plot(df['Time [y]'], -1*df['OUTFLOW TRACER [mol/y]'])
 plt.title('Breakthrough curve')
 plt.xlabel('Time [y]')
@@ -39,6 +40,7 @@ plt.show()
 cPlateau1 = np.array(-1*df['OUTFLOW TRACER [mol/y]']/np.max(-1*df['OUTFLOW TRACER [mol/y]']))
 time = np.array(df['Time [y]'])
 fig,ax = plt.subplots(figsize = (8,6))
+plt.rcParams.update({'font.size': 20})
 ax.plot(time, cPlateau1)
 plt.title('Plateau normalised BTC')
 plt.xlabel('Time [y]')
@@ -65,6 +67,7 @@ Ddisp = m2t/(2*m1t)
 # Deff = Ddisp/advVel
 
 fig,ax = plt.subplots(figsize = (8,6))
+plt.rcParams.update({'font.size': 20})
 ax.plot(df['Time [y]'], 1-cPlateau1)
 plt.title('Complementary plateau norm BTC')
 plt.xlabel('Time [y]')

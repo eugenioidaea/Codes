@@ -23,13 +23,13 @@ DFN.add_user_fract(shape='rect',
                    radii=11,
                    translation=[0, 0, 0],
                    normal_vector=[1, 0, 0],
-                   permeability=1.0e-12)
+                   permeability=1.0e-10)
 
 DFN.add_user_fract(shape='rect',
                    radii=0.1,
                    translation=[0, 0, 0],
                    normal_vector=[0, 1, 0],
-                   permeability=1.0e-12)
+                   permeability=1.0e-10)
 
 DFN.make_working_directory(delete=True)
 DFN.check_input()
