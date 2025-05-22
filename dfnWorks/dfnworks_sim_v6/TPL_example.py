@@ -46,8 +46,8 @@ DFN.add_fracture_family(shape="ell",
                         hy_variable='permeability',
                         hy_function='log-normal',
                         hy_params={
-                            "mu": 1e-1,
-                            "sigma": 1e-10
+                            "mu": 1e-10,
+                            "sigma": 0.01
                         })
 
 DFN.add_fracture_family(shape="ell",
@@ -64,8 +64,8 @@ DFN.add_fracture_family(shape="ell",
                         hy_variable='permeability',
                         hy_function='log-normal',
                         hy_params={
-                            "mu": 1e-1,
-                            "sigma": 1e-10
+                            "mu": 1e-10,
+                            "sigma": 0.01
                         })
 
 # DFN.add_fracture_family(

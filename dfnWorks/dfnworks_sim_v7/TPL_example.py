@@ -23,7 +23,7 @@ DFN.add_user_fract(shape='rect',
                    radii=11,
                    translation=[0, 0, 0],
                    normal_vector=[1, 0, 0],
-                   permeability=1.0e-11)
+                   permeability=1.0e-12)
 
 DFN.add_user_fract(shape='rect',
                    radii=0.1,
@@ -35,5 +35,8 @@ DFN.make_working_directory(delete=True)
 DFN.check_input()
 DFN.create_network()
 DFN.num_frac = 1 # this hacks the meshing and only meshes the first fracture
-DFN.mesh_network(uniform_mesh = True)
-# DFN.dfn_flow()
+
+# DFN.aperture
+
+DFN.mesh_network(uniform_mesh = True, strict = False)
+DFN.dfn_flow()

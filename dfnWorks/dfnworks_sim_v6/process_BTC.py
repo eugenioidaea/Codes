@@ -63,6 +63,7 @@ VarT = m2t - m1t**2
 
 Ddisp = m2t/(2*m1t)
 # Deff = Ddisp/advVel
+Deff = 20**2/m1t # 20 is the length of the domain
 
 fig,ax = plt.subplots(figsize = (8,6))
 ax.plot(df['Time [y]'], 1-cPlateau1)
