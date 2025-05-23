@@ -25,9 +25,23 @@ mas_filename = "output/dfn_diffusion_no_flow-mas.dat"
 
 df = load_mas_file(mas_filename)
 
+D = 1e-6
+c = 1
+L = 20
+t = np.linspace(1, 1e3, 10)
+def CJsol(t, n):
+    cos = np.tile([-1, 1], n // 2 + 1)[:n]
+    e = np.exp(-D*n**2*np.pi**2*t/L**2)
+    J = D*c/L+2*c/L*np.sum(cos*e, n)
+    return J
+J = CJsol(1000, 50)
+
 fig,ax = plt.subplots(figsize = (8,6))
 plt.rcParams.update({'font.size': 20})
 ax.plot(df['Time [y]'], -1*df['OUTFLOW TRACER [mol/y]'])
+
+ax.plot(t, J)
+
 plt.title('Breakthrough curve')
 plt.xlabel('Time [y]')
 plt.ylabel('Outflowing tracer [mol/y]')
