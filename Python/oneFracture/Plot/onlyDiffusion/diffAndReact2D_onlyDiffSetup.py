@@ -10,7 +10,7 @@ plotCharts =                True # It controls graphical features (disable when 
 matrixDecay =               False # It activates the radioactive decay only in the porous matrix
 domainDecay =               False # Switch for the radioactive (exponential) decay of the particles in the whole domain
 adsorptionProbability =     False # Particles' adsorption probability (ap) sets the fraction of impacts that are adsorbed on average at every time step
-diffuseIntoMatrix =         True # Depending on the value of the boundary conditions (Semra 1993), particles can be reflected or partially diffuse into the porou matrix
+diffuseIntoMatrix =         False # Depending on the value of the boundary conditions (Semra 1993), particles can be reflected or partially diffuse into the porou matrix
 matrixDiffVerification =    False # It activates the matrix-diffusion verification testcase
 lbxOn =                     False # It controls the position of the left boundary
 lbxAdsorption =             False # It controls whether the particles get adsorpted or reflected on the left boundary 
@@ -25,7 +25,7 @@ if plotCharts:
 
 # Parameters #################################################################
 num_particles = int(1e3) # Number of particles in the simulation
-sim_time = int(10)
+sim_time = int(30)
 dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 Df = 0.1 # Diffusion for particles moving in the fracture
@@ -112,7 +112,7 @@ probCrossLeftToRight = np.full(num_particles, False)
 probCrossRightToLeft = np.full(num_particles, False)
 particleSteps = np.zeros(num_particles)
 timeInMatrix = np.zeros(num_particles)
-recordedTimes = np.linspace(0, sim_time, rt)
+recordedTimes = np.linspace(0, sim_time-dt, rt)
 impacts = 0
 numOfLivePart = []
 Time = []
