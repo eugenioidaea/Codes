@@ -1,4 +1,4 @@
-debug = False
+debug = True
 if not debug:
     from IPython import get_ipython
     get_ipython().run_line_magic('reset', '-f')
@@ -9,7 +9,7 @@ from sklearn.linear_model import LinearRegression
 
 save = False
 
-loadFinalPositions = np.load('onlyDiff.npz', allow_pickle=True)
+loadFinalPositions = np.load('decayAndAdsorption.npz', allow_pickle=True)
 for name, value in (loadFinalPositions.items()):
     globals()[name] = value
 
@@ -38,7 +38,7 @@ for i in range(len(xRT)):
     if i == 0:
         axes[i].plot(xRT[i], yRT[i], 'b*')
     else:
-        livePmask = xRT[i] != xRT[i-1]
+        livePmask = (xRT[i] != xRT[i-1]) | (yRT[i] == lby) | (yRT[i] == uby)
         axes[i].plot(xRT[i][livePmask], yRT[i][livePmask], 'b*')
     axes[i].plot([xInit, xInit], [lby, uby], color='orange', linestyle='--', linewidth=3)
     axes[i].axhline(y=uby, color='brown', linewidth=3)
