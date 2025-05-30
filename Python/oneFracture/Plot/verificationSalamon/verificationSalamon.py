@@ -9,31 +9,31 @@ from sklearn.linear_model import LinearRegression
 
 save = False
 
-#    loadFinalPositions = np.load('Dl01Dr01Rl0Rr0.npz')
+#    loadFinalPositions = np.load('Dl01Dr01Rl0Rr0.npz', allow_pickle=True)
 #    for name, value in (loadFinalPositions.items()):
 #        globals()[name] = value
 
-#    loadFinalPositions = np.load('Dl01Dr001Rl0Rr0.npz')
+#    loadFinalPositions = np.load('Dl01Dr001Rl0Rr0.npz', allow_pickle=True)
 #    for name, value in (loadFinalPositions.items()):
 #        globals()[name] = value
 
-#    loadFinalPositions = np.load('Dl01Dr01RlPlRrPr.npz')
+#    loadFinalPositions = np.load('Dl01Dr01RlPlRrPr.npz', allow_pickle=True)
 #    for name, value in (loadFinalPositions.items()):
 #        globals()[name] = value
 
-loadFinalPositions = np.load('Dl01Dr001RlPlRrPr.npz')
+loadFinalPositions = np.load('Dl01Dr001RlPlRrPr.npz', allow_pickle=True)
 for name, value in (loadFinalPositions.items()):
     globals()[name] = value
 
-#    loadFinalPositions = np.load('Dl01Dr001RlPlRrPr1e5ts.npz')
+#    loadFinalPositions = np.load('Dl01Dr001RlPlRrPr1e5ts.npz', allow_pickle=True)
 #    for name, value in (loadFinalPositions.items()):
 #        globals()[name] = value
 
-# loadMatrixDiffVer = np.load('matrixDiffusionVerification.npz')
+# loadMatrixDiffVer = np.load('matrixDiffusionVerification.npz', allow_pickle=True)
 # for name, value in (loadMatrixDiffVer.items()):
 #     globals()[name] = value
 
-# loadTestSalamon = np.load('testSalamon.npz')
+# loadTestSalamon = np.load('testSalamon.npz', allow_pickle=True)
 # for name, value in (loadTestSalamon.items()):
 #     globals()[name] = value
 

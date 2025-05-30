@@ -17,26 +17,26 @@ save = False
 
 # Load simulation results from .npz files ###################################################
 if plotDomainDecay:
-    loadDomainDecayK01 = np.load('domainDecayK01.npz')
+    loadDomainDecayK01 = np.load('domainDecayK01.npz', allow_pickle=True)
     for name, value in (loadDomainDecayK01.items()):
         globals()[name] = value
     numOfLivePartDomainK01 = numOfLivePart.copy()
     timeDomainK01 = Time.copy()
 
-    loadDomainDecayK001 = np.load('domainDecayK001.npz')
+    loadDomainDecayK001 = np.load('domainDecayK001.npz', allow_pickle=True)
     for name, value in (loadDomainDecayK001.items()):
         globals()[name] = value
     numOfLivePartDomainK001 = numOfLivePart.copy()
     timeDomainK001 = Time.copy()
 
-    loadDomainDecayK0001 = np.load('domainDecayK0001.npz')
+    loadDomainDecayK0001 = np.load('domainDecayK0001.npz', allow_pickle=True)
     for name, value in (loadDomainDecayK0001.items()):
         globals()[name] = value
     numOfLivePartDomainK0001 = numOfLivePart.copy()
     timeDomainK0001 = Time.copy()
 
 if plotMatrixDecayK:
-    loadMatrixDecayK01 = np.load('matrixDecayK01.npz')
+    loadMatrixDecayK01 = np.load('matrixDecayK01.npz', allow_pickle=True)
     for name, value in (loadMatrixDecayK01.items()):
         globals()[name] = value
     numOfLivePartK01 = numOfLivePart.copy()
@@ -45,7 +45,7 @@ if plotMatrixDecayK:
     yK01 = y.copy()
     kDecay01 = kDecay.copy()
 
-    loadMatrixDecayK001 = np.load('matrixDecayK001.npz')
+    loadMatrixDecayK001 = np.load('matrixDecayK001.npz', allow_pickle=True)
     for name, value in (loadMatrixDecayK001.items()):
         globals()[name] = value
     numOfLivePartK001 = numOfLivePart.copy()
@@ -54,7 +54,7 @@ if plotMatrixDecayK:
     yK001 = y.copy()
     kDecay001 = kDecay.copy()
 
-    loadMatrixDecayK004 = np.load('matrixDecayK004.npz')
+    loadMatrixDecayK004 = np.load('matrixDecayK004.npz', allow_pickle=True)
     for name, value in (loadMatrixDecayK004.items()):
         globals()[name] = value
     numOfLivePartK004 = numOfLivePart.copy()
@@ -63,7 +63,7 @@ if plotMatrixDecayK:
     yK004 = y.copy()
     kDecay004 = kDecay.copy()
 
-    loadMatrixDecayK007 = np.load('matrixDecayK007.npz')
+    loadMatrixDecayK007 = np.load('matrixDecayK007.npz', allow_pickle=True)
     for name, value in (loadMatrixDecayK007.items()):
         globals()[name] = value
     numOfLivePartK007 = numOfLivePart.copy()
@@ -72,7 +72,7 @@ if plotMatrixDecayK:
     yK007 = y.copy()
     kDecay007 = kDecay.copy()
 
-    loadMatrixDecayK0005 = np.load('matrixDecayK0005.npz')
+    loadMatrixDecayK0005 = np.load('matrixDecayK0005.npz', allow_pickle=True)
     for name, value in (loadMatrixDecayK0005.items()):
         globals()[name] = value
     numOfLivePartK0005 = numOfLivePart.copy()
@@ -81,7 +81,7 @@ if plotMatrixDecayK:
     yK0005 = y.copy()
     kDecay0005 = kDecay.copy()
 
-    loadMatrixDecayK0001 = np.load('matrixDecayK0001.npz')
+    loadMatrixDecayK0001 = np.load('matrixDecayK0001.npz', allow_pickle=True)
     for name, value in (loadMatrixDecayK0001.items()):
         globals()[name] = value
     numOfLivePartK0001 = numOfLivePart.copy()
@@ -91,7 +91,7 @@ if plotMatrixDecayK:
     kDecay0001 = kDecay.copy()
 
 if plotMatrixDecayDm:
-    loadMatrixDecayDm001 = np.load('Dm1e-2matrixK1e-2.npz')
+    loadMatrixDecayDm001 = np.load('Dm1e-2matrixK1e-2.npz', allow_pickle=True)
     for name, value in (loadMatrixDecayDm001.items()):
         globals()[name] = value
     numOfLivePartDm001 = numOfLivePart.copy()
@@ -99,7 +99,7 @@ if plotMatrixDecayDm:
     dm001 = Dm.copy()
     df001 = Df.copy()
 
-    loadMatrixDecayDm0001 = np.load('Dm1e-3matrixK1e-2.npz')
+    loadMatrixDecayDm0001 = np.load('Dm1e-3matrixK1e-2.npz', allow_pickle=True)
     for name, value in (loadMatrixDecayDm0001.items()):
         globals()[name] = value
     numOfLivePartDm0001 = numOfLivePart.copy()
@@ -107,7 +107,7 @@ if plotMatrixDecayDm:
     dm0001 = Dm.copy()
     df0001 = Df.copy()
 
-    loadMatrixDecayDm00005 = np.load('Dm5e-4matrixK1e-2.npz')
+    loadMatrixDecayDm00005 = np.load('Dm5e-4matrixK1e-2.npz', allow_pickle=True)
     for name, value in (loadMatrixDecayDm00005.items()):
         globals()[name] = value
     numOfLivePartDm00005 = numOfLivePart.copy()
@@ -115,7 +115,7 @@ if plotMatrixDecayDm:
     dm00005 = Dm.copy()
     df00005 = Df.copy()
 
-    loadMatrixDecayDm00001 = np.load('Dm1e-4matrixK1e-2.npz')
+    loadMatrixDecayDm00001 = np.load('Dm1e-4matrixK1e-2.npz', allow_pickle=True)
     for name, value in (loadMatrixDecayDm00001.items()):
         globals()[name] = value
     numOfLivePartDm00001 = numOfLivePart.copy()
@@ -123,7 +123,7 @@ if plotMatrixDecayDm:
     dm00001 = Dm.copy()
     df00001 = Df.copy()
 
-    loadMatrixDecayDm000001 = np.load('Dm1e-5matrixK1e-2.npz')
+    loadMatrixDecayDm000001 = np.load('Dm1e-5matrixK1e-2.npz', allow_pickle=True)
     for name, value in (loadMatrixDecayDm000001.items()):
         globals()[name] = value
     numOfLivePartDm000001 = numOfLivePart.copy()

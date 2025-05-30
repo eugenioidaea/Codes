@@ -9,42 +9,42 @@ from sklearn.linear_model import LinearRegression
 
 save = False
 
-loadCompareTau4 = np.load('compareTau4.npz')
+loadCompareTau4 = np.load('compareTau4.npz', allow_pickle=True)
 for name, value in (loadCompareTau4.items()):
     globals()[name] = value
 numOfLivePartTau4 = numOfLivePart.copy()
 Time4 = Time.copy()
 tau4 = (uby-lby)**2/Df
 
-loadCompareTau40 = np.load('compareTau40.npz')
+loadCompareTau40 = np.load('compareTau40.npz', allow_pickle=True)
 for name, value in (loadCompareTau40.items()):
     globals()[name] = value
 numOfLivePartTau40 = numOfLivePart.copy()
 Time40 = Time.copy()
 tau40 = (uby-lby)**2/Df
 
-loadCompareTau100 = np.load('compareTau100.npz')
+loadCompareTau100 = np.load('compareTau100.npz', allow_pickle=True)
 for name, value in (loadCompareTau100.items()):
     globals()[name] = value
 numOfLivePartTau100 = numOfLivePart.copy()
 Time100 = Time.copy()
 tau100 = (uby-lby)**2/Df
 
-loadCompareTau400 = np.load('compareTau400.npz')
+loadCompareTau400 = np.load('compareTau400.npz', allow_pickle=True)
 for name, value in (loadCompareTau400.items()):
     globals()[name] = value
 numOfLivePartTau400 = numOfLivePart.copy()
 Time400 = Time.copy()
 tau400 = (uby-lby)**2/Df
 
-loadCompareTau1000 = np.load('compareTau1000.npz')
+loadCompareTau1000 = np.load('compareTau1000.npz', allow_pickle=True)
 for name, value in (loadCompareTau1000.items()):
     globals()[name] = value
 numOfLivePartTau1000 = numOfLivePart.copy()
 Time1000 = Time.copy()
 tau1000 = (uby-lby)**2/Df
 
-loadCompareTau4000 = np.load('compareTau4000.npz')
+loadCompareTau4000 = np.load('compareTau4000.npz', allow_pickle=True)
 for name, value in (loadCompareTau4000.items()):
     globals()[name] = value
 numOfLivePartTau4000 = numOfLivePart.copy()

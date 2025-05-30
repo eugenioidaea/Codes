@@ -9,15 +9,18 @@ from sklearn.linear_model import LinearRegression
 
 save = False
 
-loadFinalPositions = np.load('compareAdsP100.npz', allow_pickle=True)
+loadFinalPositions = np.load('onlyDiff.npz', allow_pickle=True)
 for name, value in (loadFinalPositions.items()):
     globals()[name] = value
 
 finalPositionMatrixDecay = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
-plt.plot(x, y, 'b*')
-# plt.plot(xK001, yK001, 'r*')
-# plt.plot(xK01, yK01, 'b*')
+# for i in range(len(xRT)):
+#     plt.plot(xRT[i], yRT[i], 'b*')
+plt.plot(xRT[0], yRT[0], 'b*')
+plt.plot(xRT[1], yRT[1], 'r*')
+plt.plot(xRT[2], yRT[2], 'g*')
+plt.plot(xRT[3], yRT[3], 'y*')
 plt.plot([xInit, xInit], [lby, uby], color='yellow', linestyle='--', linewidth=3)
 plt.axhline(y=uby, color='r', linewidth=3)
 plt.axhline(y=lby, color='r', linewidth=3)

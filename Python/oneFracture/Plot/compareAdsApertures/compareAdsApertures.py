@@ -9,21 +9,21 @@ from sklearn.linear_model import LinearRegression
 
 save = False
 
-loadCompareAdsAp2 = np.load('compareAp2.npz')
+loadCompareAdsAp2 = np.load('compareAp2.npz', allow_pickle=True)
 for name, value in (loadCompareAdsAp2.items()):
     globals()[name] = value
 liveParticlesInTimeAp2 = liveParticlesInTime.copy()
 liveParticlesInTimeNormAp2 = liveParticlesInTimeNorm.copy()
 tauAp2 = (uby-lby)**2/Df
 
-loadCompareAdsAp4 = np.load('compareAp4.npz')
+loadCompareAdsAp4 = np.load('compareAp4.npz', allow_pickle=True)
 for name, value in (loadCompareAdsAp4.items()):
     globals()[name] = value
 liveParticlesInTimeAp4 = liveParticlesInTime.copy()
 liveParticlesInTimeNormAp4 = liveParticlesInTimeNorm.copy()
 tauAp4 = (uby-lby)**2/Df
 
-loadCompareAdsAp6 = np.load('compareAp6.npz')
+loadCompareAdsAp6 = np.load('compareAp6.npz', allow_pickle=True)
 for name, value in (loadCompareAdsAp6.items()):
     globals()[name] = value
 liveParticlesInTimeAp6 = liveParticlesInTime.copy()

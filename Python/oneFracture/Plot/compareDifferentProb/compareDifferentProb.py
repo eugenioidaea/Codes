@@ -9,21 +9,21 @@ from sklearn.linear_model import LinearRegression
 
 save = False
 
-loadCompareP80 = np.load('compareP80.npz')
+loadCompareP80 = np.load('compareP80.npz', allow_pickle=True)
 for name, value in (loadCompareP80.items()):
     globals()[name] = value
 numOfLivePartP80 = numOfLivePart.copy()
 Time80 = Time.copy()
 tau80 = (uby-lby)**2/Df
 
-loadCompareP60 = np.load('compareP60.npz')
+loadCompareP60 = np.load('compareP60.npz', allow_pickle=True)
 for name, value in (loadCompareP60.items()):
     globals()[name] = value
 numOfLivePartP60 = numOfLivePart.copy()
 Time60 = Time.copy()
 tau60 = (uby-lby)**2/Df
 
-loadCompareP40 = np.load('compareP40.npz')
+loadCompareP40 = np.load('compareP40.npz', allow_pickle=True)
 for name, value in (loadCompareP40.items()):
     globals()[name] = value
 numOfLivePartP40 = numOfLivePart.copy()

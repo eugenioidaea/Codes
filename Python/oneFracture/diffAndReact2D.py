@@ -36,6 +36,7 @@ xInit = 0 # Initial horizontal position of the particles
 uby = 1 # Upper Boundary
 lby = -1 # Lower Boundary
 vcp = 10 # Vertical Control Plane
+rt = 4 # Number of times at which the spatial positions of the particles should be recorded
 if lbxOn:
     lbx = 0 # Left Boundary X
 if matrixDiffVerification:
@@ -45,10 +46,12 @@ if matrixDiffVerification:
     # probReflectedLeft = np.sqrt(Dl)/(np.sqrt(Dl)+np.sqrt(Dr))
     probReflectedRight = 0.0 # Particles being reflected while crossing right to left the central wall
     # probReflectedRight = np.sqrt(Dr)/(np.sqrt(Dl)+np.sqrt(Dr))
-# probReflectedInward = 1.0 # Probability of impacts from the fracture reflected again into the fracture
-probReflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
-# probReflectedOutward = 1.0 # Probability of impacts from the porous matrix reflected again into the porous matrix
-probReflectedOutward = np.sqrt(Dm)/(np.sqrt(Df)+np.sqrt(Dm))
+if diffuseIntoMatrix:
+    probReflectedInward = np.sqrt(Df)/(np.sqrt(Df)+np.sqrt(Dm))
+    probReflectedOutward = np.sqrt(Dm)/(np.sqrt(Df)+np.sqrt(Dm))
+else:
+    probReflectedInward = 1.0 # Probability of impacts from the fracture reflected again into the fracture
+    probReflectedOutward = 1.0 # Probability of impacts from the porous matrix reflected again into the porous matrix
 recordSpatialConc = int(1e2) # Concentration profile recorded time
 stopBTC = 100 # % of particles that need to pass the control plane before the simulation is ended
 k_ads = 0.1 # Adsorption constant (currently not used since the probability of adsorption is a random variable from a UNIFORM distribution and not EXPONENTIAL)
@@ -109,11 +112,14 @@ probCrossLeftToRight = np.full(num_particles, False)
 probCrossRightToLeft = np.full(num_particles, False)
 particleSteps = np.zeros(num_particles)
 timeInMatrix = np.zeros(num_particles)
+recordedTimes = np.linspace(0, sim_time, rt)
 impacts = 0
 numOfLivePart = []
 Time = []
 x = x0.copy()
 y = y0.copy()
+xRT = []
+yRT = []
 
 # Functions ##########################################################################
 def update_positions(x, y, fracture, matrix, Df, Dm, dt, meanEta, stdEta):
@@ -189,6 +195,10 @@ start_time = time.time() # Start timing the while loop
 
 while t<sim_time and (not(numOfLivePart) or numOfLivePart[-1]>0) and bool(liveParticle.any()) and bool(((y!=lby) & (y!=uby)).any()):
 
+    if np.isin(np.round(t, 1), np.round(recordedTimes, 1)):
+        xRT.append(x.copy())
+        yRT.append(y.copy())
+
     if domainDecay:
         liveParticle = np.array(survivalTimeDist>t) # Particles which are not degradeted
     if matrixDecay:
@@ -241,13 +251,13 @@ while t<sim_time and (not(numOfLivePart) or numOfLivePart[-1]>0) and bool(livePa
         pdf_lbxOn[int(t/dt)] = sum(crossOutLeft)
 
     # Decide what happens to the particles which hit the fracture's walls: all get reflected, some get reflected some manage to escape, all get absorbed by the fracture's walls
-    if diffuseIntoMatrix:
-        # Update the reflected particles' positions according to an elastic reflection dynamic
-        x, y = apply_reflection(x, y, crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, lbxOn)
     if adsorptionProbability:
         # adsDist = adsorption_dist(k_ads) # Exponential distribution
         adsDist = np.random.uniform(0, 1, num_particles) # Uniform distribution
         x, y, impacts = apply_adsorption(x, y, crossOutAbove, crossOutBelow, crossOutLeft, adsDist, impacts)
+    else:
+        # Update the reflected particles' positions according to an elastic reflection dynamic
+        x, y = apply_reflection(x, y, crossOutAbove, crossOutBelow, crossInAbove, crossInBelow, uby, lby, lbxOn)
 
     # Record the pdf of the btc on the left control panel
     if lbxOn:
@@ -369,7 +379,7 @@ else:
 # Save and export variables to a .npz file #############################################
 save = input("Do you want to save? Results may be overwritten. [Y][N]")
 if save.upper()=="Y":
-    variablesToSave = {name: value for name, value in globals().items() if isinstance(value, (np.ndarray, int, float, bool))} # Filter the variables we want to save by type
+    variablesToSave = {name: value for name, value in globals().items() if isinstance(value, (list, np.ndarray, int, float, bool))} # Filter the variables we want to save by type
     # np.savez('infiniteDomain1e6.npz', **variablesToSave)
     # np.savez('semiInfiniteDomain1e3.npz', **variablesToSave)
     # np.savez('degradation_3.npz', **variablesToSave)

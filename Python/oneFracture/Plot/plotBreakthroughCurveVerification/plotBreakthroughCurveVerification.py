@@ -9,7 +9,7 @@ from sklearn.linear_model import LinearRegression
 
 save = False
 
-loadSemiInfiniteDomain = np.load('semiInfiniteDomain1e3.npz')
+loadSemiInfiniteDomain = np.load('semiInfiniteDomain1e3.npz', allow_pickle=True)
 for name, value in (loadSemiInfiniteDomain.items()):
     globals()[name] = value
 

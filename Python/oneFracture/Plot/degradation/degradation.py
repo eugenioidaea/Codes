@@ -13,7 +13,7 @@ save = False
 # for name, value in (loadFinalPositions.items()):
 #     globals()[name] = value
 
-loadFinalPositions = np.load('onlyDecayTau400.npz')
+loadFinalPositions = np.load('onlyDecayTau400.npz', allow_pickle=True)
 for name, value in (loadFinalPositions.items()):
     globals()[name] = value
 

@@ -9,43 +9,43 @@ from sklearn.linear_model import LinearRegression
 
 save = False
 
-loadCompareAdsP100 = np.load('compareAdsP100.npz')
+loadCompareAdsP100 = np.load('compareAdsP100.npz', allow_pickle=True)
 for name, value in (loadCompareAdsP100.items()):
     globals()[name] = value
 liveParticlesInTimeNormP100 = np.sort(numOfLivePart/num_particles)[::-1].copy()
 TimeP100 = Time
 
-loadCompareAdsP90 = np.load('compareAdsP90.npz')
+loadCompareAdsP90 = np.load('compareAdsP90.npz', allow_pickle=True)
 for name, value in (loadCompareAdsP90.items()):
     globals()[name] = value
 liveParticlesInTimeNormP90 = np.sort(numOfLivePart/num_particles)[::-1].copy()
 TimeP90 = Time
 
-loadCompareAdsP80 = np.load('compareAdsP80.npz')
+loadCompareAdsP80 = np.load('compareAdsP80.npz', allow_pickle=True)
 for name, value in (loadCompareAdsP80.items()):
     globals()[name] = value
 liveParticlesInTimeNormP80 = np.sort(numOfLivePart/num_particles)[::-1].copy()
 TimeP80 = Time
 
-loadCompareAdsP60 = np.load('compareAdsP60.npz')
+loadCompareAdsP60 = np.load('compareAdsP60.npz', allow_pickle=True)
 for name, value in (loadCompareAdsP60.items()):
     globals()[name] = value
 liveParticlesInTimeNormP60 = np.sort(numOfLivePart/num_particles)[::-1].copy()
 TimeP60 = Time
 
-loadCompareAdsP40 = np.load('compareAdsP40.npz')
+loadCompareAdsP40 = np.load('compareAdsP40.npz', allow_pickle=True)
 for name, value in (loadCompareAdsP40.items()):
     globals()[name] = value
 liveParticlesInTimeNormP40 = np.sort(numOfLivePart/num_particles)[::-1].copy()
 TimeP40 = Time
 
-loadCompareAdsP20 = np.load('compareAdsP20.npz')
+loadCompareAdsP20 = np.load('compareAdsP20.npz', allow_pickle=True)
 for name, value in (loadCompareAdsP20.items()):
     globals()[name] = value
 liveParticlesInTimeNormP20 = np.sort(numOfLivePart/num_particles)[::-1].copy()
 TimeP20 = Time
 
-loadCompareAdsP10 = np.load('compareAdsP10.npz')
+loadCompareAdsP10 = np.load('compareAdsP10.npz', allow_pickle=True)
 for name, value in (loadCompareAdsP10.items()):
     globals()[name] = value
 liveParticlesInTimeNormP10 = np.sort(numOfLivePart/num_particles)[::-1].copy()

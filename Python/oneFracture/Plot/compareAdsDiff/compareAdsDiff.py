@@ -10,7 +10,7 @@ from sklearn.linear_model import LinearRegression
 save = False
 
 # LOAD SECTION #################################################
-loadCompareAdsD1 = np.load('compareAdsD1.npz')
+loadCompareAdsD1 = np.load('compareAdsD1.npz', allow_pickle=True)
 for name, value in (loadCompareAdsD1.items()):
     globals()[name] = value
 variableWidth = abs(timeLogSpaced-timeLogSpaced[::-1])/max(abs(timeLogSpaced-timeLogSpaced[::-1]))
@@ -25,7 +25,7 @@ liveParticlesInTimeNormD1 = liveParticlesInTimeNorm.copy()
 # liveParticlesInTimeNormD1 = liveParticlesInTimeNorm.copy()
 tauD1 = (uby-lby)**2/Df
 
-loadCompareAdsD01 = np.load('compareAdsD01.npz')
+loadCompareAdsD01 = np.load('compareAdsD01.npz', allow_pickle=True)
 for name, value in (loadCompareAdsD01.items()):
     globals()[name] = value
 variableWidth = abs(timeLogSpaced-timeLogSpaced[::-1])/max(abs(timeLogSpaced-timeLogSpaced[::-1]))
@@ -40,7 +40,7 @@ liveParticlesInTimeNormD01 = liveParticlesInTimeNorm.copy()
 # liveParticlesInTimeNormD01 = liveParticlesInTimeNorm.copy()
 tauD01 = (uby-lby)**2/Df
 
-loadCompareAdsD001 = np.load('compareAdsD001.npz')
+loadCompareAdsD001 = np.load('compareAdsD001.npz', allow_pickle=True)
 for name, value in (loadCompareAdsD001.items()):
     globals()[name] = value
 variableWidth = abs(timeLogSpaced-timeLogSpaced[::-1])/max(abs(timeLogSpaced-timeLogSpaced[::-1]))
@@ -55,7 +55,7 @@ liveParticlesInTimeNormD001 = liveParticlesInTimeNorm.copy()
 # liveParticlesInTimeNormD001 = liveParticlesInTimeNorm.copy()
 tauD001 = (uby-lby)**2/Df
 
-loadCompareAdsD0001 = np.load('compareAdsD0001.npz')
+loadCompareAdsD0001 = np.load('compareAdsD0001.npz', allow_pickle=True)
 for name, value in (loadCompareAdsD0001.items()):
     globals()[name] = value
 variableWidth = abs(timeLogSpaced-timeLogSpaced[::-1])/max(abs(timeLogSpaced-timeLogSpaced[::-1]))

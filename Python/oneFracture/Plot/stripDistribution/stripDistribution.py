@@ -17,7 +17,7 @@ save = False
 # for name, value in (loadFinalPositions.items()):
 #     globals()[name] = value
 
-loadFinalPositions = np.load('stripDistribution1e6.npz')
+loadFinalPositions = np.load('stripDistribution1e6.npz', allow_pickle=True)
 for name, value in (loadFinalPositions.items()):
     globals()[name] = value
 

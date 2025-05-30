@@ -9,7 +9,7 @@ from sklearn.linear_model import LinearRegression
 
 save = False
 
-loadAdsorption = np.load('totalAdsorption_3.npz')
+loadAdsorption = np.load('totalAdsorption_3.npz', allow_pickle=True)
 for name, value in (loadAdsorption.items()):
     globals()[name] = value
 liveParticlesInTimeAds = liveParticlesInTime.copy()
@@ -17,7 +17,7 @@ liveParticlesInLogTimeAds = liveParticlesInLogTime.copy()
 liveParticlesInTimeNormAds = liveParticlesInTimeNorm.copy()
 liveParticlesInLogTimeNormAds = liveParticlesInLogTimeNorm.copy()
 
-loadDegradation = np.load('degradation_3.npz')
+loadDegradation = np.load('degradation_3.npz', allow_pickle=True)
 for name, value in (loadDegradation.items()):
     globals()[name] = value
 liveParticlesInTimeDeg = liveParticlesInTime.copy()

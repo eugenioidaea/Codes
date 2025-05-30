@@ -9,7 +9,7 @@ from sklearn.linear_model import LinearRegression
 
 save = False
 
-loadInfiniteDomain = np.load('infiniteDomain1e6.npz')
+loadInfiniteDomain = np.load('infiniteDomain1e6.npz', allow_pickle=True)
 for name, value in (loadInfiniteDomain.items()):
     globals()[name] = value
 
