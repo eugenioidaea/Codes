@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
 from sklearn.linear_model import LinearRegression
+from scipy.optimize import curve_fit
 
 save = False
 
@@ -201,6 +202,8 @@ plt.plot(tau100, -interpSemilogTau100.coef_[0], 'o', markerfacecolor='pink', mar
 plt.plot(tau400, -interpSemilogTau400.coef_[0], 'o', markerfacecolor='green', markeredgecolor='green', markersize='10', label=r'$k(\tau_d)=%g$' % (round(-interpSemilogTau400.coef_[0], 3)))
 plt.plot(tau1000, -interpSemilogTau1000.coef_[0], 'o', markerfacecolor='orange', markeredgecolor='orange', markersize='10', label=r'$k(\tau_d)=%g$' % (round(-interpSemilogTau1000.coef_[0], 3)))
 plt.plot(tau4000, -interpSemilogTau4000.coef_[0], 'o', markerfacecolor='purple', markeredgecolor='purple', markersize='10', label=r'$k(\tau_d)=%g$' % (round(-interpSemilogTau4000.coef_[0], 3)))
+pTau = np.array([tau4, tau40, tau100, tau400, tau1000, tau4000])
+k = np.array([-interpSemilogTau4.coef_[0], -interpSemilogTau40.coef_[0], -interpSemilogTau100.coef_[0], -interpSemilogTau400.coef_[0], -interpSemilogTau1000.coef_[0], -interpSemilogTau4000.coef_[0]])
 # plt.title("Reaction rates vs characteristic times")
 plt.xscale('log')
 plt.yscale('log')
@@ -211,6 +214,37 @@ plt.xlabel(r'$\tau_d$')
 plt.ylabel(r'$k(\tau_d)$')
 plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
 plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
+
+# Linear fitting
+# pTauReshaped = pTau.reshape(-1, 1)
+# yKfit = LinearRegression().fit(pTauReshaped, k)
+# xInterp = np.linspace(min(pTauReshaped), max(pTauReshaped), 10)
+# yInterp = xInterp*yKfit.coef_[0]+yKfit.intercept_
+# plt.plot(xInterp, yInterp, color="black")
+# plt.text(xInterp[len(xInterp)//2], yInterp[len(yInterp)//2], f"y={yKfit.coef_[0]:.5f}x+{yKfit.intercept_:.5f}", fontsize=18, ha='left', va='top')
+
+# Quadratic fitting
+# coefficients = np.polyfit(pTau, k, 2)
+# poly = np.poly1d(coefficients)
+# yInterp2 = poly(xInterp)
+# plt.plot(xInterp, yInterp2, label='2nd order polynomial', color='blue')
+# plt.legend(loc='best')
+# plt.tight_layout()
+
+# Power law fitting
+def power_law(x, a, b):
+    return a * x**b
+params, covariance = curve_fit(power_law, pTau[:-3], k[:-3])
+a_fitted, b_fitted = params
+plt.plot(pTau, power_law(pTau, *params), color='black', label = r'$y = %g x^{%g}$' % (round(a_fitted, 2), round(b_fitted, 2)))
+
+# Exponential fitting
+pTauReshaped = pTau.reshape(-1, 1)
+yKfit = LinearRegression().fit(pTauReshaped[3:], np.log(k[3:]))
+xInterp = np.linspace(min(pTauReshaped), max(pTauReshaped), 10)
+yInterp = np.exp(yKfit.intercept_)*np.exp(xInterp*yKfit.coef_[0])
+plt.plot(xInterp, yInterp, color="blue", label = r'$y = %g e^{%g}$' % (round(np.exp(a_fitted), 2), round(b_fitted, 2)))
+
 plt.legend(loc='best')
 plt.tight_layout()
 

@@ -270,19 +270,23 @@ plt.xlabel(r'$p_{ads}$')
 plt.ylabel(r'$k(t)$')
 plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
 plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
-pAdsReshaped = np.array([0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 1.0]).reshape(-1, 1)
-yKfit = LinearRegression().fit(pAdsReshaped, kt)
 xInterp = np.linspace(min(pAdsReshaped), max(pAdsReshaped), 10)
-yInterp = xInterp*yKfit.coef_[0]+yKfit.intercept_
-plt.plot(xInterp, yInterp, color="black")
-plt.text(xInterp[len(xInterp)//2], yInterp[len(yInterp)//2], f"y={yKfit.coef_[0]:.5f}x+{yKfit.intercept_:.5f}", fontsize=18, ha='left', va='top')
 
-# coefficients = np.polyfit([0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 1.0], kt, 2)
-# poly = np.poly1d(coefficients)
-# yInterp2 = poly(xInterp)
-# plt.plot(xInterp, yInterp2, label='2nd order polynomial', color='blue')
-# plt.legend(loc='best')
-# plt.tight_layout()
+# Linear fitting
+# pAdsReshaped = np.array([0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 1.0]).reshape(-1, 1)
+# yKfit = LinearRegression().fit(pAdsReshaped, kt)
+# yInterp = xInterp*yKfit.coef_[0]+yKfit.intercept_
+# plt.plot(xInterp, yInterp, color="black")
+# plt.text(xInterp[len(xInterp)//2], yInterp[len(yInterp)//2], f"y={yKfit.coef_[0]:.5f}x+{yKfit.intercept_:.5f}", fontsize=18, ha='left', va='top')
+
+# Quadratic fitting
+coefficients = np.polyfit([0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 1.0], kt, 2)
+poly = np.poly1d(coefficients)
+yInterp2 = poly(xInterp)
+plt.plot(xInterp, yInterp2, label=r'$y = %g x^{2} + %g x + %g$' % (round(coefficients[0], 2), round(coefficients[1], 2), round(coefficients[2], 2)), color='black')
+# plt.plot(pTau, power_law(pTau, *params), color='black', label = r'$y = %g x^{%g}$' % (round(a_fitted, 2), round(b_fitted, 2)))
+plt.legend(loc='best')
+plt.tight_layout()
 
 finalPositionMatrixDecay = plt.figure(figsize=(8, 8))
 plt.rcParams.update({'font.size': 20})
