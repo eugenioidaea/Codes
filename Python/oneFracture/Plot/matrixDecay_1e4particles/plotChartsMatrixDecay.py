@@ -154,12 +154,14 @@ if plotDomainDecay & plotMatrixDecayK:
 if plotMatrixDecayK:
     finalPositionMatrixDecay = plt.figure(figsize=(8, 8))
     plt.rcParams.update({'font.size': 20})
-    plt.plot(xK0001, yK0001, 'g*')
-    plt.plot(xK001, yK001, 'r*')
-    plt.plot(xK01, yK01, 'b*')
+    plt.plot(xK0001, yK0001, 'g*', label=r'$k=0.001$')
+    plt.plot(xK001, yK001, 'r*', label=r'$k=0.01$')
+    plt.plot(xK01, yK01, 'b*', label=r'$k=0.1$')
     plt.plot([xInit, xInit], [lby, uby], color='yellow', linewidth=2)
     plt.axhline(y=uby, color='r', linestyle='--', linewidth=1)
     plt.axhline(y=lby, color='r', linestyle='--', linewidth=1)
+    plt.legend(loc='best')
+    plt.tight_layout()
 
     derStep = 10
     ratesMatrixDecay = plt.figure(figsize=(8, 8))
