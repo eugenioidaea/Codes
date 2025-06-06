@@ -31,11 +31,11 @@ if plotCharts:
 # matrixDecay SETUP:
 Df = 1e-1 # Diffusion for particles moving in the fracture
 Dm = 1e-2 # Diffusion for particles moving in the porous matrix
-kDecay = 5e-3 # 1e-1, 7e-2, 4e-2, 1e-2, 1e-3
+kDecay = 1e-3 # 1e-1, 7e-2, 4e-2, 1e-2, 5e-3
 
 # Parameters #################################################################
 num_particles = int(1e6) # Number of particles in the simulation
-sim_time = int(8e3)
+sim_time = int(8e4)
 dt = 0.1 # Time step
 num_steps = int(sim_time/dt) # Number of steps
 ap = 0.9 # Adsorption probability
@@ -414,8 +414,8 @@ if save.upper()=="Y":
     # np.savez('matrixDecayK001.npz', **variablesToSave)
     # np.savez('matrixDecayK004.npz', **variablesToSave)
     # np.savez('matrixDecayK007.npz', **variablesToSave)
-    # np.savez('matrixDecayK0001.npz', **variablesToSave)
-    np.savez('matrixDecayK0005.npz', **variablesToSave)
+    np.savez('matrixDecayK0001.npz', **variablesToSave)
+    # np.savez('matrixDecayK0005.npz', **variablesToSave)
     # np.savez('domainDecayK01.npz', **variablesToSave)
     # np.savez('domainDecayK001.npz', **variablesToSave)
     # np.savez('domainDecayK0001.npz', **variablesToSave)
