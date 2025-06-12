@@ -37,7 +37,7 @@ END
 
 #=========================== fluid properties =================================
 FLUID_PROPERTY
-  DIFFUSION_COEFFICIENT 4.5d-6
+  DIFFUSION_COEFFICIENT 4.5d-7
 END
 
 DATASET Permeability
@@ -47,8 +47,8 @@ END
 #=========================== material properties ==============================
 MATERIAL_PROPERTY soil1
   ID 1
-  POROSITY 0.25
-  TORTUOSITY 0.2d0
+  POROSITY 1.0
+  TORTUOSITY 1.0d0
   CHARACTERISTIC_CURVES default
   PERMEABILITY
     DATASET Permeability
@@ -71,7 +71,7 @@ END
 
 #=========================== output options ===================================
 OUTPUT
-  PERIODIC TIME 100 y ## Comment this out if you don't want to visualize the results
+#  PERIODIC TIME 100 y ## Comment this out if you don't want to visualize the results
 #  FORMAT TECPLOT BLOCK
   PRINT_PRIMAL_GRID
   FORMAT VTK
@@ -83,9 +83,6 @@ OUTPUT
     PERMEABILITY_Y
     PERMEABILITY_Z
     POROSITY
-    # GAS_DENSITY_MOLAR
-    # LIQUID_DENSITY_MOLAR
-    # SOLUTE_CONCENTRATION
   /
 END
 
@@ -189,4 +186,3 @@ STRATA
 END
 
 END_SUBSURFACE
-
