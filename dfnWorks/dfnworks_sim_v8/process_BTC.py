@@ -24,17 +24,16 @@ def load_mas_file(filename):
     except:
         pass
 
-def CJsolFor(t_array, n_terms, x):
-    nArr = np.arange(1, n_terms + 1)
-    t = t_array
-    J = np.zeros(len(time))
-
-    for ti in range(0, len(t)):
-        cos_part = np.cos(nArr * np.pi * x / L)
-        exp_part = np.exp(-Deff * (nArr**2) * np.pi**2 * t[ti] / L**2)
-        J[ti] = Deff*C1/L * (1 + 2*np.sum(cos_part*exp_part))
-
-    return J
+# def CJsolFor(t_array, n_terms, x):
+#     nArr = np.arange(1, n_terms + 1)
+#     t = t_array
+#     J = np.zeros(len(time))
+#     for ti in range(0, len(t)):
+#         cos_part = np.cos(nArr * np.pi * x / L)
+#         exp_part = np.exp(-Deff * (nArr**2) * np.pi**2 * t[ti] / L**2)
+#         J[ti] = Deff*C1/L * (1 + 2*np.sum(cos_part*exp_part))
+#     J = J/np.max(J)    
+#     return J
 
 def CJsolVector(t_array, n_terms, x):
     nArr = np.arange(1, n_terms + 1).reshape(-1, 1)  # shape (n_terms, 1)
@@ -46,8 +45,42 @@ def CJsolVector(t_array, n_terms, x):
     sum_terms = cos_part * exp_part  # shape (n_terms, num_times)
     sum_result = np.sum(sum_terms, axis=0)  # sum over n
     
-    J = Deff*C1/L * (1 + 2*sum_result)  # shape (num_times,)
+    J = Deff*C1/L * (1 + 2*sum_result) * Atot # shape (num_times,)
+    J = J/np.max(J)
     return J
+
+# Least squares
+def lsqJvec(Deff):
+    nArr = np.arange(1, n + 1).reshape(-1, 1)  # shape (n_terms, 1)
+    t = time.reshape(1, -1)  # shape (1, num_times)
+    
+    cos_part = np.cos(nArr * np.pi * x / L)  # shape (n_terms, 1)
+    exp_part = np.exp(-Deff * (nArr**2) * np.pi**2 * t / L**2)  # shape (n_terms, num_times)
+    
+    sum_terms = cos_part * exp_part  # shape (n_terms, num_times)
+    sum_result = np.sum(sum_terms, axis=0)  # sum over n
+    
+    Jopt = Atot*Deff*C1/L * (1 + 2*sum_result)  # shape (num_times,)
+    Jopt = Jopt/np.max(Jopt)
+    return Jopt
+def objective(Deff):
+    Jobj = lsqJvec(Deff[0]) # Deff is an array from optimizer
+    return np.sum((Jsim - Jobj) ** 2)
+
+# Curve fitting
+def fitJvec(time, Deff):
+    nArr = np.arange(1, n + 1).reshape(-1, 1)   # shape (n_terms, 1)
+    t = time.reshape(1, -1)                     # shape (1, num_times)
+
+    cos_part = np.cos(nArr * np.pi * x / L)     # shape (n_terms, 1)
+    exp_part = np.exp(-Deff * (nArr**2) * np.pi**2 * t / L**2)  # (n_terms, num_times)
+
+    sum_terms = cos_part * exp_part
+    sum_result = np.sum(sum_terms, axis=0)
+
+    Jfit = Atot * Deff * C1 / L * (1 + 2 * sum_result)
+    Jfit = Jfit/np.max(Jfit)
+    return Jfit
 
 # Parsing intersection file ############################################
 import pandas as pd
@@ -87,13 +120,30 @@ Jsim = -np.array(df['OUTFLOW TRACER [mol/y]'])/(86400*365) # [mol/s]
 C1 = 1e3 # [mol/m3]
 Atot = width.sum()*length_f2_minus1 # [m2]
 L = 20 # [m]
-Deff = Jsim[-1]*L/(C1*Atot) # 4.5e-6 # [m2/s]
-n = 50
+n = 50 # [-]
 x = L # Distance between inlet and btc record section # [m]
+Deff = Jsim[-1]*L/(C1*Atot) # 4.5e-6 # [m2/s]
+
+Jsim = Jsim/np.max(Jsim)
 
 # Compute analytical solution ##########################################
-Jfor = CJsolFor(time, n, x)
+# Jfor = CJsolFor(time, n, x)
 Jvec = CJsolVector(time, n, x)
+
+# OPTIMISTAION ###############################################################################
+# Initial guess for Deff
+initial_guess = [3.835337584289503e-08]
+# Run optimization
+result = minimize(objective, initial_guess, method='Nelder-Mead')
+# Optimal Deff
+lsqDeff = result.x[0]
+# Initial guess for Deff
+initial_guess = [Deff]
+
+# Fit the model
+popt, pcov = curve_fit(fitJvec, time, Jsim, p0=initial_guess)
+# Extract best-fit Deff
+curveFitDeff = popt[0]
 
 # PLOTS ################################################################
 # Analytical solution
@@ -112,7 +162,7 @@ Jvec = CJsolVector(time, n, x)
 fig, ax = plt.subplots(figsize = (8,6))
 plt.rcParams.update({'font.size': 20})
 ax.plot(time, Jsim, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label='Numerical')
-ax.plot(time, Jvec*Atot, color='blue', linewidth=3, label='Analytical')
+ax.plot(time, Jvec, color='blue', linewidth=3, label='Analytical')
 # ax.plot(time, Jfor*Atot/(86400*365), color='blue', linewidth=3, label='Analytical')
 # ax.plot(time, Jfor*Atot, color='blue', linewidth=3, label='Analytical')
 # plt.title('Breakthrough curve')
@@ -124,68 +174,13 @@ plt.legend(loc='best')
 plt.grid(True)
 plt.show()
 
-print(Deff)
-
-# OPTIMISTAION ###############################################################################
-# Least squares
-def lsqJvec(Deff):
-    nArr = np.arange(1, n + 1).reshape(-1, 1)  # shape (n_terms, 1)
-    t = time.reshape(1, -1)  # shape (1, num_times)
-    
-    cos_part = np.cos(nArr * np.pi * x / L)  # shape (n_terms, 1)
-    exp_part = np.exp(-Deff * (nArr**2) * np.pi**2 * t / L**2)  # shape (n_terms, num_times)
-    
-    sum_terms = cos_part * exp_part  # shape (n_terms, num_times)
-    sum_result = np.sum(sum_terms, axis=0)  # sum over n
-    
-    Jopt = Atot*Deff*C1/L * (1 + 2*sum_result)  # shape (num_times,)
-    return Jopt
-
-def objective(Deff):
-    Jopt = lsqJvec(Deff[0])  # Deff is an array from optimizer
-    return np.sum(abs(Jsim - Jopt) ** 2)
-
-# Initial guess for Deff
-initial_guess = [3.835337584289503e-08]
-
-# Run optimization
-result = minimize(objective, initial_guess, method='Nelder-Mead')
-
-# Optimal Deff
-Deff_optimal = result.x[0]
-
-Jopt = lsqJvec(Deff_optimal)
-
-# Curve fitting
-def fitJvec(time, Deff):
-    nArr = np.arange(1, n + 1).reshape(-1, 1)   # shape (n_terms, 1)
-    t = time.reshape(1, -1)                     # shape (1, num_times)
-
-    cos_part = np.cos(nArr * np.pi * x / L)     # shape (n_terms, 1)
-    exp_part = np.exp(-Deff * (nArr**2) * np.pi**2 * t / L**2)  # (n_terms, num_times)
-
-    sum_terms = cos_part * exp_part
-    sum_result = np.sum(sum_terms, axis=0)
-
-    Jfit = Atot * Deff * C1 / L * (1 + 2 * sum_result)
-    return Jfit
-
-# Initial guess for Deff
-initial_guess = [3.835337584289503e-08]
-
-# Fit the model
-popt, pcov = curve_fit(fitJvec, time, Jsim, p0=initial_guess)
-
-# Extract best-fit Deff
-Deff_opt = popt[0]
-
 # Numerical vs analytical vs optimised ######################################################
 fig, ax = plt.subplots(figsize = (8,6))
 plt.rcParams.update({'font.size': 20})
 ax.plot(time, Jsim, 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label='Numerical')
-ax.plot(time, Jvec*Atot, color='blue', linewidth=3, label='Analytical')
-ax.plot(time, Jopt, '*', markerfacecolor='none', markeredgecolor='green', markersize='5', label='lsq')
-ax.plot(time, fitJvec(time, Deff_opt), '*', markerfacecolor='none', markeredgecolor='pink', markersize='5', label='fit')
+ax.plot(time, Jvec, color='blue', linewidth=3, label='Analytical')
+ax.plot(time, lsqJvec(lsqDeff), '*', markerfacecolor='none', markeredgecolor='green', markersize='5', label='lsq')
+ax.plot(time, fitJvec(time, curveFitDeff), '*', markerfacecolor='none', markeredgecolor='pink', markersize='5', label='fit')
 plt.xlabel('Time [s]')
 plt.ylabel('Outflowing tracer [mol/s]')
 plt.xscale('log')
@@ -194,8 +189,10 @@ plt.legend(loc='best')
 plt.grid(True)
 plt.show()
 
-print("Optimal Deff:", Deff_optimal)
-print(f"Fitted Deff: {Deff_opt:.4e}")
+print(f"Jsim Deff: {Deff:.4e}")
+print(f"Initial guess Deff {initial_guess[0]:.4e}")
+print(f"LSQ Deff: {lsqDeff:.4e}")
+print(f"Curve fit Deff: {curveFitDeff:.4e}")
 
 # # cNorm = -1*df['OUTFLOW TRACER [mol/y]']/np.sum(-1*df['OUTFLOW TRACER [mol/y]'])
 # cPlateau1 = np.array(-1*df['OUTFLOW TRACER [mol/y]']/np.max(-1*df['OUTFLOW TRACER [mol/y]']))
