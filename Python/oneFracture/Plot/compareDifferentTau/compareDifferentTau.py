@@ -218,7 +218,7 @@ def power_law(x, a, b):
 params, covariance = curve_fit(power_law, pTau[:-3], k[:-3])
 a_fitted, b_fitted = params
 # plt.plot(pTau, power_law(pTau, *params), linestyle='-.', color='black', label = r'$k(\tau_d) = %g \tau_d^{%g}$' % (round(a_fitted, 2), round(b_fitted, 2)))
-plt.plot(pTau, power_law(pTau, *params), linestyle='-.', color='black', label = r'$k(\tau_d) \propto \tau_d^{%g}$' % (round(b_fitted, 2)))
+plt.plot(pTau, power_law(pTau, *params), linestyle='-.', color='black', label = r'$k_{eff} \propto \tau_d^{%g}$' % (round(b_fitted, 2)))
 # Exponential fitting
 # pTauReshaped = pTau.reshape(-1, 1)
 # yKfit = LinearRegression().fit(pTauReshaped[3:], np.log(k[3:]))
@@ -229,7 +229,7 @@ plt.plot(pTau, power_law(pTau, *params), linestyle='-.', color='black', label = 
 pTauReshaped = pTau.reshape(-1, 1)
 xConst = np.linspace(min(pTauReshaped), max(pTauReshaped), 10)
 yConst = np.ones(len(xConst))*0.05
-plt.plot(xConst, yConst, linestyle='--', color="black", label = r'$k(\tau_d) = 0.05$')
+plt.plot(xConst, yConst, linestyle='--', color="black", label = r'$k_0 = 0.05$')
 plt.legend(loc='best')
 plt.plot(tau4, -interpSemilogTau4.coef_[0], 'o', markerfacecolor='none', markeredgecolor='blue', markersize='10', label=r'$k(\tau_d)=%g$' % (round(-interpSemilogTau4.coef_[0], 3)))
 plt.plot(tau40, -interpSemilogTau40.coef_[0], 's', markerfacecolor='none', markeredgecolor='red', markersize='10', label=r'$k(\tau_d)=%g$' % (round(-interpSemilogTau40.coef_[0], 3)))
@@ -244,7 +244,7 @@ plt.yscale('log')
 # plt.ylim(-10, 1)
 plt.xlabel(r'$\tau_d$')
 # plt.ylabel('Normalised number of live particles')
-plt.ylabel(r'$k(\tau_d)$')
+plt.ylabel(r'$k_{eff}$')
 # plt.grid(True, which="major", linestyle='-', linewidth=0.7, color='black')
 # plt.grid(True, which="minor", linestyle=':', linewidth=0.5, color='gray')
 plt.tight_layout()

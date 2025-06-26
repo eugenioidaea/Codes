@@ -35,17 +35,17 @@ def load_mas_file(filename):
 #     J = J/np.max(J)    
 #     return J
 
-def CJsolVector(t_array, n_terms, x):
+def CJsolVector(t_array, n_terms, x, D):
     nArr = np.arange(1, n_terms + 1).reshape(-1, 1)  # shape (n_terms, 1)
     t = t_array.reshape(1, -1)  # shape (1, num_times)
     
     cos_part = np.cos(nArr * np.pi * x / L)  # shape (n_terms, 1)
-    exp_part = np.exp(-Deff * (nArr**2) * np.pi**2 * t / L**2)  # shape (n_terms, num_times)
+    exp_part = np.exp(-D * (nArr**2) * np.pi**2 * t / L**2)  # shape (n_terms, num_times)
     
     sum_terms = cos_part * exp_part  # shape (n_terms, num_times)
     sum_result = np.sum(sum_terms, axis=0)  # sum over n
     
-    J = Deff*C1/L * (1 + 2*sum_result) * Atot # shape (num_times,)
+    J = D*C1/L * (1 + 2*sum_result) * Atot # shape (num_times,)
     J = J/np.max(J)
     return J
 
@@ -115,12 +115,13 @@ mas_filename = "output/dfn_diffusion_no_flow-mas.dat"
 df = load_mas_file(mas_filename)
 
 # Input paramenters ####################################################
+Dmol = 4.5e-7 # [m2/s] DIFFUSION_COEFFICIENT from PFLOTRAN input file
 time = np.array(df['Time [y]'])*86400*365 # [s]
 Jsim = -np.array(df['OUTFLOW TRACER [mol/y]'])/(86400*365) # [mol/s]
 C1 = 1e3 # [mol/m3]
 Atot = width.sum()*length_f2_minus1 # [m2]
 L = 20 # [m]
-n = 50 # [-]
+n = 100 # [-]
 x = L # Distance between inlet and btc record section # [m]
 Deff = Jsim[-1]*L/(C1*Atot) # 4.5e-6 # [m2/s]
 
@@ -128,7 +129,7 @@ Jsim = Jsim/np.max(Jsim)
 
 # Compute analytical solution ##########################################
 # Jfor = CJsolFor(time, n, x)
-Jvec = CJsolVector(time, n, x)
+Jvec = CJsolVector(time, n, x, Dmol)
 
 # OPTIMISTAION ###############################################################################
 # Initial guess for Deff
@@ -161,35 +162,36 @@ curveFitDeff = popt[0]
 # Numerical vs analytical
 fig, ax = plt.subplots(figsize = (8,6))
 plt.rcParams.update({'font.size': 20})
-ax.plot(time[:503], Jsim[:503], 'o', markerfacecolor='none', markeredgecolor='red', markersize='5', label='Numerical')
-ax.plot(time[:503], Jvec[:503], color='blue', linewidth=3, label='Analytical')
+ax.plot(time, Jsim, 'o', markerfacecolor='none', markeredgecolor='red', markersize='8', label='Numerical')
+ax.plot(time, Jvec, color='orange', linewidth=3, label='Dmol')
 # ax.plot(time, Jfor*Atot/(86400*365), color='blue', linewidth=3, label='Analytical')
 # ax.plot(time, Jfor*Atot, color='blue', linewidth=3, label='Analytical')
 # plt.title('Breakthrough curve')
 plt.xlabel('Time [s]')
-plt.ylabel('Outflowing tracer [mol/s]')
+plt.ylabel('J [-]')
 plt.xscale('log')
 # plt.yscale('log')
 plt.legend(loc='best')
 plt.grid(True)
 plt.show()
+diff = np.linalg.norm(Jsim - Jvec, ord=np.inf)
+print(f"diff = {diff:.6e}")
 
 # Numerical vs analytical vs optimised ######################################################
 fig, ax = plt.subplots(figsize = (8,6))
 plt.rcParams.update({'font.size': 20})
 ax.plot(time, Jsim, 'o', markerfacecolor='none', markeredgecolor='red', markersize='8', label='Numerical')
-ax.plot(time, Jvec, color='blue', linewidth=3, label='Analytical')
+ax.plot(time, Jvec, color='orange', linewidth=3, label='Dmol')
 ax.plot(time, lsqJvec(lsqDeff), '-*', color='green', markersize='8', label='lsq')
 # ax.plot(time, fitJvec(time, curveFitDeff), '*', markerfacecolor='none', markeredgecolor='pink', markersize='5', label='fit')
 plt.xlabel('Time [s]')
-plt.ylabel('Outflowing tracer [mol/s]')
+plt.ylabel('J [-]')
 plt.xscale('log')
 # plt.yscale('log')
 plt.legend(loc='best')
 plt.grid(True)
 plt.show()
 
-Dmol = 4.5e-7
 print(f"Dmol [m2/s] = {Dmol:.4e}")
 print(f"Deff [m2/s] = Jsim[-1]*L/(C1*Atot) = {Deff:.4e}")
 print(f"Initial guess : D0 [m2/s] = {initial_guess[0]:.4e}")
