@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pylab as plt
 from scipy.optimize import minimize
 from scipy.optimize import curve_fit
+from sklearn.linear_model import LinearRegression
 
 # Functions #################################################
 def load_mas_file(filename):
@@ -146,6 +147,13 @@ popt, pcov = curve_fit(fitJvec, time, Jsim, p0=initial_guess)
 # Extract best-fit Deff
 curveFitDeff = popt[0]
 
+# Linear regression
+timeReshaped = time.reshape(-1, 1)
+fitFirstPart = LinearRegression().fit(timeReshaped[time<0.5e10], np.log(1-Jsim[time<0.5e10]))
+fitSecondPart = LinearRegression().fit(timeReshaped[time>0.5e10][:-1], np.log(1-Jsim[time>0.5e10][:-1]))
+fit1 = np.exp(fitFirstPart.intercept_+fitFirstPart.coef_*time[time<0.5e10])
+fit2 = np.exp(fitSecondPart.intercept_+fitSecondPart.coef_*time[time>0.5e10][:-1])
+
 # PLOTS ################################################################
 # Analytical solution
 # fig, ax = plt.subplots(figsize = (8,6))
@@ -175,7 +183,7 @@ plt.legend(loc='best')
 plt.grid(True)
 plt.show()
 
-# Numerical vs analytical vs optimised ######################################################
+# Numerical vs analytical vs optimised
 fig, ax = plt.subplots(figsize = (8,6))
 plt.rcParams.update({'font.size': 20})
 ax.plot(time, Jsim, 'o', markerfacecolor='none', markeredgecolor='red', markersize='8', label='Numerical')
@@ -214,6 +222,10 @@ ax.plot(time[:-1], 1-CJsolVector(time, n, x, Dmol)[:-1], '-', color='orange', li
 ax.plot(time[:-1], 1-Jvec[:-1], '--', color='blue', linewidth=3, label='Deff')
 ax.plot(time[:-1], 1-lsqJvec(lsqDeff)[:-1], '-*', color='green', linewidth=3, markersize='8', label='lsq')
 # ax.plot(time, fitJvec(time, curveFitDeff), '*', markerfacecolor='none', markeredgecolor='pink', markersize='5', label='fit')
+ax.plot(time[time<0.5e10], fit1, '-', color='black')
+ax.plot(time[time>0.5e10][:-1], fit2, '-', color='black')
+plt.text(time[time<0.5e10][-1], fit1[-1], r'$1-J=\frac{%g}{e^{%g t}}$' % (round(np.exp(fitFirstPart.intercept_), 2), round(-fitFirstPart.coef_[0], 10)), fontsize=18, ha='left', va='bottom')
+plt.text(timeReshaped[-4], fit2[-4], r'$1-J=\frac{%g}{e^{%g t}}$' % (round(np.exp(fitSecondPart.intercept_), 2), round(-fitSecondPart.coef_[0], 10)), fontsize=18, ha='left', va='bottom')
 plt.xlabel('Time [s]')
 plt.ylabel('1-J [-]')
 # plt.xscale('log')
